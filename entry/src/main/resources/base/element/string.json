@@ -1,0 +1,20 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "XIAKE KB Course Schedule Application"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "侠客课表应用入口"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "侠客课表"
+    },
+    {
+      "name": "internet_permission_reason",
+      "value": "访问网络获取课程数据和学院信息"
+    }
+  ]
+}
