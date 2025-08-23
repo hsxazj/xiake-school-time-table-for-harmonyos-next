@@ -1,13 +1,19 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { AppConfigManager } from '../services/AppConfigManager';
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
+  private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
+    
+    // 初始化配置信息
+    this.initializeConfig();
   }
 
   onDestroy(): void {
@@ -40,5 +46,23 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+  }
+
+  /**
+   * 初始化应用配置 (参照class-schedule-c的getKxTime逻辑)
+   */
+  private async initializeConfig(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, 'testTag', '🔄 [EntryAbility] 开始初始化应用配置...');
+      
+      // 使用AppConfigManager统一管理配置初始化
+      await this.appConfigManager.initialize();
+      
+      hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 应用配置初始化完成');
+      
+    } catch (error) {
+      hilog.error(DOMAIN, 'testTag', '❌ [EntryAbility] 应用配置初始化失败: %{public}s', JSON.stringify(error));
+      // 不阻塞应用启动，仅记录错误
+    }
   }
 }

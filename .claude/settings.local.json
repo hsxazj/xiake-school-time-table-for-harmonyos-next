@@ -6,7 +6,8 @@
       "Bash(hvigor build:*)",
       "Bash(rm:*)",
       "Bash(ohpm install:*)",
-      "Bash(./hvigor/hvigor-wrapper.js build:*)"
+      "Bash(./hvigor/hvigor-wrapper.js build:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

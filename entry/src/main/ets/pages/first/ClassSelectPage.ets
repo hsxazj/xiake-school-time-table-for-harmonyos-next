@@ -3,7 +3,7 @@ import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../../components/base/SelectItem';
 import { CustomPicker, PickerItem } from '../../components/base/CustomPicker';
 import { CollegeApiService } from '../../services/api/CollegeApiService';
-import { StorageService } from '../../services/storage/StorageService';
+import { UserInfoManager } from '../../common/constants/PreferencesUtil';
 import { College, Major, ClassInfo, UserSelection } from '../../models/CollegeModels';
 
 @Entry
@@ -28,7 +28,7 @@ struct CollegeSelectPage {
   @State private selectedClassIndex: number = 0;
 
   private collegeApiService: CollegeApiService = CollegeApiService.getInstance();
-  private storageService: StorageService = StorageService.getInstance();
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   
   private collegePickerController: CustomDialogController = new CustomDialogController({
     builder: CustomPicker({
@@ -328,25 +328,21 @@ struct CollegeSelectPage {
       className: this.className
     };
 
-    const success = await this.storageService.saveUserSelection(userSelection);
+    // 保存用户选择到PreferencesUtil
+    this.userInfoManager.saveCollegeInfo(userSelection.collegeId.toString(), userSelection.collegeName);
+    this.userInfoManager.saveMajorInfo(userSelection.majorId.toString(), userSelection.majorName);
+    this.userInfoManager.saveClassInfo(userSelection.classId.toString(), userSelection.className);
     
-    if (success) {
-      promptAction.showToast({
-        message: '保存成功',
-        duration: 1000
+    promptAction.showToast({
+      message: '保存成功',
+      duration: 1000
+    });
+    
+    setTimeout(() => {
+      router.replaceUrl({
+        url: 'pages/MainTabPage'
       });
-      
-      setTimeout(() => {
-        router.replaceUrl({
-          url: 'pages/MainTabPage'
-        });
-      }, 1000);
-    } else {
-      promptAction.showToast({
-        message: '保存失败，请重试',
-        duration: 2000
-      });
-    }
+    }, 1000);
   }
 
   build() {

@@ -4,6 +4,14 @@ import {
   CurrentSemesterStatus,
   ConfigApiResponse
 } from '../services/api/ConfigApiService';
+import { 
+  CourseApiService, 
+  CourseInfo, 
+  CourseRequestParams,
+  CoursePosition
+} from '../services/api/CourseApiService';
+import { AppConfigManager } from '../services/AppConfigManager';
+import { UserInfoManager, UserSchoolInfo } from '../common/constants/PreferencesUtil';
 import { ApiResponse } from '../models/CollegeModels';
 
 // 定义接口
@@ -25,6 +33,14 @@ interface MenuItemType {
 interface WeekDateRange {
   startDate: Date;
   endDate: Date;
+}
+
+// 课程数据接口（用于模拟数据）
+interface MockCourseInfo {
+  name: string;
+  location: string;
+  teacher: string;
+  color: string;
 }
 
 @Entry
@@ -255,520 +271,304 @@ struct SchedulePage {
   @State private currentSemester: SemesterInfo | null = null;
   @State private semesterList: SemesterInfo[] = [];
   @State private displayStatusText: string = "第1周";
-  private swiper: SwiperController = new SwiperController();
+  // 新增基于日期的滑动状态
+  @State private currentDate: Date = new Date(); // 当前显示的日期
+  // 滑动手势状态
+  @State private startTime: number = 0;
+  @State private startPosition: number = 0;
+  @State private endPosition: number = 0;
+  // 新增课程数据相关状态
+  @State private coursePositions: CoursePosition[] = [];
+  @State private isLoadingCourses: boolean = false;
+  
   private configService: ConfigApiService = ConfigApiService.getInstance();
+  private courseService: CourseApiService = CourseApiService.getInstance();
+  private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   private timeSlots: string[] = ['8:00', '9:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-  // TODO 模拟多周课程数据
-  private allWeeksData: Record<number, Record<number, Record<number, CourseInfo | null>>> = {
-    1: {
-      // 第1周
-      1: {
-        // 周一
-        1: {
-          name: '高等数学',
-          location: '教学楼A101',
-          teacher: '张教授',
-          color: '#E8F5E8'
-        },
-        2: {
-          name: '线性代数',
-          location: '教学楼A102',
-          teacher: '李教授',
-          color: '#E3F2FD'
-        },
-        4: {
-          name: '数据结构',
-          location: '实验楼B201',
-          teacher: '王教授',
-          color: '#FFF3E0'
-        }
-      },
-      2: {
-        // 周二
-        0: {
-          name: '英语',
-          location: '外语楼C301',
-          teacher: '陈教授',
-          color: '#F3E5F5'
-        },
-        3: {
-          name: '计算机网络',
-          location: '教学楼A205',
-          teacher: '刘教授',
-          color: '#FFEBEE'
-        }
-      },
-      3: {
-        // 周三
-        1: {
-          name: '操作系统',
-          location: '教学楼A301',
-          teacher: '赵教授',
-          color: '#F0F4C3'
-        },
-        5: {
-          name: '软件工程',
-          location: '教学楼B105',
-          teacher: '孙教授',
-          color: '#FCE4EC'
-        }
-      },
-      4: {
-        // 周四
-        2: {
-          name: '数据库原理',
-          location: '实验楼B301',
-          teacher: '钱教授',
-          color: '#E0F2F1'
-        }
-      },
-      5: {
-        // 周五
-        0: {
-          name: '体育',
-          location: '体育馆',
-          teacher: '周教练',
-          color: '#FFF8E1'
-        },
-        6: {
-          name: '马克思主义原理',
-          location: '教学楼C201',
-          teacher: '吴教授',
-          color: '#F1F8E9'
-        }
-      },
-      6: {}, // 周六
-      7: {}  // 周日
-    },
-    2: {
-      // 第2周 - 不同的课程安排
-      1: {
-        0: {
-          name: '高等数学',
-          location: '教学楼A101',
-          teacher: '张教授',
-          color: '#E8F5E8'
-        },
-        3: {
-          name: '算法设计',
-          location: '实验楼B202',
-          teacher: '李教授',
-          color: '#FFECB3'
-        }
-      },
-      2: {
-        1: {
-          name: '英语',
-          location: '外语楼C301',
-          teacher: '陈教授',
-          color: '#F3E5F5'
-        },
-        4: {
-          name: '计算机组成原理',
-          location: '教学楼A206',
-          teacher: '赵教授',
-          color: '#E8EAF6'
-        }
-      },
-      3: {
-        2: {
-          name: '操作系统',
-          location: '教学楼A301',
-          teacher: '赵教授',
-          color: '#F0F4C3'
-        }
-      },
-      4: {
-        1: {
-          name: '数据库原理',
-          location: '实验楼B301',
-          teacher: '钱教授',
-          color: '#E0F2F1'
-        },
-        5: {
-          name: '编译原理',
-          location: '教学楼A401',
-          teacher: '孙教授',
-          color: '#FCE4EC'
-        }
-      },
-      5: {
-        0: {
-          name: '体育',
-          location: '体育馆',
-          teacher: '周教练',
-          color: '#FFF8E1'
-        }
-      },
-      6: {},
-      7: {}
-    }
-  };
+  // 模拟多周课程数据
+  private allWeeksData: Record<number, Record<number, Record<number, MockCourseInfo | null>>> = this.initMockData();
+
+  private initMockData(): Record<number, Record<number, Record<number, MockCourseInfo | null>>> {
+    const mockData: Record<number, Record<number, Record<number, MockCourseInfo | null>>> = {};
+    
+    // 初始化第1周数据
+    mockData[1] = {};
+    mockData[1][1] = {}; // 周一
+    mockData[1][1][1] = {
+      name: '高等数学',
+      location: '教学楼A101',
+      teacher: '张教授',
+      color: '#E8F5E8'
+    };
+    mockData[1][1][2] = {
+      name: '线性代数',
+      location: '教学楼A102',
+      teacher: '李教授',
+      color: '#E3F2FD'
+    };
+    
+    // 其他模拟数据可以根据需要添加
+    return mockData;
+  }
 
   aboutToAppear(): void {
-    // 先初始化默认配置，确保有基础数据
-    this.initDefaultConfig();
-    // 检查配置服务是否已有数据，如果有则直接使用，否则重新加载
-    this.initializeFromExistingConfig();
+    // 基于日期的初始化逻辑
+    this.initializeWithCurrentDate();
   }
 
   /**
-   * 从现有配置初始化 (如果应用启动时已预加载)
+   * 基于当前日期初始化 - 找到最近的学期并计算当前周数
    */
-  private async initializeFromExistingConfig(): Promise<void> {
+  private async initializeWithCurrentDate(): Promise<void> {
     try {
-      const semesterList = this.configService.getSemesterList();
-      if (semesterList && semesterList.length > 0) {
-        // 使用已存在的配置数据
-        console.info('📋 [Schedule] 使用预加载的配置数据');
-        this.processExistingConfig();
-      } else {
-        // 没有预加载数据，重新获取
-        console.info('📋 [Schedule] 预加载数据不存在，重新获取配置');
-        await this.loadConfig();
+      // 确保配置已加载
+      await this.appConfigManager.initialize();
+      this.semesterList = this.configService.getSemesterList();
+      
+      if (this.semesterList.length === 0) {
+        console.error('📋 [Schedule] 没有学期数据');
+        return;
       }
+
+      // 使用今天的日期作为起始点
+      const today = new Date();
+      this.currentDate = new Date(today);
+      
+      // 找到最近的学期和计算周数
+      this.updateCurrentSemesterFromDate(this.currentDate);
+      
+      // 计算当前日期对应的周日期范围
+      this.calculateWeekDatesFromCurrentDate();
+      
+      // 加载课程数据
+      await this.loadCourseData();
+      
+      console.info(`📅 [Schedule Init] 初始化完成: ${this.currentDate.getFullYear()}-${this.currentDate.getMonth()+1}-${this.currentDate.getDate()}`);
+      
     } catch (error) {
-      console.error('📋 [Schedule] 配置初始化失败:', error);
-      await this.loadConfig(); // 降级处理
+      console.error('📋 [Schedule] 日期初始化失败:', error);
     }
   }
 
   /**
-   * 处理现有配置数据
+   * 加载课程数据
    */
-  private processExistingConfig(): void {
-    // 获取学期列表
-    const tempSemesterList = this.configService.getSemesterList();
-    this.semesterList = [];
-    tempSemesterList.forEach((semester) => {
-      this.semesterList.push({
-        year: semester.year,
-        semester: semester.semester,
-        startDate: semester.startDate,
-        endDate: semester.endDate,
-        totalWeeks: semester.totalWeeks
-      });
-    });
-
-    // 计算当前学期状态
-    const tempStatus = this.configService.calculateCurrentSemesterStatus();
-    const newCurrentStatus: CurrentSemesterStatus = {
-      isInSemester: tempStatus.isInSemester,
-      isInHoliday: tempStatus.isInHoliday,
-      currentWeek: tempStatus.currentWeek,
-      statusText: tempStatus.statusText
-    };
-    if (tempStatus.currentSemester) {
-      newCurrentStatus.currentSemester = {
-        year: tempStatus.currentSemester.year,
-        semester: tempStatus.currentSemester.semester,
-        startDate: tempStatus.currentSemester.startDate,
-        endDate: tempStatus.currentSemester.endDate,
-        totalWeeks: tempStatus.currentSemester.totalWeeks
-      };
-    }
-    this.currentStatus = newCurrentStatus;
-    this.displayStatusText = tempStatus.statusText;
-
-    if (tempStatus.isInSemester && tempStatus.currentSemester) {
-      // 当前在学期中
-      const tempCurrentSemester = tempStatus.currentSemester;
-      const newSemester: SemesterInfo = {
-        year: tempCurrentSemester.year,
-        semester: tempCurrentSemester.semester,
-        startDate: tempCurrentSemester.startDate,
-        endDate: tempCurrentSemester.endDate,
-        totalWeeks: tempCurrentSemester.totalWeeks
-      };
-      this.currentSemester = newSemester;
-      this.currentWeek = tempStatus.currentWeek;
-      this.totalWeeks = tempCurrentSemester.totalWeeks;
-      this.updateWeekDates(tempCurrentSemester.startDate);
-
-      // 延迟定位到当前周
-      setTimeout(() => {
-        this.navigateToCurrentWeek();
-      }, 100);
-    } else if (tempStatus.isInHoliday) {
-      // 当前在假期中
-      const latestSemester = this.getLatestSemester();
-      if (latestSemester) {
-        const newSemester: SemesterInfo = {
-          year: latestSemester.year,
-          semester: latestSemester.semester,
-          startDate: latestSemester.startDate,
-          endDate: latestSemester.endDate,
-          totalWeeks: latestSemester.totalWeeks
-        };
-        this.currentSemester = newSemester;
-        this.totalWeeks = latestSemester.totalWeeks;
-        this.currentWeek = 1; // 假期中默认显示第1周
-        this.updateWeekDates(latestSemester.startDate);
-      }
+  private async loadCourseData(): Promise<void> {
+    if (!this.currentSemester) {
+      console.warn('📚 [Course] 当前学期信息为空，无法加载课程');
+      return;
     }
 
-    console.info(`📅 [Schedule Config] 状态: ${this.displayStatusText}, 当前学期: ${this.currentSemester?.year}年${this.currentSemester?.semester ===
-      1 ? '秋季' : '春季'}学期`);
-  }
-
-  /**
-   * 加载配置信息 (支持完整的学期管理系统)
-   */
-  private async loadConfig(): Promise<void> {
+    this.isLoadingCourses = true;
+    
     try {
-      // 调用配置服务
-      const rawConfigResponse = await this.configService.getConfig();
-      // 手动构建响应对象，避免对象字面量错误
-      const configResponse: ConfigApiResponse = {
-        msg: rawConfigResponse.msg,
-        code: rawConfigResponse.code,
-        data: {
-          start: rawConfigResponse.data.start,
-          end: rawConfigResponse.data.end
-        }
-      };
+      // 从首选项获取用户班级信息
+      const userInfo = this.userInfoManager.getUserInfo();
+      console.info(`📚 [Course] 当前用户信息: 学院=${userInfo.collegeName}, 专业=${userInfo.majorName}, 班级=${userInfo.className}`);
+      
+      const classId = userInfo.classId;
+      
+      if (!classId) {
+        console.warn('📚 [Course] 用户未设置班级信息，无法获取课程数据');
+        console.warn('📚 [Course] 请在设置页面选择学院、专业和班级');
+        return;
+      }
 
-      if (configResponse.code === 200 && configResponse.data) {
-        // 获取学期列表
-        const tempSemesterList = this.configService.getSemesterList();
-        // 清空并重新填充
-        this.semesterList = [];
-        tempSemesterList.forEach((semester) => {
-          this.semesterList.push({
-            year: semester.year,
-            semester: semester.semester,
-            startDate: semester.startDate,
-            endDate: semester.endDate,
-            totalWeeks: semester.totalWeeks
-          });
-        });
+      // 构建请求参数 - 使用学期信息和用户班级ID
+      const params = this.courseService.buildCourseParams(
+        this.currentSemester.academicYear,
+        this.currentSemester.semester,
+        this.currentWeek, // 添加当前周数
+        classId,
+        undefined
+      );
 
-        // 计算当前学期状态
-        const tempStatus = this.configService.calculateCurrentSemesterStatus();
-        // 手动复制状态对象
-        const newCurrentStatus: CurrentSemesterStatus = {
-          isInSemester: tempStatus.isInSemester,
-          isInHoliday: tempStatus.isInHoliday,
-          currentWeek: tempStatus.currentWeek,
-          statusText: tempStatus.statusText
-        };
-        if (tempStatus.currentSemester) {
-          newCurrentStatus.currentSemester = {
-            year: tempStatus.currentSemester.year,
-            semester: tempStatus.currentSemester.semester,
-            startDate: tempStatus.currentSemester.startDate,
-            endDate: tempStatus.currentSemester.endDate,
-            totalWeeks: tempStatus.currentSemester.totalWeeks
-          };
-        }
-        this.currentStatus = newCurrentStatus;
-        this.displayStatusText = tempStatus.statusText;
-
-        if (tempStatus.isInSemester && tempStatus.currentSemester) {
-          // 当前在学期中
-          const tempCurrentSemester = tempStatus.currentSemester;
-          const newSemester: SemesterInfo = {
-            year: tempCurrentSemester.year,
-            semester: tempCurrentSemester.semester,
-            startDate: tempCurrentSemester.startDate,
-            endDate: tempCurrentSemester.endDate,
-            totalWeeks: tempCurrentSemester.totalWeeks
-          };
-          this.currentSemester = newSemester;
-          this.currentWeek = tempStatus.currentWeek;
-          this.totalWeeks = tempCurrentSemester.totalWeeks;
-          this.updateWeekDates(tempCurrentSemester.startDate);
-
-          // 延迟定位到当前周，确保Swiper已完全初始化
-          setTimeout(() => {
-            this.navigateToCurrentWeek();
-          }, 100);
-        } else if (tempStatus.isInHoliday) {
-          // 当前在假期中，显示最近的学期
-          const latestSemester = this.getLatestSemester();
-          if (latestSemester) {
-            const newSemester: SemesterInfo = {
-              year: latestSemester.year,
-              semester: latestSemester.semester,
-              startDate: latestSemester.startDate,
-              endDate: latestSemester.endDate,
-              totalWeeks: latestSemester.totalWeeks
-            };
-            this.currentSemester = newSemester;
-            this.totalWeeks = latestSemester.totalWeeks;
-            this.currentWeek = 1; // 假期中默认显示第1周
-            this.updateWeekDates(latestSemester.startDate);
-          }
-        }
-
-        console.info(`📅 [Schedule Config] 状态: ${this.displayStatusText}, 当前学期: ${this.currentSemester?.year}年${this.currentSemester?.semester ===
-          1 ? '秋季' : '春季'}学期`);
+      console.info(`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
+      
+      // 获取课程列表
+      const courseResponse = await this.courseService.getCourseList(params);
+      
+      if (courseResponse.code === 200 && courseResponse.data) {
+        // 处理课程数据
+        this.courseService.processCourseData(courseResponse.data);
+        this.coursePositions = this.courseService.getWeekCourses(this.currentWeek);
+        console.info(`📚 [Course] 成功加载${courseResponse.data.length}门课程`);
       } else {
-        console.error('配置加载失败:', configResponse.msg);
+        console.warn(`📚 [Course] 课程数据加载失败: ${courseResponse.msg}`);
+        this.coursePositions = [];
       }
+      
     } catch (error) {
-      console.error('配置请求失败:', error);
-      // 保持默认配置
+      console.error('📚 [Course] 加载课程数据失败:', error);
+      this.coursePositions = [];
+    } finally {
+      this.isLoadingCourses = false;
     }
   }
 
   /**
-   * 初始化默认配置
+   * 根据给定日期找到最近的学期并计算周数
+   * 直接使用ConfigApiService的calculateCurrentSemesterStatus逻辑
    */
-  private initDefaultConfig(): void {
-    this.totalWeeks = 20;
-    this.currentWeek = 1;
-    this.displayStatusText = "第1周";
-
-    // 默认学期信息 (2025学年第一学期)
-    this.currentSemester = {
-      year: "2024",
-      semester: 1,
-      startDate: "2024-09-08",
-      endDate: "2025-01-21",
-      totalWeeks: 20
-    };
-
-    this.updateWeekDates(this.currentSemester.startDate);
+  private updateCurrentSemesterFromDate(targetDate: Date): void {
+    // 使用ConfigApiService的已有逻辑来计算状态
+    const semesterStatus = this.configService.calculateCurrentSemesterStatus(targetDate);
+    
+    if (semesterStatus && semesterStatus.currentSemester) {
+      this.currentSemester = semesterStatus.currentSemester;
+      this.currentWeek = semesterStatus.currentWeek;
+      this.totalWeeks = semesterStatus.currentSemester.totalWeeks;
+      this.displayStatusText = semesterStatus.statusText;
+      
+      console.info(`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek})`);
+    }
   }
 
   /**
-   * 获取最近的学期 (用于假期中的显示)
+   * 根据当前日期计算周日期范围
    */
-  private getLatestSemester(): SemesterInfo | null {
-    if (this.semesterList.length === 0) {
-      return null;
-    }
-
-    const today = new Date();
-    let latestSemester: SemesterInfo | null = null;
-
-    // 找到最近结束的学期，如果没有就用最后一个学期
-    for (const semester of this.semesterList) {
-      const endDate = new Date(semester.endDate);
-      if (endDate <= today) {
-        latestSemester = semester;
-      }
-    }
-
-    return latestSemester || this.semesterList[this.semesterList.length - 1];
-  }
-
-  /**
-   * 更新周日期信息
-   */
-  private updateWeekDates(startDate?: string): void {
-    const semesterStartDate = startDate || this.currentSemester?.startDate || "2024-09-08";
-
-    const weekRange = this.configService.calculateWeekDates(semesterStartDate, this.currentWeek);
+  private calculateWeekDatesFromCurrentDate(): void {
+    // 找到当前日期所在周的周一
+    const currentDate = new Date(this.currentDate);
+    const dayOfWeek = currentDate.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    
+    const mondayOfWeek = new Date(currentDate);
+    mondayOfWeek.setDate(currentDate.getDate() + daysToMonday);
+    
+    // 计算周日
+    const sundayOfWeek = new Date(mondayOfWeek);
+    sundayOfWeek.setDate(mondayOfWeek.getDate() + 6);
+    
     this.weekDates = {
-      startDate: weekRange.startDate,
-      endDate: weekRange.endDate
+      startDate: mondayOfWeek,
+      endDate: sundayOfWeek
     };
-    this.currentMonth = this.configService.getMonthString(this.weekDates.startDate);
-
-    // 同步Swiper位置到当前周
-    if (this.swiper && this.currentWeek > 0) {
-      this.swiper.changeIndex(this.currentWeek - 1);
-    }
+    
+    this.currentMonth = this.configService.getMonthString(mondayOfWeek);
   }
 
   /**
-   * 导航到当前周 (应用启动时自动定位)
+   * 导航到上一周
    */
-  private navigateToCurrentWeek(): void {
-    if (this.currentWeek > 0 && this.currentWeek <= this.totalWeeks) {
-      console.info(`📍 [Navigation] 自动定位到第${this.currentWeek}周`);
-      // 强制更新Swiper位置
-      if (this.swiper) {
-        this.swiper.changeIndex(this.currentWeek - 1);
-      }
-      // 确保状态同步
-      this.updateWeekDates();
-    }
+  private navigateToPreviousWeek(): void {
+    // 当前日期减去7天
+    const newDate = new Date(this.currentDate);
+    newDate.setDate(this.currentDate.getDate() - 7);
+    
+    this.currentDate = newDate;
+    this.updateCurrentSemesterFromDate(this.currentDate);
+    this.calculateWeekDatesFromCurrentDate();
+    
+    // 重新加载课程数据（如果学期发生变化）
+    this.loadCourseData();
+    
+    console.info(`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth()+1}-${newDate.getDate()}`);
   }
 
   /**
-   * 切换学期 (支持上一个/下一个学期切换)
+   * 导航到下一周  
+   */
+  private navigateToNextWeek(): void {
+    // 当前日期加上7天
+    const newDate = new Date(this.currentDate);
+    newDate.setDate(this.currentDate.getDate() + 7);
+    
+    this.currentDate = newDate;
+    this.updateCurrentSemesterFromDate(this.currentDate);
+    this.calculateWeekDatesFromCurrentDate();
+    
+    // 重新加载课程数据（如果学期发生变化）
+    this.loadCourseData();
+    
+    console.info(`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth()+1}-${newDate.getDate()}`);
+  }
+
+  /**
+   * 切换学期 (跳转到指定学期的第一周)
    */
   private switchSemester(direction: 'prev' | 'next'): void {
     if (!this.currentSemester) {
       return;
     }
 
-    // 先创建当前学期的副本用于传参
-    const currentSemesterCopy: SemesterInfo = {
-      year: this.currentSemester.year,
-      semester: this.currentSemester.semester,
-      startDate: this.currentSemester.startDate,
-      endDate: this.currentSemester.endDate,
-      totalWeeks: this.currentSemester.totalWeeks
-    };
-
-    // 调用服务获取邻接学期
-    const rawTargetSemester = this.configService.getAdjacentSemester(currentSemesterCopy, direction);
+    // 找到目标学期
+    const rawTargetSemester = this.configService.getAdjacentSemester(this.currentSemester, direction);
     if (rawTargetSemester) {
-      // 手动复制学期对象
-      const targetSemester: SemesterInfo = {
-        year: rawTargetSemester.year,
-        semester: rawTargetSemester.semester,
-        startDate: rawTargetSemester.startDate,
-        endDate: rawTargetSemester.endDate,
-        totalWeeks: rawTargetSemester.totalWeeks
-      };
+      // 跳转到目标学期的开学日期
+      const targetStartDate = new Date(rawTargetSemester.startDate);
+      this.currentDate = targetStartDate;
+      
+      // 更新学期信息
+      this.updateCurrentSemesterFromDate(this.currentDate);
+      this.calculateWeekDatesFromCurrentDate();
+      
+      // 重新加载新学期的课程数据
+      this.loadCourseData();
+      
+      console.info(`📅 [Semester Switch] 切换到${rawTargetSemester.academicYear}学年第${rawTargetSemester.semester}学期`);
+    }
+  }
 
-      this.currentSemester = targetSemester;
-      this.totalWeeks = targetSemester.totalWeeks;
-      this.currentWeek = 1; // 切换学期后默认显示第1周
+  /**
+   * 获取星期对应的日期
+   */
+  private getDateForWeekDay(dayIndex: number): string {
+    if (!this.weekDates) return '';
+    
+    const targetDate = new Date(this.weekDates.startDate);
+    targetDate.setDate(this.weekDates.startDate.getDate() + dayIndex);
+    
+    const month = targetDate.getMonth() + 1;
+    const day = targetDate.getDate();
+    return `${month}/${day}`;
+  }
 
-      // 重新计算状态文本
-      const now = new Date();
-      const startDate = new Date(targetSemester.startDate);
-      const endDate = new Date(targetSemester.endDate);
+  /**
+   * 触摸开始 (参考class-schedule-c的touchStart方法)
+   */
+  private touchStart(event: TouchEvent): void {
+    this.startTime = Date.now();
+    this.startPosition = event.touches[0].x;
+  }
 
-      if (now >= startDate && now <= endDate) {
-        // 切换到的学期是当前学期
-        const realCurrentWeek = this.configService.calculateWeekInSemester(targetSemester.startDate, now);
-        this.currentWeek = realCurrentWeek;
-        this.displayStatusText = `第${realCurrentWeek}周`;
-      } else {
-        // 切换到的学期不是当前学期
-        this.displayStatusText = `第${this.currentWeek}周`;
+  /**
+   * 触摸结束 (参考class-schedule-c的touchEnd方法)
+   */
+  private touchEnd(event: TouchEvent): void {
+    const endTime = Date.now();
+    // 如果触摸时间超过2秒，忽略
+    if (endTime - this.startTime > 2000) {
+      return;
+    }
+    
+    this.endPosition = event.changedTouches[0].x;
+    
+    // 当移动距离超过100时判断左滑右滑 (与class-schedule-c一致)
+    if (Math.abs(this.endPosition - this.startPosition) > 100) {
+      const elePosition = this.endPosition - this.startPosition > 0 ? "right" : "left";
+      
+      if (elePosition === 'right') {
+        // 右滑：显示上一周 (对应class-schedule-c的leftClick)
+        this.navigateToPreviousWeek();
+      } else if (elePosition === 'left') {
+        // 左滑：显示下一周 (对应class-schedule-c的rightClick)
+        this.navigateToNextWeek();
       }
-
-      this.updateWeekDates(targetSemester.startDate);
-
-      console.info(`📅 [Semester Switch] 切换到${targetSemester.year}年${targetSemester.semester === 1 ? '秋季' :
-        '春季'}学期`);
     }
   }
 
   /**
-   * 切换周数
+   * 生成周数列表
    */
-  private onWeekChange(weekNum: number): void {
-    this.currentWeek = weekNum;
-
-    // 如果不在假期中，更新显示状态
-    if (!this.currentStatus?.isInHoliday) {
-      this.displayStatusText = `第${weekNum}周`;
-    }
-
-    this.updateWeekDates();
-    // 切换Swiper到对应页面
-    this.swiper.changeIndex(weekNum - 1);
-  }
-
-  /**
-   * 生成周数数组
-   */
-  private generateWeekNumbers(): number[] {
-    const weeks: number[] = [];
+  private getWeekNumbersList(): number[] {
+    const weekNumbers: number[] = [];
     for (let i = 1; i <= this.totalWeeks; i++) {
-      weeks.push(i);
+      weekNumbers.push(i);
     }
-    return weeks;
+    return weekNumbers;
   }
 
   build() {
@@ -776,21 +576,14 @@ struct SchedulePage {
       Column() {
         // 顶部日期和周次tabbar
         Row() {
-          // 月份显示
-          Text(this.currentMonth)
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor('#45CAD9')
-            .margin({ right: 10 })
-
           // 周数可点击区域
           Row() {
             Text(this.displayStatusText || `第${this.currentWeek || 1}周`)
-              .fontSize(18)
+              .fontSize(22)
               .fontWeight(FontWeight.Bold)
               .fontColor(this.currentStatus?.isInHoliday ? '#FF9800' : '#333333') // 假期中用橙色
             Text('▼')
-              .fontSize(12)
+              .fontSize(14)
               .fontColor('#999999')
               .margin({ left: 4 })
           }
@@ -810,7 +603,7 @@ struct SchedulePage {
           // 日期范围显示
           if (this.weekDates) {
             Text(`${this.configService.formatDateString(this.weekDates.startDate)} - ${this.configService.formatDateString(this.weekDates.endDate)}`)
-              .fontSize(12)
+              .fontSize(14)
               .fontColor('#666666')
           }
         }
@@ -819,29 +612,24 @@ struct SchedulePage {
           left: 20,
           right: 20,
           top: 15,
-          bottom: 10
+          bottom: 5
         })
         .backgroundColor(Color.White)
         .border({ width: { bottom: 1 }, color: '#F0F0F0' })
 
-        // Swiper容器用于滑动切换周
-        Swiper(this.swiper) {
-          // 生成多周的课表内容
-          ForEach(this.generateWeekNumbers(), (weekNum: number) => {
-            this.WeekScheduleContent(weekNum)
-          })
+        // 课表内容区域 - 支持触摸滑动手势
+        Column() {
+          this.WeekScheduleContent()
         }
         .width('100%')
         .layoutWeight(1)
-        .indicator(false)
-        .loop(false)
-        .onChange((index: number) => {
-          this.currentWeek = index + 1;
-          this.updateWeekDates();
-        })
-        .onGestureSwipe((index: number, extraInfo: SwiperAnimationEvent) => {
-          this.currentWeek = index + 1;
-          this.updateWeekDates();
+        .onTouch((event: TouchEvent) => {
+          if (event.type === TouchType.Down) {
+            this.touchStart(event);
+          } else if (event.type === TouchType.Up) {
+            this.touchEnd(event);
+          }
+          return true;
         })
       }
       .width('100%')
@@ -890,7 +678,7 @@ struct SchedulePage {
         Blank()
 
         // 当前学期信息
-        Text(`${this.currentSemester?.year || '2024'}年${this.currentSemester?.semester === 1 ? '秋季' : '春季'}学期`)
+        Text(`${this.currentSemester?.academicYear || '2024'}学年第${this.currentSemester?.semester || 1}学期`)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
           .fontColor('#333333')
@@ -923,7 +711,7 @@ struct SchedulePage {
 
       Scroll() {
         Column() {
-          ForEach(this.generateWeekNumbers(), (weekNum: number) => {
+          ForEach(this.getWeekNumbersList(), (weekNum: number) => {
             Row() {
               Text(`第${weekNum}周`)
                 .fontSize(16)
@@ -942,7 +730,16 @@ struct SchedulePage {
             .height(50)
             .padding({ left: 20, right: 20 })
             .onClick(() => {
-              this.onWeekChange(weekNum);
+              // 跳转到指定周：计算目标日期并更新
+              if (this.currentSemester) {
+                const semesterStartDate = new Date(this.currentSemester.startDate);
+                const targetDate = new Date(semesterStartDate);
+                targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
+                
+                this.currentDate = targetDate;
+                this.updateCurrentSemesterFromDate(this.currentDate);
+                this.calculateWeekDatesFromCurrentDate();
+              }
               this.showWeekPicker = false;
             })
 
@@ -989,7 +786,7 @@ struct SchedulePage {
   }
 
   @Builder
-  WeekScheduleContent(weekNum: number) {
+  WeekScheduleContent() {
     Column() {
       // 星期表头
       Row() {
@@ -997,20 +794,29 @@ struct SchedulePage {
         Column()
           .width(40)
 
-        // 星期标题
+        // 星期标题和日期
         ForEach(this.weekDays, (day: string, dayIndex: number) => {
           Column() {
             Text(day)
-              .fontSize(13)
+              .fontSize(16)
               .fontColor('#333333')
               .fontWeight(FontWeight.Medium)
+              .margin({ bottom: 2 })
+            
+            // 显示对应的日期
+            if (this.weekDates) {
+              Text(this.getDateForWeekDay(dayIndex))
+                .fontSize(14)
+                .fontColor('#666666')
+            }
           }
           .layoutWeight(1)
-          .padding(6)
+          .padding(4)
           .justifyContent(FlexAlign.Center)
         })
       }
       .width('100%')
+      .height(70)
       .backgroundColor('#FAFAFA')
       .border({ width: { bottom: 1 }, color: '#E8E8E8' })
 
@@ -1027,7 +833,7 @@ struct SchedulePage {
                   .fontWeight(FontWeight.Medium)
               }
               .width(40)
-              .height(60)
+              .height(70)
               .justifyContent(FlexAlign.Center)
               .alignItems(HorizontalAlign.Center)
               .backgroundColor('#FAFAFA')
@@ -1036,7 +842,8 @@ struct SchedulePage {
               // 七天的课程内容
               ForEach(this.weekDays, (day: string, dayIndex: number) => {
                 Column() {
-                  this.buildCourseCell(weekNum, dayIndex + 1, timeIndex)
+                  // 显示当前日期对应的课程数据
+                  this.buildCurrentCourseCell(dayIndex + 1, timeIndex)
                 }
                 .layoutWeight(1)
                 .height(60)
@@ -1049,6 +856,7 @@ struct SchedulePage {
             .width('100%')
           })
         }
+        .height('100%')
       }
       .layoutWeight(1)
     }
@@ -1057,57 +865,145 @@ struct SchedulePage {
   }
 
   @Builder
-  buildCourseCell(weekNum: number, dayIndex: number, timeIndex: number) {
-    if (this.allWeeksData[weekNum]?.[dayIndex]?.[timeIndex]) {
-      Column() {
-        Text(this.allWeeksData[weekNum][dayIndex][timeIndex]!.name)
-          .fontSize(11)
-          .fontColor('#333333')
-          .fontWeight(FontWeight.Medium)
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .textAlign(TextAlign.Center)
-          .margin({ bottom: 2 })
-        Text(this.allWeeksData[weekNum][dayIndex][timeIndex]!.location)
+  buildCurrentCourseCell(dayIndex: number, timeIndex: number) {
+    // 获取课程数据并显示
+    this.renderCourseCell(dayIndex, timeIndex)
+  }
+
+  @Builder
+  renderCourseCell(dayIndex: number, timeIndex: number) {
+    if (this.hasCourseAt(dayIndex, timeIndex)) {
+      this.renderCourseWithData(dayIndex, timeIndex)
+    } else {
+      this.renderEmptyCell()
+    }
+  }
+
+  @Builder
+  renderCourseWithData(dayIndex: number, timeIndex: number) {
+    Column() {
+      Text(this.getCourseNameAt(dayIndex, timeIndex))
+        .fontSize(11)
+        .fontColor('#333333')
+        .fontWeight(FontWeight.Medium)
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .textAlign(TextAlign.Center)
+        .margin({ bottom: 2 })
+      
+      // 显示教室信息
+      if (this.hasClassroomAt(dayIndex, timeIndex)) {
+        Text(this.getClassroomAt(dayIndex, timeIndex))
           .fontSize(9)
           .fontColor('#666666')
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .textAlign(TextAlign.Center)
       }
-      .width('100%')
-      .height('100%')
-      .padding(4)
-      .backgroundColor(this.allWeeksData[weekNum][dayIndex][timeIndex]!.color)
-      .borderRadius(6)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .margin(2)
-      .onClick(() => {
-        // 点击课程详情
-      })
-    } else {
-      Column()
-        .width('100%')
-        .height('100%')
-        .backgroundColor(Color.Transparent)
+    }
+    .width('100%')
+    .height('100%')
+    .padding(4)
+    .backgroundColor(this.getCourseColorAt(dayIndex, timeIndex))
+    .borderRadius(6)
+    .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
+    .margin(2)
+    .onClick(() => {
+      this.onCourseClick(dayIndex, timeIndex);
+    })
+  }
+
+  @Builder
+  renderEmptyCell() {
+    Column() {
+      if (this.isLoadingCourses) {
+        Text('...')
+          .fontSize(9)
+          .fontColor('#999999')
+          .textAlign(TextAlign.Center)
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Color.Transparent)
+  }
+
+  /**
+   * 检查指定位置是否有课程
+   */
+  private hasCourseAt(dayIndex: number, timeIndex: number): boolean {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    return course !== null;
+  }
+
+  /**
+   * 获取指定位置的课程名
+   */
+  private getCourseNameAt(dayIndex: number, timeIndex: number): string {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    return course ? course.courseName : '';
+  }
+
+  /**
+   * 检查指定位置的课程是否有教室信息
+   */
+  private hasClassroomAt(dayIndex: number, timeIndex: number): boolean {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    return course ? course.classroom && course.classroom.length > 0 : false;
+  }
+
+  /**
+   * 获取指定位置的教室信息
+   */
+  private getClassroomAt(dayIndex: number, timeIndex: number): string {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    return course && course.classroom && course.classroom.length > 0 ? course.classroom[0] : '';
+  }
+
+  /**
+   * 获取指定位置课程的颜色
+   */
+  private getCourseColorAt(dayIndex: number, timeIndex: number): string {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    return course ? this.getCourseColor(course.courseName) : Color.Transparent.toString();
+  }
+
+  /**
+   * 处理课程点击事件
+   */
+  private onCourseClick(dayIndex: number, timeIndex: number): void {
+    const course = this.courseService.getCourseAt(this.currentWeek, dayIndex, timeIndex);
+    if (course) {
+      console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
+      // TODO: 显示课程详情弹窗
     }
   }
-}
 
-// 课程信息接口
-interface CourseInfo {
-  name: string;
-  location: string;
-  teacher: string;
-  color: string;
+  /**
+   * 根据课程名获取颜色
+   */
+  private getCourseColor(courseName: string): string {
+    // 简单的颜色计算算法
+    const colors = [
+      '#E8F5E8', '#E3F2FD', '#F3E5F5', '#FFF3E0', '#FFEBEE',
+      '#F0F4C3', '#FCE4EC', '#E0F2F1', '#FFF8E1', '#F1F8E9'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < courseName.length; i++) {
+      hash = courseName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  }
 }
 
 @Component
 struct MinePage {
   @State private userInfo: UserInfo = {
     avatar: '👤',
-    username: '侠客同学',
+    username: '霞客同学',
     studentId: '2024001',
     college: '计算机学院',
     major: '软件工程',

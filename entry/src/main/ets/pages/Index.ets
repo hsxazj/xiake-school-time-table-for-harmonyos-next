@@ -1,30 +1,40 @@
 import router from '@ohos.router';
-import { ConfigApiService } from '../services/api/ConfigApiService';
+import { AppConfigManager } from '../services/AppConfigManager';
 
 @Entry
 @Component
 struct Index {
   @State message: string = '欢迎使用霞客课表';
-  private configService: ConfigApiService = ConfigApiService.getInstance();
+  @State initMessage: string = '正在初始化...';
+
+  private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
 
   aboutToAppear(): void {
-    // 在应用启动时预加载配置信息
-    this.preloadConfiguration();
+    this.waitForInitAndNavigate();
   }
-  
+
   /**
-   * 预加载配置信息
+   * 等待初始化完成后跳转到主页面
    */
-  private async preloadConfiguration(): Promise<void> {
+  private async waitForInitAndNavigate(): Promise<void> {
     try {
-      console.info('🚀 [App Init] 开始预加载配置信息');
-      // 异步加载配置，不阻塞UI展示
-      await this.configService.getConfig();
-      console.info('✅ [App Init] 配置信息预加载完成');
+      // 等待AppConfigManager初始化完成
+      await this.appConfigManager.initialize();
+      
+      this.initMessage = '初始化完成！';
+      
+      // 短暂延迟后跳转到主页面
+      setTimeout(() => {
+        router.replaceUrl({
+          url: 'pages/first/ClassSelectPage'  // 或者其他主页面
+        });
+      }, 500);
+      
     } catch (error) {
-      console.warn('⚠️ [App Init] 配置预加载失败，将在课表页面重试:', error);
-    } finally {
-      // 2秒后跳转，确保用户看到启动画面
+      console.error('Index页面初始化失败:', error);
+      this.initMessage = '初始化失败，请重试';
+      
+      // 即使初始化失败也跳转，让用户能正常使用
       setTimeout(() => {
         router.replaceUrl({
           url: 'pages/first/ClassSelectPage'
@@ -47,7 +57,7 @@ struct Index {
           .fontColor('#179FA2')
           .textAlign(TextAlign.Center)
 
-        Text('正在初始化...')
+        Text(this.initMessage)
           .fontSize(14)
           .fontColor('#999999')
           .margin({ top: 20 })

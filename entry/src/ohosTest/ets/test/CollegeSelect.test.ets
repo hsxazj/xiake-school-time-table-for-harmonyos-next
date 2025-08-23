@@ -1,11 +1,11 @@
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
 import { CollegeApiService } from '../../../main/ets/services/api/CollegeApiService';
-import { StorageService } from '../../../main/ets/services/storage/StorageService';
+import { UserInfoManager } from '../../../main/ets/common/constants/PreferencesUtil';
 
 export default function CollegeSelectTest() {
   describe('CollegeSelect', () => {
     let collegeApiService: CollegeApiService;
-    let storageService: StorageService;
+    let userInfoManager: UserInfoManager;
 
     beforeAll(() => {
       console.log('College select test start');
@@ -13,12 +13,12 @@ export default function CollegeSelectTest() {
 
     beforeEach(() => {
       collegeApiService = CollegeApiService.getInstance();
-      storageService = StorageService.getInstance();
+      userInfoManager = UserInfoManager.getInstance();
     });
 
     afterEach(() => {
       collegeApiService = null;
-      storageService = null;
+      userInfoManager = null;
     });
 
     afterAll(() => {
@@ -30,9 +30,9 @@ export default function CollegeSelectTest() {
       expect(collegeApiService instanceof CollegeApiService).assertTrue();
     });
 
-    it('should create StorageService instance', () => {
-      expect(storageService).not.assertNull();
-      expect(storageService instanceof StorageService).assertTrue();
+    it('should create UserInfoManager instance', () => {
+      expect(userInfoManager).not.assertNull();
+      expect(userInfoManager instanceof UserInfoManager).assertTrue();
     });
 
     it('should have singleton pattern', () => {
@@ -41,18 +41,19 @@ export default function CollegeSelectTest() {
       expect(instance1 === instance2).assertTrue();
     });
 
-    it('should handle storage operations', async () => {
-      const testKey = 'test_key';
-      const testValue = 'test_value';
+    it('should handle user info operations', () => {
+      const testCollegeId = '123';
+      const testCollegeName = 'Test College';
       
-      const setResult = await storageService.setItem(testKey, testValue);
-      expect(setResult).assertTrue();
+      userInfoManager.saveCollegeInfo(testCollegeId, testCollegeName);
       
-      const getValue = await storageService.getItem(testKey, '');
-      expect(getValue).assertEqual(testValue);
+      const collegeId = userInfoManager.getCollegeId();
+      const collegeName = userInfoManager.getCollegeName();
       
-      const removeResult = await storageService.removeItem(testKey);
-      expect(removeResult).assertTrue();
+      expect(collegeId).assertEqual(testCollegeId);
+      expect(collegeName).assertEqual(testCollegeName);
+      
+      userInfoManager.clearUserInfo();
     });
   });
 }
