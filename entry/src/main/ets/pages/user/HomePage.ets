@@ -1,4 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
+import router from '@ohos.router';
 import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
 import { CurrentSemesterStatus } from '../../services/api/ConfigApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
@@ -26,12 +27,6 @@ struct HomePage {
           .color('#45CAD9')
           .margin({ top: 200 })
       } else {
-        Text('欢迎使用霞客课表')
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#179FA2')
-          .margin({ top: 60, bottom: 20 })
-
         // 学期状态卡片 (参照class-schedule-c的homepage显示)
         if (this.currentStatus) {
           Column() {
@@ -167,9 +162,8 @@ struct HomePage {
             offsetY: 0
           })
           .onClick(() => {
-            promptAction.showToast({
-              message: '欢迎使用霞客课表！',
-              duration: 2000
+            router.replaceUrl({
+              url: 'pages/MainTabPage'
             });
           })
       }

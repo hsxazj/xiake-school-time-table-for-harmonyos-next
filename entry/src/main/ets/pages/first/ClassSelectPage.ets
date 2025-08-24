@@ -598,6 +598,9 @@ struct CollegeSelectPage {
       className: this.className
     };
 
+    // 检查用户之前是否已有完整信息（用于判断是首次设置还是修改设置）
+    const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo();
+
     // 保存用户选择到PreferencesUtil
     this.userInfoManager.saveCollegeInfo(userSelection.collegeId, userSelection.collegeName);
     this.userInfoManager.saveMajorInfo(userSelection.majorId, userSelection.majorName);
@@ -609,9 +612,17 @@ struct CollegeSelectPage {
     });
 
     setTimeout(() => {
-      router.replaceUrl({
-        url: 'pages/MainTabPage'
-      });
+      if (hadCompleteInfo) {
+        // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
+        router.replaceUrl({
+          url: 'pages/MainTabPage'
+        });
+      } else {
+        // 用户之前没有完整信息，说明是首次设置，跳转到欢迎页面
+        router.replaceUrl({
+          url: 'pages/user/HomePage'
+        });
+      }
     }, 1000);
   }
 }

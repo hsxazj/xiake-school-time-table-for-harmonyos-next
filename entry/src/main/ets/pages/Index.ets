@@ -1,5 +1,6 @@
 import router from '@ohos.router';
 import { AppConfigManager } from '../services/AppConfigManager';
+import { UserInfoManager } from '../common/constants/PreferencesUtil';
 
 @Entry
 @Component
@@ -7,6 +8,7 @@ struct Index {
   @State message: string = '欢迎使用霞客课表';
   @State initMessage: string = '正在初始化...';
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     this.waitForInitAndNavigate();
@@ -58,11 +60,22 @@ struct Index {
 
       this.initMessage = '初始化完成！';
 
-      // 短暂延迟后跳转到主页面
+      // 检查是否已设置完整的学籍信息
+      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo();
+      
+      // 短暂延迟后跳转
       setTimeout(() => {
-        router.replaceUrl({
-          url: 'pages/first/ClassSelectPage'  // 或者其他主页面
-        });
+        if (hasCompleteInfo) {
+          // 已有完整信息，直接跳转到主页Tab页面
+          router.replaceUrl({
+            url: 'pages/MainTabPage'
+          });
+        } else {
+          // 没有完整信息，跳转到学院选择页面
+          router.replaceUrl({
+            url: 'pages/first/ClassSelectPage'
+          });
+        }
       }, 500);
 
     } catch (error) {

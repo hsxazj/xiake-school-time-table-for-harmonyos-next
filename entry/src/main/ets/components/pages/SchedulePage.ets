@@ -61,6 +61,7 @@ export struct SchedulePage {
   @State private currentMonth: string = '';
   @State private weekDates: WeekDateRange | null = null;
   @State private showWeekPicker: boolean = false;
+  @State private weekPickerVisible: boolean = false;
   // 新增学期管理相关状态
   @State private currentStatus: CurrentSemesterStatus | null = null;
   @State private currentSemester: SemesterInfo | null = null;
@@ -140,7 +141,7 @@ export struct SchedulePage {
           })
           .borderRadius(4)
           .onClick(() => {
-            this.showWeekPicker = true;
+            this.openWeekPickerWithAnimation();
           })
 
           Blank()
@@ -187,8 +188,13 @@ export struct SchedulePage {
           .width('100%')
           .height('100%')
           .backgroundColor('rgba(0, 0, 0, 0.5)')
+          .opacity(this.weekPickerVisible ? 1 : 0)  // 透明度动画
+          .animation({
+            duration: 300,
+            curve: Curve.EaseOut
+          })
           .onClick(() => {
-            this.showWeekPicker = false;
+            this.closeWeekPickerWithAnimation();
           })
 
         Column() {
@@ -823,7 +829,7 @@ export struct SchedulePage {
   /**
    * 切换学期 (跳转到指定学期的第一周)
    */
-  private switchSemester(direction: 'prev' | 'next'): void {
+  private async switchSemester(direction: 'prev' | 'next'): Promise<void> {
     if (!this.currentSemester) {
       return;
     }
@@ -840,7 +846,7 @@ export struct SchedulePage {
       this.calculateWeekDatesFromCurrentDate();
 
       // 重新加载新学期的课程数据
-      this.loadCourseData();
+      await this.loadCourseData();
 
       console.info(`📅 [Semester Switch] 切换到${rawTargetSemester.academicYear}学年第${rawTargetSemester.semester}学期`);
     }
@@ -921,7 +927,8 @@ export struct SchedulePage {
           .fontColor('#45CAD9')
           .backgroundColor(Color.Transparent)
           .height(30)
-          .onClick(() => {
+          .onClick(async () => {
+            await this.triggerCourseBlockExitAnimation();
             this.switchSemester('prev');
           })
 
@@ -941,7 +948,8 @@ export struct SchedulePage {
           .fontColor('#45CAD9')
           .backgroundColor(Color.Transparent)
           .height(30)
-          .onClick(() => {
+          .onClick(async () => {
+            await this.triggerCourseBlockExitAnimation();
             this.switchSemester('next');
           })
       }
@@ -979,9 +987,12 @@ export struct SchedulePage {
             .width('100%')
             .height(50)
             .padding({ left: 20, right: 20 })
-            .onClick(() => {
+            .onClick(async () => {
               // 跳转到指定周：计算目标日期并更新
               if (this.currentSemester) {
+                // 先播放退场动画
+                await this.triggerCourseBlockExitAnimation();
+                
                 const semesterStartDate = new Date(this.currentSemester.startDate);
                 const targetDate = new Date(semesterStartDate);
                 targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
@@ -989,8 +1000,11 @@ export struct SchedulePage {
                 this.currentDate = targetDate;
                 this.updateCurrentSemesterFromDate(this.currentDate);
                 this.calculateWeekDatesFromCurrentDate();
+                
+                // 重新请求接口获取课程数据
+                await this.loadCourseData();
               }
-              this.showWeekPicker = false;
+              this.closeWeekPickerWithAnimation();
             })
 
             if (weekNum < this.totalWeeks) {
@@ -1005,34 +1019,31 @@ export struct SchedulePage {
 
       Row() {
         Button('取消')
-          .width('45%')
+          .width('80%')
           .height(45)
           .fontSize(16)
           .fontColor('#666666')
           .backgroundColor('#F5F5F5')
           .onClick(() => {
-            this.showWeekPicker = false;
-          })
-
-        Blank()
-
-        Button('确定')
-          .width('45%')
-          .height(45)
-          .fontSize(16)
-          .fontColor(Color.White)
-          .backgroundColor('#45CAD9')
-          .onClick(() => {
-            this.showWeekPicker = false;
+            this.closeWeekPickerWithAnimation();
           })
       }
       .width('100%')
       .margin({ top: 20 })
+      .justifyContent(FlexAlign.Center)
     }
     .width('100%')
     .padding(20)
     .backgroundColor(Color.White)
     .borderRadius({ topLeft: 20, topRight: 20 })
+    .opacity(this.weekPickerVisible ? 1 : 0)  // 透明度动画
+    .translate({
+      y: this.weekPickerVisible ? 0 : 350  // 位移动画：显示时y=0，隐藏时y=350向下偏移
+    })
+    .animation({
+      duration: 300,
+      curve: Curve.EaseOut
+    })
   }
 
   /**
@@ -1180,5 +1191,40 @@ export struct SchedulePage {
         resolve();
       }, 100); // 从200减少到100，进一步加快消失速度
     });
+  }
+
+  /**
+   * 打开周选择器并播放入场动画
+   */
+  private openWeekPickerWithAnimation(): void {
+    this.showWeekPicker = true;
+    
+    // 延迟一帧后开始进入动画，确保初始状态渲染完成
+    setTimeout(() => {
+      animateTo({
+        duration: 300,
+        curve: Curve.EaseOut
+      }, () => {
+        this.weekPickerVisible = true;
+      });
+    }, 16);
+  }
+
+  /**
+   * 关闭周选择器并播放退场动画
+   */
+  private closeWeekPickerWithAnimation(): void {
+    // 退出动画
+    animateTo({
+      duration: 250,
+      curve: Curve.EaseIn
+    }, () => {
+      this.weekPickerVisible = false;
+    });
+
+    // 动画完成后关闭弹窗
+    setTimeout(() => {
+      this.showWeekPicker = false;
+    }, 250);
   }
 }
