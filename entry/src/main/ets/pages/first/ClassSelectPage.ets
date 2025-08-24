@@ -75,22 +75,19 @@ struct CollegeSelectPage {
 
   build() {
     Column() {
-      Text('打造属于你的课表吧！')
+      Text('选择要查看的班级')
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
         .fontColor('#179FA2')
         .margin({
-          top: 120,
-          bottom: 40,
-          left: 20,
-          right: 20
+          top: 120
         })
         .textAlign(TextAlign.Start)
-        .width('100%')
+        .width('80%')
 
       Column() {
         SelectItem({
-          icon: $r('app.media.startIcon'),
+          icon: $r('app.media.college'),
           title: this.collegeName,
           iconBackgroundColor: '#F2FAF4',
           iconShadowColor: 'rgba(36, 194, 198, 0.2)',
@@ -106,7 +103,7 @@ struct CollegeSelectPage {
         })
 
         SelectItem({
-          icon: $r('app.media.startIcon'),
+          icon: $r('app.media.major'),
           title: this.majorName,
           iconBackgroundColor: '#E0EFFF',
           iconShadowColor: 'rgba(126, 175, 252, 0.3)',
@@ -122,7 +119,7 @@ struct CollegeSelectPage {
         })
 
         SelectItem({
-          icon: $r('app.media.startIcon'),
+          icon: $r('app.media.class_icon'),
           title: this.className,
           iconBackgroundColor: '#FFF3E9',
           iconShadowColor: 'rgba(250, 207, 94, 0.2)',
@@ -179,7 +176,7 @@ struct CollegeSelectPage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F8F8F8')
+    .backgroundColor(Color.White)
     .justifyContent(FlexAlign.Start)
   }
 
@@ -620,7 +617,7 @@ struct CollegeSelectPage {
       } else {
         // 用户之前没有完整信息，说明是首次设置，跳转到欢迎页面
         router.replaceUrl({
-          url: 'pages/user/HomePage'
+          url: 'pages/HomePage'
         });
       }
     }, 1000);

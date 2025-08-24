@@ -143,25 +143,15 @@ export struct SchedulePage {
           .onClick(() => {
             this.openWeekPickerWithAnimation();
           })
-
-          Blank()
-
-          // 日期范围显示
-          if (this.weekDates) {
-            Text(`${this.configService.formatDateString(this.weekDates.startDate)} - ${this.configService.formatDateString(this.weekDates.endDate)}`)
-              .fontSize(14)
-              .fontColor('#666666')
-          }
         }
         .width('100%')
         .padding({
-          left: 20,
-          right: 20,
+          left: 6,
+          right: 6,
           top: 15,
           bottom: 5
         })
         .backgroundColor(Color.White)
-        .border({ width: { bottom: 1 }, color: '#F0F0F0' })
 
         // 课表内容区域 - 支持触摸滑动手势
         Column() {
@@ -180,7 +170,7 @@ export struct SchedulePage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F5F5F5')
+      .backgroundColor(Color.White)
 
       // 周选择器弹窗
       if (this.showWeekPicker) {
@@ -218,17 +208,22 @@ export struct SchedulePage {
       Row() {
         // 左上角月份显示区域
         Column() {
-          Text(this.currentMonth || '1月')
-            .fontSize(16)
-            .fontColor('#45CAD9')
+          Text(this.currentMonth.substring(0,this.currentMonth.length-1))
+            .fontSize(14)
+            .fontColor('#333333')
             .fontWeight(FontWeight.Medium)
+            .margin({ bottom: 2 })
+          Text('月')
+            .fontSize(14)
+            .fontColor('#333333')
+            .fontWeight(FontWeight.Medium)
+            .margin({ bottom: 2 })
         }
         .width(40)
-        .height(70)
+        .height(60)
         .justifyContent(FlexAlign.Center)
+        .backgroundColor(Color.White)
         .alignItems(HorizontalAlign.Center)
-        .backgroundColor('#FAFAFA')
-        .border({ width: { right: 1, bottom: 1 }, color: '#E8E8E8' })
 
         // 星期标题和日期（参考show-list.vue的second-week-box）
         ForEach(this.weekDays, (day: string, dayIndex: number) => {
@@ -256,11 +251,10 @@ export struct SchedulePage {
             }
           }
           .layoutWeight(1)
-          .height(70)
+          .height(55)
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
-          .backgroundColor('#FAFAFA')
-          .border({ width: { right: dayIndex < 6 ? 1 : 0, bottom: 1 }, color: '#F0F0F0' })
+          .backgroundColor(Color.White)
         })
       }
       .width('100%')
@@ -278,6 +272,7 @@ export struct SchedulePage {
             })
           }
           .layoutWeight(1)
+          .backgroundColor(Color.White)
           .alignItems(VerticalAlign.Top)
         }
         .height('100%')
@@ -304,15 +299,12 @@ export struct SchedulePage {
           .fontColor('#666666')
           .width('100%')
           .textAlign(TextAlign.Center)
-          .border({ width: { bottom: 0.5 }, color: '#E8E8E8' })
           .layoutWeight(1) // 使用layoutWeight实现均匀分布
       })
     }
     .height('100%')
     .width(40)
-    .backgroundColor('#FAFAFA')
-    .border({ width: { right: 1 }, color: '#E8E8E8' })
-    .padding({ top: 8, bottom: 8 })
+    .backgroundColor(Color.White)
   }
 
   /**
@@ -328,6 +320,7 @@ export struct SchedulePage {
           courseIndex)
       })
     }
+    .backgroundColor(Color.White)
     .width(`${100 / 7}%`) // 7列等宽
     .alignItems(HorizontalAlign.Center)
     .padding(1) // 减少内边距

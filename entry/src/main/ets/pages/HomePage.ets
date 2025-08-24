@@ -1,8 +1,8 @@
 import { promptAction } from '@kit.ArkUI';
 import router from '@ohos.router';
-import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
-import { CurrentSemesterStatus } from '../../services/api/ConfigApiService';
-import { AppConfigManager } from '../../services/AppConfigManager';
+import { UserInfoManager, UserSchoolInfo } from '../common/constants/PreferencesUtil';
+import { CurrentSemesterStatus } from '../services/api/ConfigApiService';
+import { AppConfigManager } from '../services/AppConfigManager';
 
 @Entry
 @Component

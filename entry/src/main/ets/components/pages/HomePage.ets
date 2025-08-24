@@ -19,20 +19,22 @@ export struct HomePage {
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
-            .margin({ bottom: 8 }) // 从4增加到8
+            .margin({ bottom: 20 }) // 从4增加到8
           
           // 显示学院+班级信息
           if (this.userInfo) {
             Row() {
               Text(`${this.userInfo.collegeName} ${this.userInfo.className}`)
-                .fontSize(14)
+                .fontSize(16)
                 .fontColor('#666666')
               
               Text('切换')
-                .fontSize(12)
+                .fontSize(16)
                 .fontColor('#45CAD9')
                 .margin({ left: 8 })
             }
+            .justifyContent(FlexAlign.SpaceBetween)
+            .width('100%')
           } else {
             Row() {
               Text('学院信息加载中...')
@@ -62,8 +64,8 @@ export struct HomePage {
       }
       .width('100%')
       .padding({
-        left: 20,
-        right: 20,
+        left: 5,
+        right: 5,
         top: 50,
         bottom: 20
       })

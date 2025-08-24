@@ -20,14 +20,9 @@ export struct SelectItem {
     Row() {
       Stack() {
         Circle()
-          .width(62)
-          .height(62)
+          .width(50)
+          .height(50)
           .fill(this.iconBackgroundColor)
-          .shadow({
-            radius: 10,
-            color: this.iconShadowColor,
-            offsetY: 0
-          })
 
         Image(this.icon)
           .width(30)
@@ -48,9 +43,10 @@ export struct SelectItem {
     .height(80)
     .backgroundColor(Color.White)
     .borderRadius(12)
+    .border( {style: BorderStyle.Solid, width: 1, color: this.iconShadowColor})
     .padding({
-      left: 20,
-      right: 20,
+      left: 15,
+      right: 15,
       top: 15,
       bottom: 15
     })

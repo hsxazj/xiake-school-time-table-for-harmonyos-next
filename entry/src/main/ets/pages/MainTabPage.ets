@@ -44,7 +44,7 @@ struct MainTabPage {
     }
     .width('100%')
     .height('100%')
-    .barBackgroundColor('#FFFFFF')
+    .barBackgroundColor($r('sys.color.comp_background_list_card'))
     .barMode(BarMode.Fixed)
     .vertical(false)
     .scrollable(false)

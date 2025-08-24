@@ -17,7 +17,7 @@ export struct CustomPicker {
     setTimeout(() => {
       animateTo({
         duration: 300,
-        curve: Curve.EaseOut
+        curve: Curve.Friction
       }, () => {
         this.isVisible = true;
       });
@@ -115,7 +115,7 @@ export struct CustomPicker {
       })
       .animation({
         duration: 300,
-        curve: Curve.EaseOut
+        curve: Curve.Friction
       })
     }
     .width('100%')
@@ -127,7 +127,7 @@ export struct CustomPicker {
     // 退出动画 - 属性动画控制
     animateTo({
       duration: 250,
-      curve: Curve.EaseIn
+      curve: Curve.Friction
     }, () => {
       this.isVisible = false;
     });
