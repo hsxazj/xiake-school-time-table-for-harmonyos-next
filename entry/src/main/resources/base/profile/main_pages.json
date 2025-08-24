@@ -3,6 +3,7 @@
     "pages/Index",
     "pages/first/ClassSelectPage",
     "pages/MainTabPage",
-    "pages/user/HomePage"
+    "pages/user/HomePage",
+    "pages/TestPage"
   ]
 }

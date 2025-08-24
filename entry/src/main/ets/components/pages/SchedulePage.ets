@@ -2,6 +2,8 @@ import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../ser
 import { CourseApiService, CourseInfo, CoursePosition } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/constants/PreferencesUtil';
+import { curves } from '@kit.ArkUI';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -101,6 +103,13 @@ export struct SchedulePage {
   private courseColorMap: Map<string, CourseColors> = new Map();
   // 实际课程数据 - 移除模拟数据，使用接口数据
   @State private courseList: CourseInfo[] = [];
+  // 动画支持
+  private effect: TransitionEffect =
+    TransitionEffect.OPACITY
+      .combine(TransitionEffect.scale({ x: 0, y: 0 }))
+      .animation({ curve: curves.springMotion(0.6, 0.8) });
+  // 课程块可见性状态
+  @State private courseBlockVisible: boolean[][] = [];
 
   aboutToAppear(): void {
     // 基于日期的初始化逻辑
@@ -323,53 +332,60 @@ export struct SchedulePage {
    */
   @Builder
   buildCourseBlock(course: ScheduleCourse, length: number, dayIndex: number, courseIndex: number) {
-    Column() {
-      // 课程名称
-      Text(course.courseName)
-        .fontSize(11)
-        .fontColor(this.getCourseTextColor(course.courseName))
-        .fontWeight(FontWeight.Medium)
-        .maxLines(2)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .textAlign(TextAlign.Center)
-        .margin({ bottom: 2 })
-
-      // 教室信息
-      if (course.classroom && course.classroom.length > 0) {
-        Text(course.classroom[0])
-          .fontSize(9)
+    // 所有课程一次性显示，只在动画状态控制显示/隐藏
+    if (this.courseBlockVisible.length === 0 || 
+        !this.courseBlockVisible[dayIndex] || 
+        this.courseBlockVisible[dayIndex].length === 0 ||
+        this.courseBlockVisible[dayIndex][courseIndex] !== false) {
+      Column() {
+        // 课程名称
+        Text(course.courseName)
+          .fontSize(11)
           .fontColor(this.getCourseTextColor(course.courseName))
-          .maxLines(1)
+          .fontWeight(FontWeight.Medium)
+          .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .textAlign(TextAlign.Center)
-          .margin({ bottom: 1 })
-      }
+          .margin({ bottom: 2 })
 
-      // 教师信息
-      if (course.teacher && course.teacher.length > 0) {
-        Text(course.teacher[0])
-          .fontSize(8)
-          .fontColor(this.getCourseTextColor(course.courseName))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .textAlign(TextAlign.Center)
+        // 教室信息
+        if (course.classroom && course.classroom.length > 0) {
+          Text(course.classroom[0])
+            .fontSize(9)
+            .fontColor(this.getCourseTextColor(course.courseName))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .textAlign(TextAlign.Center)
+            .margin({ bottom: 1 })
+        }
+
+        // 教师信息
+        if (course.teacher && course.teacher.length > 0) {
+          Text(course.teacher[0])
+            .fontSize(8)
+            .fontColor(this.getCourseTextColor(course.courseName))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .textAlign(TextAlign.Center)
+        }
       }
+      .transition(this.effect) // 应用转场动画
+      .width('95%')
+      .height(`${length * 8.33}%`)
+      .backgroundColor(this.getCourseBackgroundColor(course.courseName))
+      .border({
+        width: 1,
+        color: this.getCourseBorderColor(course.courseName),
+        radius: 4
+      })
+      .padding(3)
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Center)
+      .margin({ top: 1, bottom: 1 })
+      .onClick(() => {
+        this.onCourseBlockClick(course, dayIndex, courseIndex);
+      })
     }
-    .width('95%') // 调整宽度，确保有足够空间
-    .height(`${length * 8.33}%`) // 每节课占总高度的1/12，即8.33%
-    .backgroundColor(this.getCourseBackgroundColor(course.courseName))
-    .border({
-      width: 1,
-      color: this.getCourseBorderColor(course.courseName),
-      radius: 4 // 减少圆角
-    })
-    .padding(3) // 减少内边距
-    .justifyContent(FlexAlign.Center)
-    .alignItems(HorizontalAlign.Center)
-    .margin({ top: 1, bottom: 1 }) // 减少上下边距
-    .onClick(() => {
-      this.onCourseBlockClick(course, dayIndex, courseIndex);
-    })
   }
 
   /**
@@ -400,6 +416,8 @@ export struct SchedulePage {
     this.scheduleGrid.classLength = Array(7).fill(null).map(() => []);
     this.scheduleGrid.isContinue = Array(7).fill(null).map(() => []);
     this.scheduleGrid.classList = [];
+    // 初始化课程块可见性状态
+    this.courseBlockVisible = Array(7).fill(null).map(() => []);
   }
 
   /**
@@ -427,6 +445,9 @@ export struct SchedulePage {
       courseNameSet.add(course.courseName);
     });
     this.scheduleGrid.classList = Array.from(courseNameSet);
+    
+    // 触发入场动画
+    this.triggerCourseBlockEnterAnimation();
 
     console.info(`📚 [Course] 处理了${this.courseList.length}门课程，当前周有${weekCourses.length}门课程`);
   }
@@ -760,7 +781,10 @@ export struct SchedulePage {
   /**
    * 导航到上一周
    */
-  private navigateToPreviousWeek(): void {
+  private async navigateToPreviousWeek(): Promise<void> {
+    // 先播放退场动画
+    await this.triggerCourseBlockExitAnimation();
+    
     // 当前日期减去7天
     const newDate = new Date(this.currentDate);
     newDate.setDate(this.currentDate.getDate() - 7);
@@ -770,7 +794,7 @@ export struct SchedulePage {
     this.calculateWeekDatesFromCurrentDate();
 
     // 重新加载课程数据（如果学期发生变化）
-    this.loadCourseData();
+    await this.loadCourseData();
 
     console.info(`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
@@ -778,7 +802,10 @@ export struct SchedulePage {
   /**
    * 导航到下一周
    */
-  private navigateToNextWeek(): void {
+  private async navigateToNextWeek(): Promise<void> {
+    // 先播放退场动画
+    await this.triggerCourseBlockExitAnimation();
+    
     // 当前日期加上7天
     const newDate = new Date(this.currentDate);
     newDate.setDate(this.currentDate.getDate() + 7);
@@ -788,7 +815,7 @@ export struct SchedulePage {
     this.calculateWeekDatesFromCurrentDate();
 
     // 重新加载课程数据（如果学期发生变化）
-    this.loadCourseData();
+    await this.loadCourseData();
 
     console.info(`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
@@ -861,8 +888,11 @@ export struct SchedulePage {
 
       if (elePosition === 'right') {
         // 右滑：显示上一周 (对应class-schedule-c的leftClick)
+        console.info(`📅 [Navigate] 右滑到上一周`)
         this.navigateToPreviousWeek();
+
       } else if (elePosition === 'left') {
+        console.info(`📅 [Navigate] 左滑到下一周`)
         // 左滑：显示下一周 (对应class-schedule-c的rightClick)
         this.navigateToNextWeek();
       }
@@ -1111,5 +1141,44 @@ export struct SchedulePage {
       '#26A69A', '#5C6BC0', '#1E88E5', '#8D6E63'
     ];
     return colors[colorIndex % colors.length];
+  }
+
+  /**
+   * 触发课程块入场动画（一次性全部显示）
+   */
+  private triggerCourseBlockEnterAnimation(): void {
+    console.info('📅 [Animation] 开始触发课程块入场动画（一次性显示）');
+    
+    // 简单延迟后一次性显示所有课程
+    setTimeout(() => {
+      // 清空控制状态，让所有课程显示
+      this.courseBlockVisible = [];
+      console.info('📅 [Animation] 所有课程已显示');
+    }, 200); // 短延迟确保界面稳定
+  }
+
+  /**
+   * 触发课程块退场动画
+   */
+  private triggerCourseBlockExitAnimation(): Promise<void> {
+    return new Promise((resolve) => {
+      console.info('📅 [Animation] 开始退场动画');
+      
+      // 初始化隐藏状态
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        this.courseBlockVisible[dayIndex] = [];
+        const courseCount = this.scheduleGrid.nowClassList[dayIndex]?.length || 0;
+        
+        for (let courseIndex = 0; courseIndex < courseCount; courseIndex++) {
+          this.courseBlockVisible[dayIndex][courseIndex] = false;
+        }
+      }
+      
+      // 等待转场动画完成
+      setTimeout(() => {
+        console.info('📅 [Animation] 退场动画完成');
+        resolve();
+      }, 400); // 等待转场动画完成
+    });
   }
 }
