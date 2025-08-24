@@ -12,14 +12,15 @@ export interface CourseRequestParams {
 
 // 课程信息
 export interface CourseInfo {
-  courseId: string;
+  courseId: number;        // 课程ID为数字
   courseName: string;
-  teacher: string[];
-  classroom: string[];
-  weekday: string;     // 星期几，如"星期一"
-  section: string;     // 节次，如"1,2"
-  weeks: string;       // 周次，如"1-16"
-  courseTime: string[]; // 具体上课时间
+  teacher: string;         // 教师为字符串，不是数组
+  classroom: string;       // 教室为字符串，不是数组
+  weekday: string;         // 星期几，如"星期一"
+  section: string;         // 节次，如"1-2节"
+  weeks: string;           // 周次，如"[2,3,4,6,7,8,9,10,11]"
+  courseTime: string[];    // 具体上课时间
+  campus: string;          // 校区
 }
 
 // 课程API响应
