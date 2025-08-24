@@ -1,10 +1,10 @@
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
-import { SelectItem } from '../../components/base/SelectItem';
-import { CustomPicker, PickerItem } from '../../components/base/CustomPicker';
-import { CollegeApiService } from '../../services/api/CollegeApiService';
-import { UserInfoManager } from '../../common/constants/PreferencesUtil';
-import { ClassInfo, College, Major, UserSelection } from '../../models/CollegeModels';
+import { SelectItem } from '../components/base/SelectItem';
+import { CustomPicker, PickerItem } from '../components/base/CustomPicker';
+import { CollegeApiService } from '../services/api/CollegeApiService';
+import { UserInfoManager } from '../common/constants/PreferencesUtil';
+import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 
 @Entry
 @Component

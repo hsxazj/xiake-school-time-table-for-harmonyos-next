@@ -73,7 +73,7 @@ struct Index {
         } else {
           // 没有完整信息，跳转到学院选择页面
           router.replaceUrl({
-            url: 'pages/first/ClassSelectPage'
+            url: 'pages/ClassSelectPage'
           });
         }
       }, 500);
@@ -85,7 +85,7 @@ struct Index {
       // 即使初始化失败也跳转，让用户能正常使用
       setTimeout(() => {
         router.replaceUrl({
-          url: 'pages/first/ClassSelectPage'
+          url: 'pages/ClassSelectPage'
         });
       }, 2000);
     }

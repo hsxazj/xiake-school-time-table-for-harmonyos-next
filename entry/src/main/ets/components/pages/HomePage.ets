@@ -120,7 +120,7 @@ export struct HomePage {
   private navigateToClassSelect(): void {
     try {
       router.pushUrl({
-        url: 'pages/first/ClassSelectPage'
+        url: 'pages/ClassSelectPage'
       });
     } catch (error) {
       console.error('跳转到班级选择页面失败:', error);
