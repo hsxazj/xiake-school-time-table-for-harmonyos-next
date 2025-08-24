@@ -107,7 +107,7 @@ export struct SchedulePage {
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
       .combine(TransitionEffect.scale({ x: 0, y: 0 }))
-      .animation({ curve: curves.springMotion(0.6, 0.8) });
+      .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 }); // 从250减少到150
   // 课程块可见性状态
   @State private courseBlockVisible: boolean[][] = [];
 
@@ -217,7 +217,7 @@ export struct SchedulePage {
             .fontColor('#45CAD9')
             .fontWeight(FontWeight.Medium)
         }
-        .width(60)
+        .width(40)
         .height(70)
         .justifyContent(FlexAlign.Center)
         .alignItems(HorizontalAlign.Center)
@@ -237,7 +237,7 @@ export struct SchedulePage {
             // 显示对应的日期（参考class-schedule-c的timeList逻辑）
             if (this.weekDates) {
               Text(this.getDateForWeekDay(dayIndex))
-                .fontSize(12)
+                .fontSize(14)
                 .fontColor(this.isToday(dayIndex) ? '#45CAD9' : '#666666')
                 .backgroundColor(this.isToday(dayIndex) ? '#E3F2FD' : Color.Transparent)
                 .borderRadius(8)
@@ -254,7 +254,7 @@ export struct SchedulePage {
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
           .backgroundColor('#FAFAFA')
-          .border({ width: { right: dayIndex < 6 ? 1 : 0, bottom: 1 }, color: '#E8E8E8' })
+          .border({ width: { right: dayIndex < 6 ? 1 : 0, bottom: 1 }, color: '#F0F0F0' })
         })
       }
       .width('100%')
@@ -303,7 +303,7 @@ export struct SchedulePage {
       })
     }
     .height('100%')
-    .width(60)
+    .width(40)
     .backgroundColor('#FAFAFA')
     .border({ width: { right: 1 }, color: '#E8E8E8' })
     .padding({ top: 8, bottom: 8 })
@@ -1104,11 +1104,11 @@ export struct SchedulePage {
   private getCourseBackgroundColor(courseName: string): string {
     const colorIndex = this.getCourseColorIndex(courseName);
     const colors = [
-      '#F1C2A3', '#F6F0A2', '#B5C9F2', '#8FC7FA',
-      '#CDFAB5', '#FCCF8E', '#8BD4CE', '#D4B5F7',
-      '#ECFAD9', '#E3F4FC', '#FAE3EB', '#FBFCD9',
-      '#ffff8e', '#FDE3DA', '#e6ffe4', '#EBFCFB',
-      '#EEE8FA', '#E3EFFC', '#FFF3E0', '#FAE8E3'
+      '#E3F2FD', '#F3E5F5', '#E8F5E8', '#FFF3E0',
+      '#F1F8E9', '#FCE4EC', '#E0F2F1', '#FFF8E1',
+      '#F9FBE7', '#E1F5FE', '#FAE8E4', '#F3E5AB',
+      '#E8EAF6', '#FFEBEE', '#E0F7FA', '#FFF9C4',
+      '#F1F8F0', '#FFEAA7', '#DDD6FE', '#FEF3C7'
     ];
     return colors[colorIndex % colors.length];
   }
@@ -1119,11 +1119,11 @@ export struct SchedulePage {
   private getCourseTextColor(courseName: string): string {
     const colorIndex = this.getCourseColorIndex(courseName);
     const colors = [
-      '#EB754D', '#BDAC2F', '#8F99EB', '#4774A8',
-      '#8AD466', '#E3A33D', '#38C2BB', '#5544C7',
-      '#3DBF3D', '#93CC43', '#2A82E4', '#D65C87',
-      '#C3C74C', '#7F822A', '#F2825C', '#3FCC3F',
-      '#176963', '#3B2C5E', '#27507D', '#967A4B'
+      '#1565C0', '#7B1FA2', '#2E7D32', '#EF6C00',
+      '#558B2F', '#C2185B', '#00695C', '#F57F17',
+      '#689F38', '#0277BD', '#D84315', '#F9A825',
+      '#5E35B1', '#C62828', '#00838F', '#AFB42B',
+      '#388E3C', '#FF8F00', '#512DA8', '#FBC02D'
     ];
     return colors[colorIndex % colors.length];
   }
@@ -1134,11 +1134,11 @@ export struct SchedulePage {
   private getCourseBorderColor(courseName: string): string {
     const colorIndex = this.getCourseColorIndex(courseName);
     const colors = [
-      '#F78863', '#FFEB3B', '#91B8E6', '#348DFA',
-      '#7CD94E', '#FFD54F', '#4DB6AC', '#7986CB',
-      '#66BB6A', '#9CCC65', '#42A5F5', '#EC407A',
-      '#D4E157', '#827717', '#FF8A65', '#4CAF50',
-      '#26A69A', '#5C6BC0', '#1E88E5', '#8D6E63'
+      '#42A5F5', '#BA68C8', '#66BB6A', '#FF9800',
+      '#8BC34A', '#E91E63', '#26A69A', '#FFEB3B',
+      '#9CCC65', '#29B6F6', '#FF5722', '#FDD835',
+      '#9575CD', '#F44336', '#00BCD4', '#CDDC39',
+      '#4CAF50', '#FFC107', '#673AB7', '#FFEB3B'
     ];
     return colors[colorIndex % colors.length];
   }
@@ -1154,7 +1154,7 @@ export struct SchedulePage {
       // 清空控制状态，让所有课程显示
       this.courseBlockVisible = [];
       console.info('📅 [Animation] 所有课程已显示');
-    }, 200); // 短延迟确保界面稳定
+    }, 50); // 从100减少到50，进一步加快显示速度
   }
 
   /**
@@ -1178,7 +1178,7 @@ export struct SchedulePage {
       setTimeout(() => {
         console.info('📅 [Animation] 退场动画完成');
         resolve();
-      }, 400); // 等待转场动画完成
+      }, 100); // 从200减少到100，进一步加快消失速度
     });
   }
 }

@@ -1,4 +1,5 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
+import router from '@ohos.router';
 
 @Component
 export struct HomePage {
@@ -18,20 +19,44 @@ export struct HomePage {
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
-            .margin({ bottom: 4 })
+            .margin({ bottom: 8 }) // 从4增加到8
           
           // 显示学院+班级信息
           if (this.userInfo) {
-            Text(`${this.userInfo.collegeName} ${this.userInfo.className}`)
-              .fontSize(14)
-              .fontColor('#666666')
+            Row() {
+              Text(`${this.userInfo.collegeName} ${this.userInfo.className}`)
+                .fontSize(14)
+                .fontColor('#666666')
+              
+              Text('切换')
+                .fontSize(12)
+                .fontColor('#45CAD9')
+                .margin({ left: 8 })
+            }
           } else {
-            Text('学院信息加载中...')
-              .fontSize(14)
-              .fontColor('#666666')
+            Row() {
+              Text('学院信息加载中...')
+                .fontSize(14)
+                .fontColor('#666666')
+              
+              Text('切换')
+                .fontSize(12)
+                .fontColor('#45CAD9')
+                .margin({ left: 8 })
+            }
           }
         }
         .alignItems(HorizontalAlign.Start)
+        .padding({
+          top: 8,
+          bottom: 8,
+          left: 4,
+          right: 4
+        })
+        .borderRadius(8)
+        .onClick(() => {
+          this.navigateToClassSelect();
+        })
 
         Blank()
       }
@@ -85,5 +110,18 @@ export struct HomePage {
 
   private loadUserInfo(): void {
     this.userInfo = this.userInfoManager.getUserInfo();
+  }
+
+  /**
+   * 跳转到班级选择页面
+   */
+  private navigateToClassSelect(): void {
+    try {
+      router.pushUrl({
+        url: 'pages/first/ClassSelectPage'
+      });
+    } catch (error) {
+      console.error('跳转到班级选择页面失败:', error);
+    }
   }
 }

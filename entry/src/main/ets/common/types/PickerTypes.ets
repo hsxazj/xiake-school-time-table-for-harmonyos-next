@@ -1,5 +1,5 @@
 export interface PickerItem {
-  id: number;
+  id: string;
   name: string;
 }
 

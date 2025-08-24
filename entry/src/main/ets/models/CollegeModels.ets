@@ -1,31 +1,31 @@
 export interface College {
-  collegeId: number;
+  collegeId: string;
   collegeName: string;
 }
 
 export interface Major {
-  majorId: number;
+  majorId: string;
   majorName: string;
-  collegeId: number;
+  collegeId: string;
 }
 
 export interface ClassInfo {
-  classId: number;
+  classId: string;
   className: string;
-  majorId: number;
+  majorId: string;
 }
 
 export interface ApiResponse<T> {
   code: number;
-  message: string;
+  msg: string; // 改为msg以匹配实际API响应
   data: T;
 }
 
 export interface UserSelection {
-  collegeId: number;
+  collegeId: string; // 改为string类型
   collegeName: string;
-  majorId: number;
+  majorId: string; // 改为string类型
   majorName: string;
-  classId: number;
+  classId: string; // 改为string类型
   className: string;
 }

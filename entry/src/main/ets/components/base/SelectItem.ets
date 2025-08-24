@@ -62,7 +62,13 @@ export struct SelectItem {
     })
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
-      this.onTap?.();
+      console.info(`SelectItem被点击，title: ${this.title}`);
+      if (this.onTap) {
+        console.info('调用onTap回调');
+        this.onTap();
+      } else {
+        console.info('onTap回调为空');
+      }
     })
   }
 }
