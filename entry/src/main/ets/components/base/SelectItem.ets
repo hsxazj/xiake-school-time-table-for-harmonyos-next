@@ -48,7 +48,12 @@ export struct SelectItem {
     .height(80)
     .backgroundColor(Color.White)
     .borderRadius(12)
-    .padding({ left: 20, right: 20, top: 15, bottom: 15 })
+    .padding({
+      left: 20,
+      right: 20,
+      top: 15,
+      bottom: 15
+    })
     .margin({ top: 10, bottom: 10 })
     .shadow({
       radius: 2,

@@ -1,4 +1,4 @@
-import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from '@ohos/hypium';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@ohos/hypium';
 import { CollegeApiService } from '../../../main/ets/services/api/CollegeApiService';
 import { UserInfoManager } from '../../../main/ets/common/constants/PreferencesUtil';
 
@@ -44,15 +44,15 @@ export default function CollegeSelectTest() {
     it('should handle user info operations', () => {
       const testCollegeId = '123';
       const testCollegeName = 'Test College';
-      
+
       userInfoManager.saveCollegeInfo(testCollegeId, testCollegeName);
-      
+
       const collegeId = userInfoManager.getCollegeId();
       const collegeName = userInfoManager.getCollegeName();
-      
+
       expect(collegeId).assertEqual(testCollegeId);
       expect(collegeName).assertEqual(testCollegeName);
-      
+
       userInfoManager.clearUserInfo();
     });
   });

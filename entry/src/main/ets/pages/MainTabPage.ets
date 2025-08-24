@@ -25,11 +25,6 @@ struct MainTabPage {
     .alignItems(HorizontalAlign.Center)
   }
 
-  private getTabIcon(index: number): string {
-    const icons = ['🏠', '📅', '👤'];
-    return icons[index] || '';
-  }
-
   build() {
     Tabs({ barPosition: BarPosition.End, controller: new TabsController() }) {
       TabContent() {
@@ -56,5 +51,10 @@ struct MainTabPage {
     .onChange((index: number) => {
       this.currentTabIndex = index;
     })
+  }
+
+  private getTabIcon(index: number): string {
+    const icons = ['🏠', '📅', '👤'];
+    return icons[index] || '';
   }
 }

@@ -9,52 +9,12 @@ struct HomePage {
   @State private userInfo: UserSchoolInfo | null = null;
   @State private isLoading: boolean = true;
   @State private currentStatus: CurrentSemesterStatus | null = null;
-
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
 
   aboutToAppear(): void {
     this.loadUserData();
     this.loadCurrentStatus();
-  }
-
-  private async loadCurrentStatus(): Promise<void> {
-    try {
-      // 直接获取当前状态，不触发重新初始化
-      // AppConfigManager已经在EntryAbility中初始化完成
-      this.currentStatus = this.appConfigManager.getCurrentStatus();
-      
-      if (this.currentStatus) {
-        console.info(`HomePage loaded current status: ${this.currentStatus.statusText}`);
-      } else {
-        console.error('HomePage: 配置未初始化或初始化失败');
-        // 不显示任何学期信息
-      }
-    } catch (error) {
-      console.error('Load current status failed:', error);
-    }
-  }
-
-  private async loadUserData(): Promise<void> {
-    try {
-      this.userInfo = this.userInfoManager.getUserInfo();
-      
-      if (!this.userInfoManager.hasCompleteUserInfo()) {
-        promptAction.showToast({
-          message: '未找到用户信息，请重新选择',
-          duration: 2000
-        });
-        this.userInfo = null;
-      }
-    } catch (error) {
-      console.error('Load user data failed:', error);
-      promptAction.showToast({
-        message: '加载用户信息失败',
-        duration: 2000
-      });
-    } finally {
-      this.isLoading = false;
-    }
   }
 
   build() {
@@ -79,7 +39,7 @@ struct HomePage {
               Text('📅')
                 .fontSize(20)
                 .margin({ right: 10 })
-              
+
               Text(this.currentStatus.statusText)
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
@@ -95,7 +55,7 @@ struct HomePage {
                   .fontSize(14)
                   .fontColor('#666666')
                   .width(60)
-                
+
                 Text(`${this.currentStatus.currentSemester.academicYear}学年第${this.currentStatus.currentSemester.semester}学期`)
                   .fontSize(14)
                   .fontColor('#333333')
@@ -116,9 +76,9 @@ struct HomePage {
           .padding(16)
           .backgroundColor(this.currentStatus.isInSemester ? '#E8F8F9' : '#FFF8E1')
           .borderRadius(12)
-          .border({ 
-            width: 1, 
-            color: this.currentStatus.isInSemester ? '#45CAD9' : '#FFC107' 
+          .border({
+            width: 1,
+            color: this.currentStatus.isInSemester ? '#45CAD9' : '#FFC107'
           })
           .margin({ bottom: 20 })
         }
@@ -130,7 +90,7 @@ struct HomePage {
                 .fontSize(16)
                 .fontColor('#666666')
                 .width(80)
-              
+
               Text(this.userInfo.collegeName)
                 .fontSize(16)
                 .fontColor('#333333')
@@ -144,7 +104,7 @@ struct HomePage {
                 .fontSize(16)
                 .fontColor('#666666')
                 .width(80)
-              
+
               Text(this.userInfo.majorName)
                 .fontSize(16)
                 .fontColor('#333333')
@@ -158,7 +118,7 @@ struct HomePage {
                 .fontSize(16)
                 .fontColor('#666666')
                 .width(80)
-              
+
               Text(this.userInfo.className)
                 .fontSize(16)
                 .fontColor('#333333')
@@ -219,5 +179,44 @@ struct HomePage {
     .backgroundColor('#F8F8F8')
     .padding(20)
     .justifyContent(FlexAlign.Center)
+  }
+
+  private async loadCurrentStatus(): Promise<void> {
+    try {
+      // 直接获取当前状态，不触发重新初始化
+      // AppConfigManager已经在EntryAbility中初始化完成
+      this.currentStatus = this.appConfigManager.getCurrentStatus();
+
+      if (this.currentStatus) {
+        console.info(`HomePage loaded current status: ${this.currentStatus.statusText}`);
+      } else {
+        console.error('HomePage: 配置未初始化或初始化失败');
+        // 不显示任何学期信息
+      }
+    } catch (error) {
+      console.error('Load current status failed:', error);
+    }
+  }
+
+  private async loadUserData(): Promise<void> {
+    try {
+      this.userInfo = this.userInfoManager.getUserInfo();
+
+      if (!this.userInfoManager.hasCompleteUserInfo()) {
+        promptAction.showToast({
+          message: '未找到用户信息，请重新选择',
+          duration: 2000
+        });
+        this.userInfo = null;
+      }
+    } catch (error) {
+      console.error('Load user data failed:', error);
+      promptAction.showToast({
+        message: '加载用户信息失败',
+        duration: 2000
+      });
+    } finally {
+      this.isLoading = false;
+    }
   }
 }

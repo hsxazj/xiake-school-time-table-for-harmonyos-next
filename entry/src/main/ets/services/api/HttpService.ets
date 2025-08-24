@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from '@ohos/axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from '@ohos/axios';
 import { API_CONFIG } from '../../common/constants/AppConstants';
 import { ApiResponse } from '../../models/CollegeModels';
 
@@ -52,81 +52,6 @@ export class HttpService {
   }
 
   /**
-   * 设置请求和响应拦截器
-   */
-  private setupInterceptors(): void {
-    // 请求拦截器
-    this.axiosInstance.interceptors.request.use(
-      (config: InternalAxiosRequestConfig) => {
-        // 添加请求开始时间
-        const customConfig = config as CustomAxiosRequestConfig;
-        const metadata: RequestMetadata = { startTime: Date.now() };
-        customConfig.metadata = metadata;
-
-        // 添加认证token
-        const token = AppStorage.get<string>('token');
-        if (token && config.headers) {
-          config.headers['authorization'] = token;
-        }
-
-        // 打印请求日志
-        console.info(`🚀 [HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-        if (config.data) {
-          console.info(`📤 [Request Data]`, JSON.stringify(config.data));
-        }
-        if (config.params) {
-          console.info(`🔗 [Request Params]`, JSON.stringify(config.params));
-        }
-        console.info(`⏰ [Request Time] ${new Date().toLocaleTimeString()}`);
-
-        return config;
-      },
-      (error: AxiosError) => {
-        console.error('❌ [Request Error]', JSON.stringify(error));
-        return Promise.reject(error);
-      }
-    );
-
-    // 响应拦截器
-    this.axiosInstance.interceptors.response.use(
-      (response: AxiosResponse) => {
-        // 打印响应日志
-        const config = response.config as CustomAxiosRequestConfig;
-        const duration = config.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
-        
-        console.info(`✅ [HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
-        console.info(`📥 [Response Data]`, JSON.stringify(response.data));
-        console.info(`⚡ [Response Time] ${duration}ms`);
-        console.info(`📊 [Response Size] ${JSON.stringify(response.data).length} bytes`);
-
-        return response;
-      },
-      (error: AxiosError) => {
-        // 打印错误日志
-        const config = error.config as CustomAxiosRequestConfig;
-        const duration = config?.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
-        
-        console.error(`💥 [HTTP Error] ${error.response?.status || 'Network Error'} ${config?.method?.toUpperCase() || 'UNKNOWN'} ${config?.url || 'UNKNOWN'}`);
-        console.error(`⚠️ [Error Message] ${error.message}`);
-        console.error(`⏱️ [Error Time] ${duration}ms`);
-        
-        if (error.response?.data) {
-          console.error(`📛 [Error Response]`, JSON.stringify(error.response.data));
-        }
-
-        // 统一错误处理
-        if (error.response?.status === 401) {
-          // Token过期，清除本地token
-          AppStorage.setOrCreate('token', '');
-          console.warn('🔐 [Auth] Token expired, cleared from storage');
-        }
-
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  /**
    * GET请求
    */
   public async get<T>(url: string, params?: Record<string, Object>): Promise<ApiResponse<T>> {
@@ -142,7 +67,7 @@ export class HttpService {
    * POST请求
    */
   public async post<T>(
-    url: string, 
+    url: string,
     data?: Record<string, Object>
   ): Promise<ApiResponse<T>> {
     try {
@@ -157,7 +82,7 @@ export class HttpService {
    * PUT请求
    */
   public async put<T>(
-    url: string, 
+    url: string,
     data?: Record<string, Object>
   ): Promise<ApiResponse<T>> {
     try {
@@ -213,16 +138,116 @@ export class HttpService {
   }
 
   /**
+   * 设置默认请求头
+   */
+  public setDefaultHeader(key: string, value: string): void {
+    this.axiosInstance.defaults.headers.common[key] = value;
+    console.info(`🔧 [Header] Set default header: ${key}=${value}`);
+  }
+
+  /**
+   * 移除默认请求头
+   */
+  public removeDefaultHeader(key: string): void {
+    // ArkTS中使用undefined赋值替代delete操作
+    this.axiosInstance.defaults.headers.common[key] = undefined;
+    console.info(`🗑️ [Header] Removed default header: ${key}`);
+  }
+
+  /**
+   * 获取axios实例（用于高级用法）
+   */
+  public getAxiosInstance(): AxiosInstance {
+    return this.axiosInstance;
+  }
+
+  /**
+   * 设置请求和响应拦截器
+   */
+  private setupInterceptors(): void {
+    // 请求拦截器
+    this.axiosInstance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => {
+        // 添加请求开始时间
+        const customConfig = config as CustomAxiosRequestConfig;
+        const metadata: RequestMetadata = { startTime: Date.now() };
+        customConfig.metadata = metadata;
+
+        // 添加认证token
+        const token = AppStorage.get<string>('token');
+        if (token && config.headers) {
+          config.headers['authorization'] = token;
+        }
+
+        // 打印请求日志
+        console.info(`🚀 [HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        if (config.data) {
+          console.info(`📤 [Request Data]`, JSON.stringify(config.data));
+        }
+        if (config.params) {
+          console.info(`🔗 [Request Params]`, JSON.stringify(config.params));
+        }
+        console.info(`⏰ [Request Time] ${new Date().toLocaleTimeString()}`);
+
+        return config;
+      },
+      (error: AxiosError) => {
+        console.error('❌ [Request Error]', JSON.stringify(error));
+        return Promise.reject(error);
+      }
+    );
+
+    // 响应拦截器
+    this.axiosInstance.interceptors.response.use(
+      (response: AxiosResponse) => {
+        // 打印响应日志
+        const config = response.config as CustomAxiosRequestConfig;
+        const duration = config.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
+
+        console.info(`✅ [HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
+        console.info(`📥 [Response Data]`, JSON.stringify(response.data));
+        console.info(`⚡ [Response Time] ${duration}ms`);
+        console.info(`📊 [Response Size] ${JSON.stringify(response.data).length} bytes`);
+
+        return response;
+      },
+      (error: AxiosError) => {
+        // 打印错误日志
+        const config = error.config as CustomAxiosRequestConfig;
+        const duration = config?.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
+
+        console.error(`💥 [HTTP Error] ${error.response?.status || 'Network Error'} ${config?.method?.toUpperCase() ||
+          'UNKNOWN'} ${config?.url || 'UNKNOWN'}`);
+        console.error(`⚠️ [Error Message] ${error.message}`);
+        console.error(`⏱️ [Error Time] ${duration}ms`);
+
+        if (error.response?.data) {
+          console.error(`📛 [Error Response]`, JSON.stringify(error.response.data));
+        }
+
+        // 统一错误处理
+        if (error.response?.status === 401) {
+          // Token过期，清除本地token
+          AppStorage.setOrCreate('token', '');
+          console.warn('🔐 [Auth] Token expired, cleared from storage');
+        }
+
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /**
    * 错误处理
    */
   private handleError(error: AxiosError): Error {
     let errorMessage = '网络请求失败';
-    
+
     if (error.response) {
       // 服务器响应错误
       const status = error.response.status;
       const data = error.response.data as ErrorResponseData;
-      
+
       switch (status) {
         case 400:
           errorMessage = data?.message || '请求参数错误';
@@ -252,29 +277,5 @@ export class HttpService {
 
     console.error('🚨 [Error Handler]', errorMessage);
     return new Error(errorMessage);
-  }
-
-  /**
-   * 设置默认请求头
-   */
-  public setDefaultHeader(key: string, value: string): void {
-    this.axiosInstance.defaults.headers.common[key] = value;
-    console.info(`🔧 [Header] Set default header: ${key}=${value}`);
-  }
-
-  /**
-   * 移除默认请求头
-   */
-  public removeDefaultHeader(key: string): void {
-    // ArkTS中使用undefined赋值替代delete操作
-    this.axiosInstance.defaults.headers.common[key] = undefined;
-    console.info(`🗑️ [Header] Removed default header: ${key}`);
-  }
-
-  /**
-   * 获取axios实例（用于高级用法）
-   */
-  public getAxiosInstance(): AxiosInstance {
-    return this.axiosInstance;
   }
 }

@@ -9,6 +9,16 @@ export class PreferencesUtil {
   private preferenceName: string = PREFERENCES_NAME;
   private groupId: string = "";
 
+  /**
+   * 构造器
+   */
+  constructor(preferenceName: string = PREFERENCES_NAME, groupId: string) {
+    this.preferenceName = preferenceName;
+    this.groupId = groupId;
+
+    preference = this.getPreference();
+  }
+
   setPreferenceName(preferenceName: string) {
     this.preferenceName = preferenceName;
   }
@@ -21,18 +31,10 @@ export class PreferencesUtil {
     let options: dataPreferences.Options = { name: this.preferenceName };
     console.debug(`name: ${this.preferenceName}, groupID: ${this.groupId}`);
 
-    if (!this.groupId) options.dataGroupId = this.groupId;
+    if (!this.groupId) {
+      options.dataGroupId = this.groupId;
+    }
     return dataPreferences.getPreferencesSync(getContext(this), options);
-  }
-
-  /**
-   * 构造器
-   */
-  constructor(preferenceName: string = PREFERENCES_NAME, groupId: string) {
-    this.preferenceName = preferenceName;
-    this.groupId = groupId;
-
-    preference = this.getPreference();
   }
 
   /**
@@ -51,7 +53,9 @@ export class PreferencesUtil {
         console.info(`The key ${key} is contained.`);
 
         // 判断是否覆盖其值，为true则覆盖
-        if (override) preference.putSync(key, value);
+        if (override) {
+          preference.putSync(key, value);
+        }
       } else {
         preference.putSync(key, value);
       }
@@ -134,7 +138,6 @@ export class PreferencesUtil {
       console.error(`Failed to put value, Cause: ${err}`);
     }
   }
-
 }
 
 // 用户学籍信息接口
@@ -150,8 +153,6 @@ export interface UserSchoolInfo {
 // 用户学籍信息管理类
 export class UserInfoManager {
   private static instance: UserInfoManager;
-  private preferencesUtil: PreferencesUtil;
-
   // 存储键常量
   private static readonly COLLEGE_ID_KEY = 'userCollegeId';
   private static readonly COLLEGE_NAME_KEY = 'userCollegeName';
@@ -159,6 +160,7 @@ export class UserInfoManager {
   private static readonly MAJOR_NAME_KEY = 'userMajorName';
   private static readonly CLASS_ID_KEY = 'userClassId';
   private static readonly CLASS_NAME_KEY = 'userClassName';
+  private preferencesUtil: PreferencesUtil;
 
   private constructor() {
     this.preferencesUtil = new PreferencesUtil(PREFERENCES_NAME, "");
@@ -248,7 +250,7 @@ export class UserInfoManager {
     const collegeId = this.getCollegeId();
     const majorId = this.getMajorId();
     const classId = this.getClassId();
-    
+
     return !!(collegeId && majorId && classId);
   }
 

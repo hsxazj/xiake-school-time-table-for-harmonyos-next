@@ -2,7 +2,9 @@
 
 ## 简介
 
-[Axios](https://github.com/axios/axios) ，是一个基于 promise 的网络请求库，可以运行 node.js 和浏览器中。本库基于[Axios](https://github.com/axios/axios) 原库v1.3.4版本进行适配，使其可以运行在 OpenHarmony，并沿用其现有用法和特性。
+[Axios](https://github.com/axios/axios) ，是一个基于 promise 的网络请求库，可以运行 node.js
+和浏览器中。本库基于[Axios](https://github.com/axios/axios) 原库v1.3.4版本进行适配，使其可以运行在
+OpenHarmony，并沿用其现有用法和特性。
 
 - http 请求
 - Promise API
@@ -18,44 +20,53 @@
 ohpm install @ohos/axios
 ```
 
-OpenHarmony ohpm 环境配置等更多内容，请参考[如何安装 OpenHarmony ohpm 包](https://gitcode.com/openharmony-tpc/docs/blob/master/OpenHarmony_har_usage.md)
+OpenHarmony ohpm
+环境配置等更多内容，请参考[如何安装 OpenHarmony ohpm 包](https://gitcode.com/openharmony-tpc/docs/blob/master/OpenHarmony_har_usage.md)
 
 ## 需要权限
+
 ```
 ohos.permission.INTERNET
 ```
 
 ## 接口和属性列表
+
 接口列表
 
-| **接口**                            | 参数                                     | 功能         |
-|-----------------------------------|----------------------------------------|------------|
-| axios(config)                     | [config](#请求配置)：请求配置                   | 发送请求       |
-| axios.create(config)              | [config](#请求配置)：请求配置                   | 创建实例       |
-| axios.request(config)             | [config](#请求配置)：请求配置                   | 发送请求       |
-| axios.get(url[, config])          | url：请求地址<br/>[config](#请求配置)：请求配置      | 发送get请求    |
-| axios.delete(url[, config])       | url：请求地址<br/>[config](#请求配置)：请求配置      | 发送delete请求 |
+| **接口**                            | 参数                                                 | 功能         |
+|-----------------------------------|----------------------------------------------------|------------|
+| axios(config)                     | [config](#请求配置)：请求配置                               | 发送请求       |
+| axios.create(config)              | [config](#请求配置)：请求配置                               | 创建实例       |
+| axios.request(config)             | [config](#请求配置)：请求配置                               | 发送请求       |
+| axios.get(url[, config])          | url：请求地址<br/>[config](#请求配置)：请求配置                  | 发送get请求    |
+| axios.delete(url[, config])       | url：请求地址<br/>[config](#请求配置)：请求配置                  | 发送delete请求 |
 | axios.post(url[, data[, config]]) | url：请求地址<br/>data：发送请求体数据<br/>[config](#请求配置)：请求配置 | 发送post请求   |
-| axios.put(url[, data[, config]])  | url：请求地址<br/>data：发送请求体数据<br/>[config](#请求配置)：请求配置      | 发送put请求    |
+| axios.put(url[, data[, config]])  | url：请求地址<br/>data：发送请求体数据<br/>[config](#请求配置)：请求配置 | 发送put请求    |
 
 属性列表
 
-| **属性**                           | 描述                                                                        |
-|----------------------------------|---------------------------------------------------------------------------|
-| axios.defaults['xxx']            | 默认设置 。值为请求配置 [config](#请求配置) 中的配置项 <br/>例如 axios.defaults.headers 获取头部信息 |
-| axios.interceptors              | 拦截器。参考 [拦截器](#拦截器)  的使用                                                  |
+| **属性**                | 描述                                                                       |
+|-----------------------|--------------------------------------------------------------------------|
+| axios.defaults['xxx'] | 默认设置 。值为请求配置 [config](#请求配置) 中的配置项 <br/>例如 axios.defaults.headers 获取头部信息 |
+| axios.interceptors    | 拦截器。参考 [拦截器](#拦截器)  的使用                                                  |
 
 ## 使用示例
 
-使用前在demo中entry-->src-->main-->ets-->common-->Common.ets文件中改为正确的服务器地址，在entry-->src-->main-->resources-->rawfile目录下添加正确的证书，才可正常的使用demo。
+使用前在demo中entry-->src-->main-->ets-->common-->Common.ets文件中改为正确的服务器地址，在entry-->src-->main-->
+resources-->rawfile目录下添加正确的证书，才可正常的使用demo。
 
 发起一个 GET 请求
 
 axios支持泛型参数，由于ArkTS不再支持any类型，需指定参数的具体类型。
 如：axios.get<T = any, R = AxiosResponse<T>, D = any>(url)
-- T: 是响应数据类型。当发送一个 POST 请求时，客户端可能会收到一个 JSON 对象。T 就是这个 JSON 对象的类型。默认情况下，T 是 any，这意味着可以接收任何类型的数据。
-- R: 是响应体的类型。当服务器返回一个响应时，响应体通常是一个 JSON 对象。R 就是这个 JSON 对象的类型。默认情况下，R 是 AxiosResponse<T>，这意味着响应体是一个 AxiosResponse 对象，它的 data 属性是 T 类型的
-- D: 是请求参数的类型。当发送一个 GET 请求时，可能会在 URL 中添加一些查询参数。D 就是这些查询参数的类型。参数为空情况下，D 是 null类型。
+
+- T: 是响应数据类型。当发送一个 POST 请求时，客户端可能会收到一个 JSON 对象。T 就是这个 JSON 对象的类型。默认情况下，T 是
+  any，这意味着可以接收任何类型的数据。
+- R: 是响应体的类型。当服务器返回一个响应时，响应体通常是一个 JSON 对象。R 就是这个 JSON 对象的类型。默认情况下，R 是
+  AxiosResponse<T>，这意味着响应体是一个 AxiosResponse 对象，它的 data 属性是 T 类型的
+- D: 是请求参数的类型。当发送一个 GET 请求时，可能会在 URL 中添加一些查询参数。D 就是这些查询参数的类型。参数为空情况下，D 是
+  null类型。
+
 ```javascript
 import axios from '@ohos/axios'
 interface userInfo{
@@ -108,6 +119,7 @@ async function getUser() {
 ```
 
 发送一个 POST 请求
+
 ```javascript
 interface user {
   firstName: string,
@@ -150,6 +162,7 @@ interface user {
 #### 通过向 axios 传递相关配置来创建请求
 
 ##### axios(config)
+
 ```javascript
 // 发送一个get请求
 axios<string, AxiosResponse<string>, null>({
@@ -163,6 +176,7 @@ axios<string, AxiosResponse<string>, null>({
 ```
 
 ##### axios(url[, config])
+
 ```javascript
 // 发送一个get请求（默认请求方式）
 axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { params: { key: "value" } })
@@ -175,6 +189,7 @@ axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { par
 ```
 
 #### 请求方法的 别名方式 来创建请求
+
 为方便起见，为所有支持的请求方法提供了别名。
 
 - axios.request(config)
@@ -184,7 +199,7 @@ axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { par
 - axios.put(url[, data[, config]])
 
 > 注意:
-在使用别名方法时， url、method、data 这些属性都不必在配置中指定。
+> 在使用别名方法时， url、method、data 这些属性都不必在配置中指定。
 
 ```javascript
 // 发送get请求
@@ -200,8 +215,10 @@ axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { par
 ### axios 实例
 
 #### 创建一个实例
+
 您可以使用自定义配置新建一个实例。<br/>
 axios.create([config])
+
 ```javascript
 const instance = axios.create({
   baseURL: 'https://www.xxx.com/info',
@@ -211,6 +228,7 @@ const instance = axios.create({
 ```
 
 #### 实例方法
+
 - axios#request(config)
 - axios#get(url[, config])
 - axios#delete(url[, config])
@@ -218,6 +236,7 @@ const instance = axios.create({
 - axios#put(url[, data[, config]])
 
 ### 请求配置<span id=config></span>
+
 这些是创建请求时可以用的配置选项。只有 url 是必需的。如果没有指定 method，请求将默认使用 get 方法。
 
   ```javascript
@@ -346,6 +365,7 @@ const instance = axios.create({
 ```
 
 ### 响应结构
+
 一个请求的响应包含以下信息。
 
 ```javascript
@@ -374,6 +394,7 @@ const instance = axios.create({
   performanceTiming: http.PerformanceTiming
 }
 ```
+
 PerformanceTiming[属性介绍](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-network-kit/js-apis-http.md#performancetiming11)
 
 当使用 then 时，您将接收如下响应:
@@ -391,9 +412,11 @@ axios.get<string, AxiosResponse<string>, null>(this.getUrl)
 ```
 
 ### 默认配置
+
 您可以指定默认配置，它将作用于每个请求。
 
 #### 全局 axios 默认值
+
 ```javascript
 axios.defaults.baseURL = 'https://www.xxx.com';
 axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
@@ -401,6 +424,7 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 ```
 
 #### 自定义实例默认值
+
 ```javascript
 // 创建实例时配置默认值
 const instance = axios.create({
@@ -410,8 +434,10 @@ const instance = axios.create({
 // 创建实例后修改默认值
 instance.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 ```
+
 配置的优先级
-配置将会按优先级进行合并。它的顺序是：在lib/defaults.js中找到的库默认值，然后是实例的 defaults 属性，最后是请求的 config 参数。后面的优先级要高于前面的。下面有一个例子。
+配置将会按优先级进行合并。它的顺序是：在lib/defaults.js中找到的库默认值，然后是实例的 defaults 属性，最后是请求的 config
+参数。后面的优先级要高于前面的。下面有一个例子。
 
 ```javascript
 // 使用库提供的默认配置创建实例
@@ -429,6 +455,7 @@ instance.get<string, AxiosResponse<string>, null>(this.getUrl, {
 ```
 
 ### 拦截器<span id=interceptors><span>
+
 在请求或响应被 then 或 catch 处理前拦截它们。
 
 ```javascript
@@ -454,20 +481,25 @@ axios.interceptors.response.use((response:AxiosResponse)=> {
 ```
 
 移除拦截器
+
 ```javascript
 const myInterceptor = axios.interceptors.request.use((response: AxiosResponse)=> {/*...*/});
 axios.interceptors.request.eject(myInterceptor);
 ```
+
 可以给自定义的 axios 实例添加拦截器
+
 ```javascript
 const instance = axios.create();
 instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/});
 ```
 
 ### 指定返回数据的类型
+
 `responseType` 指定返回数据的类型，默认无此字段。如果设置了此参数，系统将优先返回指定的类型。
 选项包括: string:字符串类型; object:对象类型; array_buffer:二进制数组类型。
 设置responseType后，response.data中的数据将为指定类型
+
 ```javascript
  axios<string, AxiosResponse<string>, null>({
     url: 'https://www.xxx.com/info',
@@ -479,6 +511,7 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 ```
 
 > 注意：也可以通过重写transformResponse方法，修改返回数据；
+
 ```javascript
  axios<string, AxiosResponse<string>, null>({
     url: 'https://www.xxx.com/info',
@@ -541,6 +574,7 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 ```
 
 ### 设置代理
+
 ```javascript
     axios<string, AxiosResponse<string>, null>({
       url: 'xxx',
@@ -556,6 +590,7 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
       //
     })
 ```
+
 ### 证书锁定
 
 证书锁定的用法如下：
@@ -563,6 +598,7 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 需要在配置文件中对证书进行相关信息的配置：配置文件路径为：entry/src/main/resources/base/profile/network_config.json
 
 配置文件：network_config
+
 ```javascript
 {
   "network-security-config": {
@@ -592,6 +628,7 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 #### digest字段消息摘要获取
 
 使用openssl从服务器获取证书，并提取出消息摘要
+
 ```javascript
 openssl s_client -connect host:port 2>&1 < /dev/null \
                     | sed -n '/-----BEGIN/,/-----END/p' \
@@ -601,13 +638,14 @@ openssl s_client -connect host:port 2>&1 < /dev/null \
                     | openssl enc -base64
 ```
 
-
-
 ### 上传下载文件
+
 #### 上传文件示例
+
 - 上传文件需要单独导入FormData模块
 - 当前版本只支持 Stage 模型
-- 上传类型支持uri和ArrayBuffer，uri支持“internal”协议类型和沙箱路径。"internal://cache/"为必填字段，示例： internal://cache/path/to/file.txt；沙箱路径示例：cacheDir + '/hello.txt'
+- 上传类型支持uri和ArrayBuffer，uri支持“internal”协议类型和沙箱路径。"internal://cache/"为必填字段，示例： internal:
+  //cache/path/to/file.txt；沙箱路径示例：cacheDir + '/hello.txt'
 - 请求的表单数据值为string类型
 - 支持设置多部分表单数据的数据名称和数据类型
 - 上传参数context:当uri为沙箱路径，无需传参context；若uri为“internal”协议类型，必须传参context
@@ -683,7 +721,10 @@ axios.post<string, AxiosResponse<string>, FormData>('https://www.xxx.com/upload'
 ```
 
 ##### FormData介绍
-FormData对象是axios内部自定义的类型，用以将数据编译成键值对，以便用来发送数据。其主要用于发送表单数据，但亦可用于发送带键数据 (keyed data)。
+
+FormData对象是axios内部自定义的类型，用以将数据编译成键值对，以便用来发送数据。其主要用于发送表单数据，但亦可用于发送带键数据 (
+keyed data)。
+
 ```
 import { FormData } from '@ohos/axios'
 
@@ -694,13 +735,16 @@ formData.append("accountnum", "123456");
 formData.append("accountnum", "123456");
 formData.append("file", "internal://cache/xx/file.txt", { filename: "text.txt", type: "text/plain"}); 
 ```
+
 上面的示例创建了一个 FormData 实例，包含"username"、"accountnum"字段。使用 append() 方法时，可以通过第三个可选参数设置多部分表单数据的数据名称和数据类型
 
-
-
 #### 下载文件示例
+
 设置下载路径filePath（默认在'internal://cache/'路径下）。<br/>
-- 当前版本只支持 Stage 模型，使用[AbilityContext](https://docs.openharmony.cn/pages/v4.1/zh-cn/application-dev/reference/apis-ability-kit/js-apis-inner-application-context.md) 类获取文件路径。
+
+- 当前版本只支持 Stage
+  模型，使用[AbilityContext](https://docs.openharmony.cn/pages/v4.1/zh-cn/application-dev/reference/apis-ability-kit/js-apis-inner-application-context.md)
+  类获取文件路径。
 - 下载文件时，如果filePath已存在该文件则下载失败，下载之前需要先删除文件
 - 不支持自动创建目录，若下载路径中的目录不存在，则下载失败
 - v2.2.1-rc.1及以下版本下载必须传context参数，v2.2.1-rc.1以上版本下载参数可去掉context参数
@@ -730,7 +774,8 @@ axios({
 
 ### 错误处理
 
-####  错误处理示例代码
+#### 错误处理示例代码
+
 ```javascript
 axios.get<string, AxiosResponse<string>, null>('/user/12345')
   .catch((error:AxiosError)=> {
@@ -741,35 +786,40 @@ axios.get<string, AxiosResponse<string>, null>('/user/12345')
 ```
 
 #### 错误码
-- 以下错误码的详细介绍参见 [HTTP错误码](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/reference/apis-network-kit/errorcode-net-http.md)
+
+-
+以下错误码的详细介绍参见 [HTTP错误码](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/reference/apis-network-kit/errorcode-net-http.md)
 - HTTP 错误关系映射：2300000 + curl错误码。 更多错误码，可参考：[curl错误码](https://curl.se/libcurl/c/libcurl-errors.html)
 
-| 名称 | 参数类型 | 可读 | 可写 | 说明 |
-| -------- | -------- | -------- | -------- | -------- |
-| NETWORK_MOBILE | number | 是 | 否 | 使用蜂窝网络时允许下载的位标志。 |
-| NETWORK_WIFI | number | 是 | 否 | 使用WLAN时允许下载的位标志。 |
-| ERROR_CANNOT_RESUME<sup>7+</sup> | number | 是 | 否 | 某些临时错误导致的恢复下载失败。 |
-| ERROR_DEVICE_NOT_FOUND<sup>7+</sup> | number | 是 | 否 | 找不到SD卡等存储设备。 |
-| ERROR_FILE_ALREADY_EXISTS<sup>7+</sup> | number | 是 | 否 | 要下载的文件已存在，下载会话不能覆盖现有文件。 |
-| ERROR_FILE_ERROR<sup>7+</sup> | number | 是 | 否 | 文件操作失败。 |
-| ERROR_HTTP_DATA_ERROR<sup>7+</sup> | number | 是 | 否 | HTTP传输失败。 |
-| ERROR_INSUFFICIENT_SPACE<sup>7+</sup> | number | 是 | 否 | 存储空间不足。 |
-| ERROR_TOO_MANY_REDIRECTS<sup>7+</sup> | number | 是 | 否 | 网络重定向过多导致的错误。 |
-| ERROR_UNHANDLED_HTTP_CODE<sup>7+</sup> | number | 是 | 否 | 无法识别的HTTP代码。 |
-| ERROR_UNKNOWN<sup>7+</sup> | number | 是 | 否 | 未知错误。 |
-| PAUSED_QUEUED_FOR_WIFI<sup>7+</sup> | number | 是 | 否 | 下载被暂停并等待WLAN连接，因为文件大小超过了使用蜂窝网络的会话允许的最大值。 |
-| PAUSED_UNKNOWN<sup>7+</sup> | number | 是 | 否 | 未知原因导致暂停下载。 |
-| PAUSED_WAITING_FOR_NETWORK<sup>7+</sup> | number | 是 | 否 | 由于网络问题（例如网络断开）而暂停下载。 |
-| PAUSED_WAITING_TO_RETRY<sup>7+</sup> | number | 是 | 否 | 发生网络错误，将重试下载会话。 |
-| SESSION_FAILED<sup>7+</sup> | number | 是 | 否 | 下载会话已失败，将不会重试。 |
-| SESSION_PAUSED<sup>7+</sup> | number | 是 | 否 | 下载会话已暂停。 |
-| SESSION_PENDING<sup>7+</sup> | number | 是 | 否 | 正在调度下载会话。 |
-| SESSION_RUNNING<sup>7+</sup> | number | 是 | 否 | 下载会话正在进行中。 |
-| SESSION_SUCCESSFUL<sup>7+</sup> | number | 是 | 否 | 下载会话已完成。 |
+| 名称                                      | 参数类型   | 可读 | 可写 | 说明                                       |
+|-----------------------------------------|--------|----|----|------------------------------------------|
+| NETWORK_MOBILE                          | number | 是  | 否  | 使用蜂窝网络时允许下载的位标志。                         |
+| NETWORK_WIFI                            | number | 是  | 否  | 使用WLAN时允许下载的位标志。                         |
+| ERROR_CANNOT_RESUME<sup>7+</sup>        | number | 是  | 否  | 某些临时错误导致的恢复下载失败。                         |
+| ERROR_DEVICE_NOT_FOUND<sup>7+</sup>     | number | 是  | 否  | 找不到SD卡等存储设备。                             |
+| ERROR_FILE_ALREADY_EXISTS<sup>7+</sup>  | number | 是  | 否  | 要下载的文件已存在，下载会话不能覆盖现有文件。                  |
+| ERROR_FILE_ERROR<sup>7+</sup>           | number | 是  | 否  | 文件操作失败。                                  |
+| ERROR_HTTP_DATA_ERROR<sup>7+</sup>      | number | 是  | 否  | HTTP传输失败。                                |
+| ERROR_INSUFFICIENT_SPACE<sup>7+</sup>   | number | 是  | 否  | 存储空间不足。                                  |
+| ERROR_TOO_MANY_REDIRECTS<sup>7+</sup>   | number | 是  | 否  | 网络重定向过多导致的错误。                            |
+| ERROR_UNHANDLED_HTTP_CODE<sup>7+</sup>  | number | 是  | 否  | 无法识别的HTTP代码。                             |
+| ERROR_UNKNOWN<sup>7+</sup>              | number | 是  | 否  | 未知错误。                                    |
+| PAUSED_QUEUED_FOR_WIFI<sup>7+</sup>     | number | 是  | 否  | 下载被暂停并等待WLAN连接，因为文件大小超过了使用蜂窝网络的会话允许的最大值。 |
+| PAUSED_UNKNOWN<sup>7+</sup>             | number | 是  | 否  | 未知原因导致暂停下载。                              |
+| PAUSED_WAITING_FOR_NETWORK<sup>7+</sup> | number | 是  | 否  | 由于网络问题（例如网络断开）而暂停下载。                     |
+| PAUSED_WAITING_TO_RETRY<sup>7+</sup>    | number | 是  | 否  | 发生网络错误，将重试下载会话。                          |
+| SESSION_FAILED<sup>7+</sup>             | number | 是  | 否  | 下载会话已失败，将不会重试。                           |
+| SESSION_PAUSED<sup>7+</sup>             | number | 是  | 否  | 下载会话已暂停。                                 |
+| SESSION_PENDING<sup>7+</sup>            | number | 是  | 否  | 正在调度下载会话。                                |
+| SESSION_RUNNING<sup>7+</sup>            | number | 是  | 否  | 下载会话正在进行中。                               |
+| SESSION_SUCCESSFUL<sup>7+</sup>         | number | 是  | 否  | 下载会话已完成。                                 |
 
 ## 关于混淆
-- 代码混淆，请查看[代码混淆简介](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/arkts-utils/source-obfuscation.md)
+
+-
+代码混淆，请查看[代码混淆简介](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/arkts-utils/source-obfuscation.md)
 - 如果希望axios库在代码混淆过程中不会被混淆，需要在混淆规则配置文件obfuscation-rules.txt中添加相应的排除规则：
+
 ```
 -keep
 ./oh_modules/@ohos/axios
@@ -781,14 +831,18 @@ axios.get<string, AxiosResponse<string>, null>('/user/12345')
 DevEco Studio: NEXT Developer Beta1(5.0.3.122), SDK: API12(5.0.0.18)
 
 > 注意：<br>
-> 1.除双向证书验证(clientCert)及证书锁定功能必须使用API 11+、配置使用系统CA或跳过验证远程服务器CA(RemoteValidation)必须使用API 18+外，其余功能支持API10<br>
+> 1.除双向证书验证(clientCert)及证书锁定功能必须使用API 11+、配置使用系统CA或跳过验证远程服务器CA(RemoteValidation)
+> 必须使用API 18+外，其余功能支持API10<br>
 
 ## FAQ
+
 - 服务器返回多个cookie，response.header中只能读取首个cookie。<br>
-由于该库底层依赖ohos.net.http模块，ohos.net.http也存在此问题，204.1.0.33 镜像版本已修复此问题。
-- 下载文件不会自动创建目录，若下载路径中的目录不存在，则下载失败。如filePath为getContext(this).cacheDir/download/test.txt，download目录不存在则下载失败。
+  由于该库底层依赖ohos.net.http模块，ohos.net.http也存在此问题，204.1.0.33 镜像版本已修复此问题。
+- 下载文件不会自动创建目录，若下载路径中的目录不存在，则下载失败。如filePath为getContext(this)
+  .cacheDir/download/test.txt，download目录不存在则下载失败。
 
 ## 目录结构
+
 ```javascript
 |---- axios
 |     |---- AppScope  # 示例代码文件夹
@@ -810,7 +864,8 @@ DevEco Studio: NEXT Developer Beta1(5.0.3.122), SDK: API12(5.0.0.18)
 
 ## 贡献代码
 
-使用过程中发现任何问题都可以提交[Issue](https://gitcode.com/openharmony-sig/ohos_axios/issues)，当然，也非常欢迎提交[PR](https://gitcode.com/openharmony-sig/ohos_axios/pulls) 。
+使用过程中发现任何问题都可以提交[Issue](https://gitcode.com/openharmony-sig/ohos_axios/issues)
+，当然，也非常欢迎提交[PR](https://gitcode.com/openharmony-sig/ohos_axios/pulls) 。
 
 ## 开源协议
 

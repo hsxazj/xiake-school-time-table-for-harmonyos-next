@@ -1,5 +1,5 @@
 import { HttpService } from './HttpService';
-import { College, Major, ClassInfo, ApiResponse } from '../../models/CollegeModels';
+import { ApiResponse, ClassInfo, College, Major } from '../../models/CollegeModels';
 
 export class CollegeApiService {
   private static instance: CollegeApiService;

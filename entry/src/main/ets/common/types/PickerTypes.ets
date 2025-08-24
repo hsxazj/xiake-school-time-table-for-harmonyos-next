@@ -1,10 +1,3 @@
-export interface PickerData {
-  items: PickerItem[];
-  selectedIndex: number;
-  title: string;
-  onConfirm: (item: PickerItem, index: number) => void;
-}
-
 export interface PickerItem {
   id: number;
   name: string;

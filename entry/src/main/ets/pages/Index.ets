@@ -6,41 +6,10 @@ import { AppConfigManager } from '../services/AppConfigManager';
 struct Index {
   @State message: string = '欢迎使用霞客课表';
   @State initMessage: string = '正在初始化...';
-
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
 
   aboutToAppear(): void {
     this.waitForInitAndNavigate();
-  }
-
-  /**
-   * 等待初始化完成后跳转到主页面
-   */
-  private async waitForInitAndNavigate(): Promise<void> {
-    try {
-      // 等待AppConfigManager初始化完成
-      await this.appConfigManager.initialize();
-      
-      this.initMessage = '初始化完成！';
-      
-      // 短暂延迟后跳转到主页面
-      setTimeout(() => {
-        router.replaceUrl({
-          url: 'pages/first/ClassSelectPage'  // 或者其他主页面
-        });
-      }, 500);
-      
-    } catch (error) {
-      console.error('Index页面初始化失败:', error);
-      this.initMessage = '初始化失败，请重试';
-      
-      // 即使初始化失败也跳转，让用户能正常使用
-      setTimeout(() => {
-        router.replaceUrl({
-          url: 'pages/first/ClassSelectPage'
-        });
-      }, 2000);
-    }
   }
 
   build() {
@@ -77,5 +46,35 @@ struct Index {
     .height('100%')
     .width('100%')
     .backgroundColor('#F8F8F8')
+  }
+
+  /**
+   * 等待初始化完成后跳转到主页面
+   */
+  private async waitForInitAndNavigate(): Promise<void> {
+    try {
+      // 等待AppConfigManager初始化完成
+      await this.appConfigManager.initialize();
+
+      this.initMessage = '初始化完成！';
+
+      // 短暂延迟后跳转到主页面
+      setTimeout(() => {
+        router.replaceUrl({
+          url: 'pages/first/ClassSelectPage'  // 或者其他主页面
+        });
+      }, 500);
+
+    } catch (error) {
+      console.error('Index页面初始化失败:', error);
+      this.initMessage = '初始化失败，请重试';
+
+      // 即使初始化失败也跳转，让用户能正常使用
+      setTimeout(() => {
+        router.replaceUrl({
+          url: 'pages/first/ClassSelectPage'
+        });
+      }, 2000);
+    }
   }
 }

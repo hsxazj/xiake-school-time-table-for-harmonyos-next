@@ -1,5 +1,3 @@
-import { promptAction } from '@kit.ArkUI';
-
 import { PickerItem, PickerProps } from '../../common/types/PickerTypes';
 
 export { PickerItem, PickerProps };
@@ -12,7 +10,6 @@ export struct CustomPicker {
   @Prop title: string = '';
   onConfirm?: (item: PickerItem, index: number) => void;
   onCancel?: () => void;
-
   @State private isVisible: boolean = false;
 
   aboutToAppear(): void {
@@ -25,21 +22,6 @@ export struct CustomPicker {
         this.isVisible = true;
       });
     }, 16);
-  }
-
-  private closeWithAnimation(): void {
-    // 退出动画 - 属性动画控制
-    animateTo({
-      duration: 250,
-      curve: Curve.EaseIn
-    }, () => {
-      this.isVisible = false;
-    });
-    
-    // 动画完成后关闭弹窗
-    setTimeout(() => {
-      this.controller.close();
-    }, 250);
   }
 
   build() {
@@ -98,9 +80,9 @@ export struct CustomPicker {
 
         // 选择器内容区域
         if (this.items.length > 0) {
-          TextPicker({ 
-            range: this.items.map(item => item.name), 
-            selected: this.selectedIndex 
+          TextPicker({
+            range: this.items.map(item => item.name),
+            selected: this.selectedIndex
           })
             .width('100%')
             .height(280)
@@ -128,7 +110,7 @@ export struct CustomPicker {
       .backgroundColor(Color.White)
       .borderRadius({ topLeft: 20, topRight: 20 })
       .padding({ bottom: 10 })
-      .translate({ 
+      .translate({
         y: this.isVisible ? 0 : 350  // 属性动画：显示时y=0，隐藏时y=350向下偏移
       })
       .animation({
@@ -139,5 +121,20 @@ export struct CustomPicker {
     .width('100%')
     .height('100%')
     .alignContent(Alignment.Bottom)
+  }
+
+  private closeWithAnimation(): void {
+    // 退出动画 - 属性动画控制
+    animateTo({
+      duration: 250,
+      curve: Curve.EaseIn
+    }, () => {
+      this.isVisible = false;
+    });
+
+    // 动画完成后关闭弹窗
+    setTimeout(() => {
+      this.controller.close();
+    }, 250);
   }
 }

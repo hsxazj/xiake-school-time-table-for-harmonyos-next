@@ -1,18 +1,7 @@
-import {
-  ConfigApiService,
-  SemesterInfo,
-  CurrentSemesterStatus,
-  ConfigApiResponse
-} from '../../services/api/ConfigApiService';
-import {
-  CourseApiService,
-  CourseInfo,
-  CourseRequestParams,
-  CoursePosition
-} from '../../services/api/CourseApiService';
+import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
+import { CourseApiService, CourseInfo, CoursePosition } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
-import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
-import { ApiResponse } from '../../models/CollegeModels';
+import { UserInfoManager } from '../../common/constants/PreferencesUtil';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -118,10 +107,6 @@ export struct SchedulePage {
     this.initializeWithCurrentDate();
   }
 
-  // 注意：由于SchedulePage组件非常大，这里只是创建基本结构
-  // 具体的方法实现需要从原文件中完整复制
-  // 为了演示目的，这里只包含核心的build方法结构
-
   build() {
     Stack() {
       Column() {
@@ -200,9 +185,7 @@ export struct SchedulePage {
         Column() {
           Blank()
 
-          Text('周选择器弹窗内容')
-            .fontSize(16)
-            .padding(20)
+          this.buildWeekPickerContent()
         }
         .width('100%')
         .height('100%')
@@ -216,24 +199,917 @@ export struct SchedulePage {
   @Builder
   WeekScheduleContent() {
     Column() {
-      Text('课表内容区域')
-        .fontSize(16)
-        .padding(20)
+      // 星期表头（参考show-list.vue的table-header结构）
+      Row() {
+        // 左上角月份显示区域
+        Column() {
+          Text(this.currentMonth || '1月')
+            .fontSize(16)
+            .fontColor('#45CAD9')
+            .fontWeight(FontWeight.Medium)
+        }
+        .width(60)
+        .height(70)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .backgroundColor('#FAFAFA')
+        .border({ width: { right: 1, bottom: 1 }, color: '#E8E8E8' })
+
+        // 星期标题和日期（参考show-list.vue的second-week-box）
+        ForEach(this.weekDays, (day: string, dayIndex: number) => {
+          Column() {
+            // 星期
+            Text(day)
+              .fontSize(14)
+              .fontColor('#333333')
+              .fontWeight(FontWeight.Medium)
+              .margin({ bottom: 2 })
+
+            // 显示对应的日期（参考class-schedule-c的timeList逻辑）
+            if (this.weekDates) {
+              Text(this.getDateForWeekDay(dayIndex))
+                .fontSize(12)
+                .fontColor(this.isToday(dayIndex) ? '#45CAD9' : '#666666')
+                .backgroundColor(this.isToday(dayIndex) ? '#E3F2FD' : Color.Transparent)
+                .borderRadius(8)
+                .padding({
+                  left: 4,
+                  right: 4,
+                  top: 2,
+                  bottom: 2
+                })
+            }
+          }
+          .layoutWeight(1)
+          .height(70)
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Center)
+          .backgroundColor('#FAFAFA')
+          .border({ width: { right: dayIndex < 6 ? 1 : 0, bottom: 1 }, color: '#E8E8E8' })
+        })
+      }
+      .width('100%')
+
+      // 课表内容区域（参考show-list.vue的class-table结构）
+      Scroll() {
+        Row() {
+          // 左侧时间轴（参考show-list.vue的class-time）
+          this.buildTimeColumn()
+
+          // 课程网格区域（参考show-list.vue的class-table）
+          Row() {
+            ForEach([0, 1, 2, 3, 4, 5, 6], (dayIndex: number) => {
+              this.buildDayColumn(dayIndex)
+            })
+          }
+          .layoutWeight(1)
+          .alignItems(VerticalAlign.Top)
+        }
+        .height('100%')
+        .width('100%')
+        .alignItems(VerticalAlign.Top)
+      }
+      .layoutWeight(1)
+      .align(Alignment.TopStart)
     }
     .width('100%')
     .height('100%')
   }
 
-  // 私有方法声明（具体实现需要从原文件复制）
-  private initializeWithCurrentDate(): void {
-    // TODO: 从原文件复制完整实现
+  /**
+   * 构建时间列（参考show-list.vue的class-time结构）
+   */
+  @Builder
+  buildTimeColumn() {
+    Column() {
+      // 直接显示1-12节，均匀分布
+      ForEach([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], (num: number) => {
+        Text(num.toString())
+          .fontSize(12)
+          .fontColor('#666666')
+          .width('100%')
+          .textAlign(TextAlign.Center)
+          .border({ width: { bottom: 0.5 }, color: '#E8E8E8' })
+          .layoutWeight(1) // 使用layoutWeight实现均匀分布
+      })
+    }
+    .height('100%')
+    .width(60)
+    .backgroundColor('#FAFAFA')
+    .border({ width: { right: 1 }, color: '#E8E8E8' })
+    .padding({ top: 8, bottom: 8 })
   }
 
+  /**
+   * 构建单天课程列（参考show-list.vue的网格布局算法）
+   */
+  @Builder
+  buildDayColumn(dayIndex: number) {
+    Column() {
+      // 直接显示所有课程，不进行复杂的连续性判断
+      ForEach(this.scheduleGrid.nowClassList[dayIndex] || [], (course: ScheduleCourse, courseIndex: number) => {
+        this.buildCourseBlock(course,
+          this.scheduleGrid.classLength[dayIndex] ? this.scheduleGrid.classLength[dayIndex][courseIndex] : 1, dayIndex,
+          courseIndex)
+      })
+    }
+    .width(`${100 / 7}%`) // 7列等宽
+    .alignItems(HorizontalAlign.Center)
+    .padding(1) // 减少内边距
+  }
+
+  /**
+   * 构建课程块（参考show-list.vue的class-table-item样式）
+   */
+  @Builder
+  buildCourseBlock(course: ScheduleCourse, length: number, dayIndex: number, courseIndex: number) {
+    Column() {
+      // 课程名称
+      Text(course.courseName)
+        .fontSize(11)
+        .fontColor(this.getCourseTextColor(course.courseName))
+        .fontWeight(FontWeight.Medium)
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .textAlign(TextAlign.Center)
+        .margin({ bottom: 2 })
+
+      // 教室信息
+      if (course.classroom && course.classroom.length > 0) {
+        Text(course.classroom[0])
+          .fontSize(9)
+          .fontColor(this.getCourseTextColor(course.courseName))
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .textAlign(TextAlign.Center)
+          .margin({ bottom: 1 })
+      }
+
+      // 教师信息
+      if (course.teacher && course.teacher.length > 0) {
+        Text(course.teacher[0])
+          .fontSize(8)
+          .fontColor(this.getCourseTextColor(course.courseName))
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .textAlign(TextAlign.Center)
+      }
+    }
+    .width('95%') // 调整宽度，确保有足够空间
+    .height(`${length * 8.33}%`) // 每节课占总高度的1/12，即8.33%
+    .backgroundColor(this.getCourseBackgroundColor(course.courseName))
+    .border({
+      width: 1,
+      color: this.getCourseBorderColor(course.courseName),
+      radius: 4 // 减少圆角
+    })
+    .padding(3) // 减少内边距
+    .justifyContent(FlexAlign.Center)
+    .alignItems(HorizontalAlign.Center)
+    .margin({ top: 1, bottom: 1 }) // 减少上下边距
+    .onClick(() => {
+      this.onCourseBlockClick(course, dayIndex, courseIndex);
+    })
+  }
+
+  /**
+   * 处理周课表数据（使用接口数据）
+   */
+  private processWeekScheduleData(): void {
+    console.info('📅 [Schedule] 开始处理周课表数据...');
+
+    // 初始化网格数据结构
+    this.initializeScheduleGrid();
+
+    // 处理课程数据
+    this.processCourseList();
+
+    // 计算课程布局
+    this.calculateCourseLayout();
+
+    console.info('📅 [Schedule] 周课表数据处理完成');
+  }
+
+  /**
+   * 初始化课表网格结构
+   */
+  private initializeScheduleGrid(): void {
+    // 7天的课程列表
+    this.scheduleGrid.nowClassList = Array(7).fill(null).map(() => []);
+    this.scheduleGrid.classNum = Array(7).fill(null).map(() => []);
+    this.scheduleGrid.classLength = Array(7).fill(null).map(() => []);
+    this.scheduleGrid.isContinue = Array(7).fill(null).map(() => []);
+    this.scheduleGrid.classList = [];
+  }
+
+  /**
+   * 处理课程列表（使用接口数据转换为课表格式）
+   */
+  private processCourseList(): void {
+    // 将接口返回的CourseInfo[]转换为ScheduleCourse[]格式
+    const convertedCourses = this.convertCourseInfoToScheduleCourse(this.courseList);
+
+    // 过滤当前周的课程
+    const weekCourses = convertedCourses.filter(course => {
+      // 解析课程的周次信息，判断是否包含当前周
+      return this.isCourseInCurrentWeek(course, this.currentWeek);
+    });
+
+    // 按周几分组
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const dayCourses = weekCourses.filter(course => course.weekday === dayIndex + 1);
+      this.scheduleGrid.nowClassList[dayIndex] = dayCourses;
+    }
+
+    // 提取所有课程名（去重）
+    const courseNameSet = new Set<string>();
+    weekCourses.forEach(course => {
+      courseNameSet.add(course.courseName);
+    });
+    this.scheduleGrid.classList = Array.from(courseNameSet);
+
+    console.info(`📚 [Course] 处理了${this.courseList.length}门课程，当前周有${weekCourses.length}门课程`);
+  }
+
+  /**
+   * 将CourseInfo转换为ScheduleCourse格式
+   */
+  private convertCourseInfoToScheduleCourse(courseList: CourseInfo[]): ScheduleCourseWithWeeks[] {
+    return courseList.map(course => {
+      const scheduleCourse: ScheduleCourseWithWeeks = {
+        courseName: course.courseName,
+        classroom: [course.classroom], // 将字符串转换为数组
+        teacher: [course.teacher], // 将字符串转换为数组
+        campus: course.campus || '', // 使用接口数据中的campus字段
+        courseTime: this.parseCourseTime(course.section),
+        weekday: this.parseWeekday(course.weekday),
+        section: this.parseSection(course.section),
+        courseId: [course.courseId.toString()], // 转换为字符串数组
+        weeks: course.weeks // 保存原始周次信息用于过滤
+      };
+      return scheduleCourse;
+    });
+  }
+
+  /**
+   * 判断课程是否在当前周
+   */
+  private isCourseInCurrentWeek(course: ScheduleCourseWithWeeks, currentWeek: number): boolean {
+    if (!course.weeks) {
+      return true;
+    } // 如果没有周次信息，默认显示
+
+    const weekRanges = this.parseWeekRange(course.weeks);
+    return weekRanges.includes(currentWeek);
+  }
+
+  /**
+   * 解析周次范围，适配接口格式 "[2,3,4,6,7,8,9,10,11]"
+   */
+  private parseWeekRange(weeksStr: string): number[] {
+    const weeks: number[] = [];
+
+    if (!weeksStr) {
+      return weeks;
+    }
+
+    try {
+      // 接口返回的格式是 "[2,3,4,6,7,8,9,10,11]"，需要解析为数组
+      if (weeksStr.startsWith('[') && weeksStr.endsWith(']')) {
+        const weekArray = JSON.parse(weeksStr) as number[];
+        return weekArray.sort((a, b) => a - b);
+      } else {
+        // 处理传统格式: "1-16", "1,3,5-7"等
+        const cleanWeeksStr = weeksStr.replace(/[单双周]/g, '');
+        const parts = cleanWeeksStr.split(',');
+
+        parts.forEach(part => {
+          if (part.includes('-')) {
+            const dashIndex = part.indexOf('-');
+            const start = parseInt(part.substring(0, dashIndex).trim());
+            const end = parseInt(part.substring(dashIndex + 1).trim());
+            for (let i = start; i <= end; i++) {
+              if (!weeks.includes(i)) {
+                weeks.push(i);
+              }
+            }
+          } else {
+            const week = parseInt(part.trim());
+            if (!isNaN(week) && !weeks.includes(week)) {
+              weeks.push(week);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('解析周次范围失败:', error, weeksStr);
+    }
+
+    return weeks.sort((a, b) => a - b);
+  }
+
+  /**
+   * 解析课程时间为二维数组格式
+   */
+  private parseCourseTime(sectionStr: string): number[][] {
+    const sections = this.parseSection(sectionStr);
+    const result: number[][] = [];
+
+    // 将连续的节次分组
+    let currentGroup: number[] = [];
+    for (let i = 0; i < sections.length; i++) {
+      if (i === 0 || sections[i] === sections[i - 1] + 1) {
+        currentGroup.push(sections[i]);
+      } else {
+        if (currentGroup.length > 0) {
+          result.push([...currentGroup]);
+        }
+        currentGroup = [sections[i]];
+      }
+    }
+
+    if (currentGroup.length > 0) {
+      result.push(currentGroup);
+    }
+
+    return result;
+  }
+
+  /**
+   * 计算课程布局（核心算法，参考show-list.vue的布局逻辑）
+   */
+  private calculateCourseLayout(): void {
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const dayCourses = this.scheduleGrid.nowClassList[dayIndex];
+
+      // 初始化当天的布局数据
+      this.scheduleGrid.classNum[dayIndex] = [];
+      this.scheduleGrid.classLength[dayIndex] = [];
+      this.scheduleGrid.isContinue[dayIndex] = [];
+
+      // 按节次排序
+      const sortedCourses = dayCourses.sort((a, b) => a.section[0] - b.section[0]);
+
+      for (let courseIndex = 0; courseIndex < sortedCourses.length; courseIndex++) {
+        const course = sortedCourses[courseIndex];
+
+        // 计算课程开始节次
+        this.scheduleGrid.classNum[dayIndex][courseIndex] = course.section[0];
+
+        // 计算课程长度（节次数）
+        this.scheduleGrid.classLength[dayIndex][courseIndex] = course.section.length;
+
+        // 简化连续性判断：默认所有课程都应该显示
+        this.scheduleGrid.isContinue[dayIndex][courseIndex] = 1;
+      }
+    }
+  }
+
+  /**
+   * 解析周几字符串
+   */
+  private parseWeekday(weekdayStr: string): number {
+    const weekdayMap: Record<string, number> = {
+      '星期一': 1,
+      '星期二': 2,
+      '星期三': 3,
+      '星期四': 4,
+      '星期五': 5,
+      '星期六': 6,
+      '星期日': 7
+    };
+    return weekdayMap[weekdayStr] || 1;
+  }
+
+  /**
+   * 解析节次字符串，适配接口格式 "1-2节"
+   */
+  private parseSection(sectionStr: string): number[] {
+    if (!sectionStr) {
+      return [1];
+    } // 默认值
+
+    // 移除"节"字符，处理 "1-2节" 格式
+    const cleanSectionStr = sectionStr.replace(/节$/g, '');
+
+    if (cleanSectionStr.includes('-')) {
+      // "1-2" -> [1, 2]
+      // "1-6" -> [1, 2, 3, 4, 5, 6]
+      const parts = cleanSectionStr.split('-');
+      if (parts.length === 2) {
+        const start = parseInt(parts[0].trim());
+        const end = parseInt(parts[1].trim());
+        const sections: number[] = [];
+        for (let i = start; i <= end; i++) {
+          sections.push(i);
+        }
+        return sections;
+      }
+    } else if (cleanSectionStr.includes(',')) {
+      // "1,2" -> [1, 2]
+      return cleanSectionStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+    } else {
+      // "1" -> [1]
+      const section = parseInt(cleanSectionStr.trim());
+      return !isNaN(section) ? [section] : [1];
+    }
+
+    return [1]; // 默认值
+  }
+
+  /**
+   * 基于当前日期初始化 - 找到最近的学期并计算当前周数
+   */
+  private async initializeWithCurrentDate(): Promise<void> {
+    try {
+      // 确保配置已加载
+      await this.appConfigManager.initialize();
+      this.semesterList = this.configService.getSemesterList();
+
+      if (this.semesterList.length === 0) {
+        console.error('📋 [Schedule] 没有学期数据');
+        return;
+      }
+
+      // 使用今天的日期作为起始点
+      const today = new Date();
+      this.currentDate = new Date(today);
+
+      // 找到最近的学期和计算周数
+      this.updateCurrentSemesterFromDate(this.currentDate);
+
+      // 计算当前日期对应的周日期范围
+      this.calculateWeekDatesFromCurrentDate();
+
+      // 加载课程数据
+      await this.loadCourseData();
+
+      console.info(`📅 [Schedule Init] 初始化完成: ${this.currentDate.getFullYear()}-${this.currentDate.getMonth() +
+        1}-${this.currentDate.getDate()}`);
+
+    } catch (error) {
+      console.error('📋 [Schedule] 日期初始化失败:', error);
+    }
+  }
+
+  /**
+   * 加载课程数据
+   */
+  private async loadCourseData(): Promise<void> {
+    if (!this.currentSemester) {
+      console.warn('📚 [Course] 当前学期信息为空，无法加载课程');
+      return;
+    }
+
+    this.isLoadingCourses = true;
+
+    try {
+      // 从首选项获取用户班级信息
+      const userInfo = this.userInfoManager.getUserInfo();
+      console.info(`📚 [Course] 当前用户信息: 学院=${userInfo.collegeName}, 专业=${userInfo.majorName}, 班级=${userInfo.className}`);
+
+      const classId = userInfo.classId;
+
+      if (!classId) {
+        console.warn('📚 [Course] 用户未设置班级信息，无法获取课程数据');
+        console.warn('📚 [Course] 请在设置页面选择学院、专业和班级');
+        return;
+      }
+
+      // 构建请求参数 - 使用学期信息和用户班级ID
+      const params = this.courseService.buildCourseParams(
+        this.currentSemester.academicYear,
+        this.currentSemester.semester,
+        this.currentWeek, // 添加当前周数
+        classId,
+        undefined
+      );
+
+      console.info(`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
+
+      // 获取课程列表
+      const courseResponse = await this.courseService.getCourseList(params);
+
+      if (courseResponse.code === 200 && courseResponse.data) {
+        // 将接口数据赋值给 courseList 状态变量
+        this.courseList = courseResponse.data;
+
+        // 处理课程数据，生成课表网格
+        this.processWeekScheduleData();
+
+        console.info(`📚 [Course] 成功加载${courseResponse.data.length}门课程`);
+      } else {
+        console.warn(`📚 [Course] 课程数据加载失败: ${courseResponse.msg}`);
+        this.courseList = [];
+        // 即使没有数据也要初始化空的网格
+        this.processWeekScheduleData();
+      }
+
+    } catch (error) {
+      console.error('📚 [Course] 加载课程数据失败:', error);
+      this.courseList = [];
+      // 即使出错也要初始化空的网格
+      this.processWeekScheduleData();
+    } finally {
+      this.isLoadingCourses = false;
+    }
+  }
+
+  /**
+   * 根据给定日期找到最近的学期并计算周数
+   * 直接使用ConfigApiService的calculateCurrentSemesterStatus逻辑
+   */
+  private updateCurrentSemesterFromDate(targetDate: Date): void {
+    // 使用ConfigApiService的已有逻辑来计算状态
+    const semesterStatus = this.configService.calculateCurrentSemesterStatus(targetDate);
+
+    if (semesterStatus && semesterStatus.currentSemester) {
+      this.currentSemester = semesterStatus.currentSemester;
+      this.currentWeek = semesterStatus.currentWeek;
+      this.totalWeeks = semesterStatus.currentSemester.totalWeeks;
+      this.displayStatusText = semesterStatus.statusText;
+
+      console.info(`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek})`);
+    }
+  }
+
+  /**
+   * 根据当前日期计算周日期范围
+   */
+  private calculateWeekDatesFromCurrentDate(): void {
+    // 找到当前日期所在周的周一
+    const currentDate = new Date(this.currentDate);
+    const dayOfWeek = currentDate.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+    const mondayOfWeek = new Date(currentDate);
+    mondayOfWeek.setDate(currentDate.getDate() + daysToMonday);
+
+    // 计算周日
+    const sundayOfWeek = new Date(mondayOfWeek);
+    sundayOfWeek.setDate(mondayOfWeek.getDate() + 6);
+
+    this.weekDates = {
+      startDate: mondayOfWeek,
+      endDate: sundayOfWeek
+    };
+
+    this.currentMonth = this.configService.getMonthString(mondayOfWeek);
+  }
+
+  /**
+   * 导航到上一周
+   */
+  private navigateToPreviousWeek(): void {
+    // 当前日期减去7天
+    const newDate = new Date(this.currentDate);
+    newDate.setDate(this.currentDate.getDate() - 7);
+
+    this.currentDate = newDate;
+    this.updateCurrentSemesterFromDate(this.currentDate);
+    this.calculateWeekDatesFromCurrentDate();
+
+    // 重新加载课程数据（如果学期发生变化）
+    this.loadCourseData();
+
+    console.info(`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
+  }
+
+  /**
+   * 导航到下一周
+   */
+  private navigateToNextWeek(): void {
+    // 当前日期加上7天
+    const newDate = new Date(this.currentDate);
+    newDate.setDate(this.currentDate.getDate() + 7);
+
+    this.currentDate = newDate;
+    this.updateCurrentSemesterFromDate(this.currentDate);
+    this.calculateWeekDatesFromCurrentDate();
+
+    // 重新加载课程数据（如果学期发生变化）
+    this.loadCourseData();
+
+    console.info(`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
+  }
+
+  /**
+   * 切换学期 (跳转到指定学期的第一周)
+   */
+  private switchSemester(direction: 'prev' | 'next'): void {
+    if (!this.currentSemester) {
+      return;
+    }
+
+    // 找到目标学期
+    const rawTargetSemester = this.configService.getAdjacentSemester(this.currentSemester, direction);
+    if (rawTargetSemester) {
+      // 跳转到目标学期的开学日期
+      const targetStartDate = new Date(rawTargetSemester.startDate);
+      this.currentDate = targetStartDate;
+
+      // 更新学期信息
+      this.updateCurrentSemesterFromDate(this.currentDate);
+      this.calculateWeekDatesFromCurrentDate();
+
+      // 重新加载新学期的课程数据
+      this.loadCourseData();
+
+      console.info(`📅 [Semester Switch] 切换到${rawTargetSemester.academicYear}学年第${rawTargetSemester.semester}学期`);
+    }
+  }
+
+  /**
+   * 获取星期对应的日期
+   */
+  private getDateForWeekDay(dayIndex: number): string {
+    if (!this.weekDates) {
+      return '';
+    }
+
+    const targetDate = new Date(this.weekDates.startDate);
+    targetDate.setDate(this.weekDates.startDate.getDate() + dayIndex);
+
+    const month = targetDate.getMonth() + 1;
+    const day = targetDate.getDate();
+    return `${month}/${day}`;
+  }
+
+  /**
+   * 触摸开始 (参考class-schedule-c的touchStart方法)
+   */
   private touchStart(event: TouchEvent): void {
-    // TODO: 从原文件复制完整实现
+    this.startTime = Date.now();
+    this.startPosition = event.touches[0].x;
   }
 
+  /**
+   * 触摸结束 (参考class-schedule-c的touchEnd方法)
+   */
   private touchEnd(event: TouchEvent): void {
-    // TODO: 从原文件复制完整实现
+    const endTime = Date.now();
+    // 如果触摸时间超过2秒，忽略
+    if (endTime - this.startTime > 2000) {
+      return;
+    }
+
+    this.endPosition = event.changedTouches[0].x;
+
+    // 当移动距离超过100时判断左滑右滑 (与class-schedule-c一致)
+    if (Math.abs(this.endPosition - this.startPosition) > 100) {
+      const elePosition = this.endPosition - this.startPosition > 0 ? "right" : "left";
+
+      if (elePosition === 'right') {
+        // 右滑：显示上一周 (对应class-schedule-c的leftClick)
+        this.navigateToPreviousWeek();
+      } else if (elePosition === 'left') {
+        // 左滑：显示下一周 (对应class-schedule-c的rightClick)
+        this.navigateToNextWeek();
+      }
+    }
+  }
+
+  /**
+   * 生成周数列表
+   */
+  private getWeekNumbersList(): number[] {
+    const weekNumbers: number[] = [];
+    for (let i = 1; i <= this.totalWeeks; i++) {
+      weekNumbers.push(i);
+    }
+    return weekNumbers;
+  }
+
+  @Builder
+  private buildWeekPickerContent() {
+    Column() {
+      // 学期信息和切换按钮
+      Row() {
+        // 上一个学期按钮
+        Button('< 上学期')
+          .fontSize(14)
+          .fontColor('#45CAD9')
+          .backgroundColor(Color.Transparent)
+          .height(30)
+          .onClick(() => {
+            this.switchSemester('prev');
+          })
+
+        Blank()
+
+        // 当前学期信息
+        Text(`${this.currentSemester?.academicYear || '2024'}学年第${this.currentSemester?.semester || 1}学期`)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
+
+        Blank()
+
+        // 下一个学期按钮
+        Button('下学期 >')
+          .fontSize(14)
+          .fontColor('#45CAD9')
+          .backgroundColor(Color.Transparent)
+          .height(30)
+          .onClick(() => {
+            this.switchSemester('next');
+          })
+      }
+      .width('100%')
+      .padding({ left: 20, right: 20, bottom: 10 })
+
+      Divider()
+        .color('#F0F0F0')
+        .strokeWidth(0.5)
+        .margin({ bottom: 10 })
+
+      Text('选择周次')
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#333333')
+        .margin({ bottom: 20 })
+
+      Scroll() {
+        Column() {
+          ForEach(this.getWeekNumbersList(), (weekNum: number) => {
+            Row() {
+              Text(`第${weekNum}周`)
+                .fontSize(16)
+                .fontColor(this.currentWeek === weekNum ? '#45CAD9' : '#333333')
+                .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
+
+              Blank()
+
+              if (this.currentWeek === weekNum) {
+                Text('✓')
+                  .fontSize(16)
+                  .fontColor('#45CAD9')
+              }
+            }
+            .width('100%')
+            .height(50)
+            .padding({ left: 20, right: 20 })
+            .onClick(() => {
+              // 跳转到指定周：计算目标日期并更新
+              if (this.currentSemester) {
+                const semesterStartDate = new Date(this.currentSemester.startDate);
+                const targetDate = new Date(semesterStartDate);
+                targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
+
+                this.currentDate = targetDate;
+                this.updateCurrentSemesterFromDate(this.currentDate);
+                this.calculateWeekDatesFromCurrentDate();
+              }
+              this.showWeekPicker = false;
+            })
+
+            if (weekNum < this.totalWeeks) {
+              Divider()
+                .color('#F0F0F0')
+                .strokeWidth(0.5)
+            }
+          })
+        }
+      }
+      .height(300)
+
+      Row() {
+        Button('取消')
+          .width('45%')
+          .height(45)
+          .fontSize(16)
+          .fontColor('#666666')
+          .backgroundColor('#F5F5F5')
+          .onClick(() => {
+            this.showWeekPicker = false;
+          })
+
+        Blank()
+
+        Button('确定')
+          .width('45%')
+          .height(45)
+          .fontSize(16)
+          .fontColor(Color.White)
+          .backgroundColor('#45CAD9')
+          .onClick(() => {
+            this.showWeekPicker = false;
+          })
+      }
+      .width('100%')
+      .margin({ top: 20 })
+    }
+    .width('100%')
+    .padding(20)
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 20, topRight: 20 })
+  }
+
+  /**
+   * 获取课程颜色索引（参考class-schedule-c的颜色计算逻辑）
+   */
+  private getCourseColorIndex(courseName: string): number {
+    let index = this.scheduleGrid.classList.indexOf(courseName);
+    if (index === -1) {
+      // 如果找不到，使用hash算法计算
+      let hash = 0;
+      for (let i = 0; i < courseName.length; i++) {
+        hash = courseName.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      index = Math.abs(hash);
+    }
+
+    // 如果index大于10，取余操作（参考show-list.vue逻辑）
+    if (index > 10) {
+      index = index % 10;
+    }
+
+    return index;
+  }
+
+  /**
+   * 获取指定key的时间段数组
+   */
+  private getSectionNumbers(key: string): number[] {
+    switch (key) {
+      case 'value1':
+        return this.sections.value1;
+      case 'value2':
+        return this.sections.value2;
+      case 'value3':
+        return this.sections.value3;
+      case 'value4':
+        return this.sections.value4;
+      case 'value5':
+        return this.sections.value5;
+      case 'value6':
+        return this.sections.value6;
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * 检查是否是今天
+   */
+  private isToday(dayIndex: number): boolean {
+    const today = new Date();
+    const currentWeekday = (today.getDay() + 6) % 7; // 转换为周一=0的格式
+    return dayIndex === currentWeekday;
+  }
+
+  /**
+   * 课程块点击事件（参考show-list.vue的showItem方法）
+   */
+  private onCourseBlockClick(course: ScheduleCourse, dayIndex: number, courseIndex: number): void {
+    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
+
+    // TODO: 显示课程详情弹窗（参考class-schedule-c的课程详情显示）
+    // 可以显示课程名、教师、教室、时间等信息
+  }
+
+  /**
+   * 获取课程背景颜色（参考show-list.vue的chooseColor方法）
+   */
+  private getCourseBackgroundColor(courseName: string): string {
+    const colorIndex = this.getCourseColorIndex(courseName);
+    const colors = [
+      '#F1C2A3', '#F6F0A2', '#B5C9F2', '#8FC7FA',
+      '#CDFAB5', '#FCCF8E', '#8BD4CE', '#D4B5F7',
+      '#ECFAD9', '#E3F4FC', '#FAE3EB', '#FBFCD9',
+      '#ffff8e', '#FDE3DA', '#e6ffe4', '#EBFCFB',
+      '#EEE8FA', '#E3EFFC', '#FFF3E0', '#FAE8E3'
+    ];
+    return colors[colorIndex % colors.length];
+  }
+
+  /**
+   * 获取课程文字颜色（参考show-list.vue的chooseTxtColor方法）
+   */
+  private getCourseTextColor(courseName: string): string {
+    const colorIndex = this.getCourseColorIndex(courseName);
+    const colors = [
+      '#EB754D', '#BDAC2F', '#8F99EB', '#4774A8',
+      '#8AD466', '#E3A33D', '#38C2BB', '#5544C7',
+      '#3DBF3D', '#93CC43', '#2A82E4', '#D65C87',
+      '#C3C74C', '#7F822A', '#F2825C', '#3FCC3F',
+      '#176963', '#3B2C5E', '#27507D', '#967A4B'
+    ];
+    return colors[colorIndex % colors.length];
+  }
+
+  /**
+   * 获取课程边框颜色（参考show-list.vue的borderColor方法）
+   */
+  private getCourseBorderColor(courseName: string): string {
+    const colorIndex = this.getCourseColorIndex(courseName);
+    const colors = [
+      '#F78863', '#FFEB3B', '#91B8E6', '#348DFA',
+      '#7CD94E', '#FFD54F', '#4DB6AC', '#7986CB',
+      '#66BB6A', '#9CCC65', '#42A5F5', '#EC407A',
+      '#D4E157', '#827717', '#FF8A65', '#4CAF50',
+      '#26A69A', '#5C6BC0', '#1E88E5', '#8D6E63'
+    ];
+    return colors[colorIndex % colors.length];
   }
 }

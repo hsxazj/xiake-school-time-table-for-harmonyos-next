@@ -1,4 +1,4 @@
- // 1. 基础格式化
+// 1. 基础格式化
 // DateUtil.formatDate(new Date(), DateUtil.FORMATS.DATE)
 //  输出: "2024-01-15"
 
@@ -46,8 +46,10 @@
 interface RelativeTimeUnit {
   /** 时间单位名称 */
   unit: string;
+
   /** 阈值（秒） */
   threshold: number;
+
   /** 除数（用于计算单位数量） */
   divisor: number;
 }
@@ -59,40 +61,58 @@ interface RelativeTimeUnit {
 interface LocaleStrings {
   /** 刚刚 */
   justNow: string;
+
   /** 分钟前 */
   minutesAgo: string;
+
   /** 小时前 */
   hoursAgo: string;
+
   /** 天前 */
   daysAgo: string;
+
   /** 周前 */
   weeksAgo: string;
+
   /** 个月前 */
   monthsAgo: string;
+
   /** 年前 */
   yearsAgo: string;
+
   /** 后（未来时间） */
   in: string;
+
   /** 分钟 */
   minutes: string;
+
   /** 小时 */
   hours: string;
+
   /** 天 */
   days: string;
+
   /** 周 */
   weeks: string;
+
   /** 个月 */
   months: string;
+
   /** 年 */
   years: string;
+
   /** 昨天 */
   yesterday: string;
+
   /** 今天 */
   today: string;
+
   /** 明天 */
   tomorrow: string;
+
   /** 上午 */
   am: string;
+
   /** 下午 */
   pm: string;
 }
@@ -104,34 +124,49 @@ interface LocaleStrings {
 interface DateFormats {
   /** 基础日期格式: yyyy-MM-dd */
   DATE: string;
+
   /** 基础时间格式: HH:mm:ss */
   TIME: string;
+
   /** 基础日期时间格式: yyyy-MM-dd HH:mm:ss */
   DATETIME: string;
+
   /** 中文日期格式: yyyy年MM月dd日 */
   DATE_CN: string;
+
   /** 中文时间格式: HH时mm分ss秒 */
   TIME_CN: string;
+
   /** 中文日期时间格式: yyyy年MM月dd日 HH时mm分 */
   DATETIME_CN: string;
+
   /** 12小时制时间格式: hh:mm:ss a */
   TIME_12: string;
+
   /** 12小时制日期时间格式: yyyy-MM-dd hh:mm:ss a */
   DATETIME_12: string;
+
   /** ISO日期格式: yyyy-MM-dd */
   ISO_DATE: string;
+
   /** ISO时间格式: HH:mm:ss.SSS (SSS表示毫秒) */
   ISO_TIME: string;
+
   /** ISO日期时间格式: yyyy-MM-ddTHH:mm:ss.SSSZ */
   ISO_DATETIME: string;
+
   /** 友好日期格式: MM月dd日 */
   FRIENDLY_DATE: string;
+
   /** 友好时间格式: HH:mm */
   FRIENDLY_TIME: string;
+
   /** 友好日期时间格式: MM-dd HH:mm */
   FRIENDLY_DATETIME: string;
+
   /** 完整日期格式: yyyy年MM月dd日 EEEE */
   FULL_DATE: string;
+
   /** 完整日期时间格式: yyyy年MM月dd日 EEEE HH:mm:ss */
   FULL_DATETIME: string;
 }
@@ -143,10 +178,13 @@ interface DateFormats {
 interface TimeDifference {
   /** 天数 */
   days: number;
+
   /** 小时数 */
   hours: number;
+
   /** 分钟数 */
   minutes: number;
+
   /** 秒数 */
   seconds: number;
 }
@@ -206,7 +244,6 @@ export class DateUtil {
     FULL_DATE: 'yyyy年MM月dd日 EEEE',
     FULL_DATETIME: 'yyyy年MM月dd日 EEEE HH:mm:ss'
   };
-
   /**
    * 相对时间计算单位配置
    * 用于将时间差转换为友好的相对时间显示
@@ -224,7 +261,6 @@ export class DateUtil {
     { unit: 'month', threshold: 31536000, divisor: 2592000 },
     { unit: 'year', threshold: 999999999, divisor: 31536000 }
   ];
-
   /**
    * 日期格式化正则表达式
    * 用于匹配和替换格式化字符串中的模式
@@ -233,7 +269,8 @@ export class DateUtil {
    * @static
    * @readonly
    */
-  private static readonly FORMAT_REGEX: RegExp = /(yyyy|yy|MMMM|MMM|MM|M|dd|d|DDD|DD|D|EEEE|EEE|EE|E|HH|H|hh|h|mm|m|ss|s|SSS|SS|S|a|z|Z)/g;
+  private static readonly FORMAT_REGEX: RegExp =
+    /(yyyy|yy|MMMM|MMM|MM|M|dd|d|DDD|DD|D|EEEE|EEE|EE|E|HH|H|hh|h|mm|m|ss|s|SSS|SS|S|a|z|Z)/g;
 
   /**
    * 格式化日期时间
@@ -299,15 +336,21 @@ export class DateUtil {
     format: string = DateUtil.FORMATS.DATETIME,
     locale: string = 'zh-CN'
   ): string | null {
-    if (!date) return null;
+    if (!date) {
+      return null;
+    }
 
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return null;
+    if (!dateObj) {
+      return null;
+    }
 
     // 如果是预设格式，优先使用系统API
     if (DateUtil.isPresetFormat(format)) {
       const systemResult = DateUtil.formatWithSystemAPI(dateObj, format, locale);
-      if (systemResult) return systemResult;
+      if (systemResult) {
+        return systemResult;
+      }
     }
 
     // 使用自定义格式化
@@ -374,7 +417,9 @@ export class DateUtil {
     maxDays: number = 7
   ): string | null {
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return null;
+    if (!dateObj) {
+      return null;
+    }
 
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
@@ -440,7 +485,9 @@ export class DateUtil {
    */
   public static isToday(date: Date | number | string): boolean {
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return false;
+    if (!dateObj) {
+      return false;
+    }
     return DateUtil.isSameDay(dateObj, new Date());
   }
 
@@ -464,7 +511,9 @@ export class DateUtil {
    */
   public static isYesterday(date: Date | number | string): boolean {
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return false;
+    if (!dateObj) {
+      return false;
+    }
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     return DateUtil.isSameDay(dateObj, yesterday);
@@ -490,7 +539,9 @@ export class DateUtil {
    */
   public static isThisWeek(date: Date | number | string): boolean {
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return false;
+    if (!dateObj) {
+      return false;
+    }
 
     const now = new Date();
     const startOfWeek = new Date(now);
@@ -553,7 +604,9 @@ export class DateUtil {
     const start = DateUtil.parseDate(startDate);
     const end = DateUtil.parseDate(endDate);
 
-    if (!start || !end) return null;
+    if (!start || !end) {
+      return null;
+    }
 
     const diffInMs = Math.abs(end.getTime() - start.getTime());
 
@@ -563,367 +616,6 @@ export class DateUtil {
       minutes: Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60)),
       seconds: Math.floor((diffInMs % (1000 * 60)) / 1000)
     };
-  }
-
-  /**
-   * 解析各种类型的日期输入为Date对象
-   *
-   * 统一处理Date对象、时间戳、字符串等不同格式的日期输入
-   *
-   * @param date 要解析的日期
-   * @returns 解析后的Date对象，解析失败时返回null
-   *
-   * @private
-   * @static
-   */
-  private static parseDate(date: Date | number | string): Date | null {
-    if (!date) return null;
-
-    let dateObj: Date;
-
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'number') {
-      dateObj = new Date(date);
-    } else {
-      // 处理字符串格式的兼容性
-      let dateString = date.toString();
-
-      // 兼容不同的日期字符串格式
-      if (dateString.includes('-') && !dateString.includes('T')) {
-        dateString = dateString.replace(/-/g, '/');
-      }
-
-      const timestamp = Date.parse(dateString);
-      if (isNaN(timestamp)) {
-        console.error('Invalid date string:', date);
-        return null;
-      }
-      dateObj = new Date(timestamp);
-    }
-
-    // 验证日期有效性
-    if (isNaN(dateObj.getTime())) {
-      console.error('Invalid date:', date);
-      return null;
-    }
-
-    return dateObj;
-  }
-
-  /**
-   * 检查给定格式是否为预设格式
-   *
-   * @param format 要检查的格式字符串
-   * @returns 是否为预设格式
-   *
-   * @private
-   * @static
-   */
-  private static isPresetFormat(format: string): boolean {
-    return format === DateUtil.FORMATS.DATE ||
-           format === DateUtil.FORMATS.TIME ||
-           format === DateUtil.FORMATS.DATETIME ||
-           format === DateUtil.FORMATS.TIME_12;
-  }
-
-  /**
-   * 使用优化的系统API进行格式化
-   *
-   * 针对常用的预设格式进行优化处理，避免ArkTS结构化类型问题
-   *
-   * @param date Date对象
-   * @param format 格式字符串
-   * @param locale 本地化设置
-   * @returns 格式化结果，失败时返回null
-   *
-   * @private
-   * @static
-   */
-  private static formatWithSystemAPI(date: Date, format: string, locale: string): string | null {
-    try {
-      // 直接使用简化的格式化方式，避免结构化类型问题
-      if (format === DateUtil.FORMATS.DATE) {
-        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-      } else if (format === DateUtil.FORMATS.TIME) {
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-      } else if (format === DateUtil.FORMATS.DATETIME) {
-        const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-        const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-        return `${dateStr} ${timeStr}`;
-      } else if (format === DateUtil.FORMATS.TIME_12) {
-        const hour12 = DateUtil.get12Hour(date.getHours());
-        const ampm = date.getHours() < 12 ? (locale === 'zh-CN' ? '上午' : 'AM') : (locale === 'zh-CN' ? '下午' : 'PM');
-        return `${hour12.toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')} ${ampm}`;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.warn('System format failed:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 获取指定语言的本地化字符串
-   *
-   * @param locale 语言代码
-   * @returns 本地化字符串对象
-   *
-   * @private
-   * @static
-   */
-  private static getLocaleStrings(locale: string): LocaleStrings {
-    if (locale === 'en-US') {
-      return {
-        justNow: 'just now',
-        minutesAgo: 'minutes ago',
-        hoursAgo: 'hours ago',
-        daysAgo: 'days ago',
-        weeksAgo: 'weeks ago',
-        monthsAgo: 'months ago',
-        yearsAgo: 'years ago',
-        in: 'in',
-        minutes: 'minutes',
-        hours: 'hours',
-        days: 'days',
-        weeks: 'weeks',
-        months: 'months',
-        years: 'years',
-        yesterday: 'yesterday',
-        today: 'today',
-        tomorrow: 'tomorrow',
-        am: 'AM',
-        pm: 'PM'
-      };
-    }
-
-    // 默认返回中文
-    return {
-      justNow: '刚刚',
-      minutesAgo: '分钟前',
-      hoursAgo: '小时前',
-      daysAgo: '天前',
-      weeksAgo: '周前',
-      monthsAgo: '个月前',
-      yearsAgo: '年前',
-      in: '后',
-      minutes: '分钟',
-      hours: '小时',
-      days: '天',
-      weeks: '周',
-      months: '个月',
-      years: '年',
-      yesterday: '昨天',
-      today: '今天',
-      tomorrow: '明天',
-      am: '上午',
-      pm: '下午'
-    };
-  }
-
-  /**
-   * 自定义格式化核心逻辑
-   *
-   * 解析格式字符串并替换为实际的日期时间值
-   *
-   * @param date Date对象
-   * @param format 格式字符串
-   * @param locale 本地化设置
-   * @returns 格式化后的字符串
-   *
-   * @private
-   * @static
-   */
-  private static customFormat(date: Date, format: string, locale: string): string {
-    const strings = DateUtil.getLocaleStrings(locale);
-
-    // 创建格式映射
-    const formatMap = new Map<string, string>();
-
-    // 年份格式
-    formatMap.set('yyyy', date.getFullYear().toString());
-    formatMap.set('yy', date.getFullYear().toString().slice(-2));
-
-    // 月份格式
-    formatMap.set('MMMM', DateUtil.getMonthName(date.getMonth(), 'long', locale));
-    formatMap.set('MMM', DateUtil.getMonthName(date.getMonth(), 'short', locale));
-    formatMap.set('MM', (date.getMonth() + 1).toString().padStart(2, '0'));
-    formatMap.set('M', (date.getMonth() + 1).toString());
-
-    // 日期格式
-    formatMap.set('dd', date.getDate().toString().padStart(2, '0'));
-    formatMap.set('d', date.getDate().toString());
-
-    // 年份中的天数格式
-    const dayOfYear = DateUtil.getDayOfYear(date);
-    formatMap.set('DDD', dayOfYear.toString().padStart(3, '0'));
-    formatMap.set('DD', dayOfYear.toString().padStart(2, '0'));
-    formatMap.set('D', dayOfYear.toString());
-
-    // 星期格式
-    formatMap.set('EEEE', DateUtil.getWeekdayName(date.getDay(), 'long', locale));
-    formatMap.set('EEE', DateUtil.getWeekdayName(date.getDay(), 'short', locale));
-    formatMap.set('EE', DateUtil.getWeekdayName(date.getDay(), 'short', locale));
-    formatMap.set('E', DateUtil.getWeekdayName(date.getDay(), 'narrow', locale));
-
-    // 小时格式
-    formatMap.set('HH', date.getHours().toString().padStart(2, '0'));
-    formatMap.set('H', date.getHours().toString());
-    formatMap.set('hh', DateUtil.get12Hour(date.getHours()).toString().padStart(2, '0'));
-    formatMap.set('h', DateUtil.get12Hour(date.getHours()).toString());
-
-    // 分钟格式
-    formatMap.set('mm', date.getMinutes().toString().padStart(2, '0'));
-    formatMap.set('m', date.getMinutes().toString());
-
-    // 秒钟格式
-    formatMap.set('ss', date.getSeconds().toString().padStart(2, '0'));
-    formatMap.set('s', date.getSeconds().toString());
-
-    // 毫秒格式
-    formatMap.set('SSS', date.getMilliseconds().toString().padStart(3, '0'));
-    formatMap.set('SS', date.getMilliseconds().toString().padStart(3, '0').slice(0, 2));
-    formatMap.set('S', Math.floor(date.getMilliseconds() / 100).toString());
-
-    // 上午/下午标识
-    formatMap.set('a', date.getHours() < 12 ? strings.am : strings.pm);
-
-    // 时区信息（简化处理）
-    formatMap.set('z', 'CST');
-    formatMap.set('Z', '+0800');
-
-    return format.replace(DateUtil.FORMAT_REGEX, (match) => {
-      return formatMap.get(match) || match;
-    });
-  }
-
-  /**
-   * 生成相对时间描述字符串
-   *
-   * @param value 数值
-   * @param unit 时间单位
-   * @param isFuture 是否为未来时间
-   * @param strings 本地化字符串
-   * @returns 相对时间字符串
-   *
-   * @private
-   * @static
-   */
-  private static formatRelativeTimeString(
-    value: number,
-    unit: string,
-    isFuture: boolean,
-    strings: LocaleStrings
-  ): string {
-    let unitString = '';
-    if (unit === 'minute') unitString = strings.minutes;
-    else if (unit === 'hour') unitString = strings.hours;
-    else if (unit === 'day') unitString = strings.days;
-    else if (unit === 'week') unitString = strings.weeks;
-    else if (unit === 'month') unitString = strings.months;
-    else if (unit === 'year') unitString = strings.years;
-
-    if (isFuture) {
-      return `${value}${unitString}${strings.in}`;
-    } else {
-      return `${value}${unitString}${strings.minutesAgo.includes('前') ? '前' : ' ago'}`;
-    }
-  }
-
-  /**
-   * 获取本地化的月份名称
-   *
-   * @param month 月份索引（0-11）
-   * @param style 显示样式：'long'完整名称, 'short'缩写
-   * @param locale 语言设置
-   * @returns 月份名称
-   *
-   * @private
-   * @static
-   */
-  private static getMonthName(month: number, style: 'long' | 'short', locale: string): string {
-    if (locale === 'zh-CN') {
-      if (style === 'long') {
-        const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-        return months[month] || `${month + 1}月`;
-      } else {
-        return `${month + 1}月`;
-      }
-    } else {
-      if (style === 'long') {
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        return months[month] || `${month + 1}`;
-      } else {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return months[month] || `${month + 1}`;
-      }
-    }
-  }
-
-  /**
-   * 获取本地化的星期名称
-   *
-   * @param day 星期索引（0-6，0代表星期日）
-   * @param style 显示样式：'long'完整名称, 'short'缩写, 'narrow'最短形式
-   * @param locale 语言设置
-   * @returns 星期名称
-   *
-   * @private
-   * @static
-   */
-  private static getWeekdayName(day: number, style: 'long' | 'short' | 'narrow', locale: string): string {
-    if (locale === 'zh-CN') {
-      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-      return style === 'long' ? `星期${weekdays[day]}` : weekdays[day] || day.toString();
-    } else {
-      if (style === 'long') {
-        const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return weekdays[day] || day.toString();
-      } else {
-        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        return weekdays[day] || day.toString();
-      }
-    }
-  }
-
-  /**
-   * 将24小时制转换为12小时制
-   *
-   * @param hour 24小时制的小时数（0-23）
-   * @returns 12小时制的小时数（1-12）
-   *
-   * @private
-   * @static
-   */
-  private static get12Hour(hour: number): number {
-    return hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  }
-
-  /**
-   * 计算指定日期是该年的第几天
-   *
-   * @param date 要计算的日期
-   * @returns 年份中的天数（1-366）
-   *
-   * @example
-   * ```typescript
-   * // 1月1日是第1天
-   * DateUtil.getDayOfYear(new Date('2024-01-01'))  // 1
-   *
-   * // 12月31日是第365天（非闰年）或第366天（闰年）
-   * DateUtil.getDayOfYear(new Date('2024-12-31'))  // 366 (2024是闰年)
-   * DateUtil.getDayOfYear(new Date('2023-12-31'))  // 365 (2023不是闰年)
-   * ```
-   *
-   * @private
-   * @static
-   */
-  private static getDayOfYear(date: Date): number {
-    const start = new Date(date.getFullYear(), 0, 1); // 当年1月1日
-    const diff = date.getTime() - start.getTime();
-    const oneDay = 1000 * 60 * 60 * 24; // 一天的毫秒数
-    return Math.floor(diff / oneDay) + 1;
   }
 
   /**
@@ -950,13 +642,19 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return null;
+    if (!dateObj1 || !dateObj2) {
+      return null;
+    }
 
     const time1 = dateObj1.getTime();
     const time2 = dateObj2.getTime();
 
-    if (time1 < time2) return -1;
-    if (time1 > time2) return 1;
+    if (time1 < time2) {
+      return -1;
+    }
+    if (time1 > time2) {
+      return 1;
+    }
     return 0;
   }
 
@@ -1147,7 +845,9 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return false;
+    if (!dateObj1 || !dateObj2) {
+      return false;
+    }
 
     return DateUtil.isSameDay(dateObj1, dateObj2);
   }
@@ -1176,7 +876,9 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return false;
+    if (!dateObj1 || !dateObj2) {
+      return false;
+    }
 
     // 计算两个日期所在周的开始日期
     const getWeekStart = (date: Date): Date => {
@@ -1216,10 +918,12 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return false;
+    if (!dateObj1 || !dateObj2) {
+      return false;
+    }
 
     return dateObj1.getFullYear() === dateObj2.getFullYear() &&
-           dateObj1.getMonth() === dateObj2.getMonth();
+      dateObj1.getMonth() === dateObj2.getMonth();
   }
 
   /**
@@ -1246,7 +950,9 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return false;
+    if (!dateObj1 || !dateObj2) {
+      return false;
+    }
 
     return dateObj1.getFullYear() === dateObj2.getFullYear();
   }
@@ -1275,7 +981,9 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return null;
+    if (!dateObj1 || !dateObj2) {
+      return null;
+    }
 
     return dateObj1.getTime() <= dateObj2.getTime() ? dateObj1 : dateObj2;
   }
@@ -1304,7 +1012,9 @@ export class DateUtil {
     const dateObj1 = DateUtil.parseDate(date1);
     const dateObj2 = DateUtil.parseDate(date2);
 
-    if (!dateObj1 || !dateObj2) return null;
+    if (!dateObj1 || !dateObj2) {
+      return null;
+    }
 
     return dateObj1.getTime() >= dateObj2.getTime() ? dateObj1 : dateObj2;
   }
@@ -1336,7 +1046,9 @@ export class DateUtil {
    */
   public static getDayOfYearPublic(date: Date | number | string): number | null {
     const dateObj = DateUtil.parseDate(date);
-    if (!dateObj) return null;
+    if (!dateObj) {
+      return null;
+    }
 
     return DateUtil.getDayOfYear(dateObj);
   }
@@ -1368,6 +1080,392 @@ export class DateUtil {
   }
 
   /**
+   * 解析各种类型的日期输入为Date对象
+   *
+   * 统一处理Date对象、时间戳、字符串等不同格式的日期输入
+   *
+   * @param date 要解析的日期
+   * @returns 解析后的Date对象，解析失败时返回null
+   *
+   * @private
+   * @static
+   */
+  private static parseDate(date: Date | number | string): Date | null {
+    if (!date) {
+      return null;
+    }
+
+    let dateObj: Date;
+
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'number') {
+      dateObj = new Date(date);
+    } else {
+      // 处理字符串格式的兼容性
+      let dateString = date.toString();
+
+      // 兼容不同的日期字符串格式
+      if (dateString.includes('-') && !dateString.includes('T')) {
+        dateString = dateString.replace(/-/g, '/');
+      }
+
+      const timestamp = Date.parse(dateString);
+      if (isNaN(timestamp)) {
+        console.error('Invalid date string:', date);
+        return null;
+      }
+      dateObj = new Date(timestamp);
+    }
+
+    // 验证日期有效性
+    if (isNaN(dateObj.getTime())) {
+      console.error('Invalid date:', date);
+      return null;
+    }
+
+    return dateObj;
+  }
+
+  /**
+   * 检查给定格式是否为预设格式
+   *
+   * @param format 要检查的格式字符串
+   * @returns 是否为预设格式
+   *
+   * @private
+   * @static
+   */
+  private static isPresetFormat(format: string): boolean {
+    return format === DateUtil.FORMATS.DATE ||
+      format === DateUtil.FORMATS.TIME ||
+      format === DateUtil.FORMATS.DATETIME ||
+      format === DateUtil.FORMATS.TIME_12;
+  }
+
+  /**
+   * 使用优化的系统API进行格式化
+   *
+   * 针对常用的预设格式进行优化处理，避免ArkTS结构化类型问题
+   *
+   * @param date Date对象
+   * @param format 格式字符串
+   * @param locale 本地化设置
+   * @returns 格式化结果，失败时返回null
+   *
+   * @private
+   * @static
+   */
+  private static formatWithSystemAPI(date: Date, format: string, locale: string): string | null {
+    try {
+      // 直接使用简化的格式化方式，避免结构化类型问题
+      if (format === DateUtil.FORMATS.DATE) {
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate()
+          .toString()
+          .padStart(2, '0')}`;
+      } else if (format === DateUtil.FORMATS.TIME) {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes()
+          .toString()
+          .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+      } else if (format === DateUtil.FORMATS.DATETIME) {
+        const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate()
+          .toString()
+          .padStart(2, '0')}`;
+        const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes()
+          .toString()
+          .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+        return `${dateStr} ${timeStr}`;
+      } else if (format === DateUtil.FORMATS.TIME_12) {
+        const hour12 = DateUtil.get12Hour(date.getHours());
+        const ampm = date.getHours() < 12 ? (locale === 'zh-CN' ? '上午' : 'AM') : (locale === 'zh-CN' ? '下午' : 'PM');
+        return `${hour12.toString().padStart(2, '0')}:${date.getMinutes()
+          .toString()
+          .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')} ${ampm}`;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.warn('System format failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 获取指定语言的本地化字符串
+   *
+   * @param locale 语言代码
+   * @returns 本地化字符串对象
+   *
+   * @private
+   * @static
+   */
+  private static getLocaleStrings(locale: string): LocaleStrings {
+    if (locale === 'en-US') {
+      return {
+        justNow: 'just now',
+        minutesAgo: 'minutes ago',
+        hoursAgo: 'hours ago',
+        daysAgo: 'days ago',
+        weeksAgo: 'weeks ago',
+        monthsAgo: 'months ago',
+        yearsAgo: 'years ago',
+        in: 'in',
+        minutes: 'minutes',
+        hours: 'hours',
+        days: 'days',
+        weeks: 'weeks',
+        months: 'months',
+        years: 'years',
+        yesterday: 'yesterday',
+        today: 'today',
+        tomorrow: 'tomorrow',
+        am: 'AM',
+        pm: 'PM'
+      };
+    }
+
+    // 默认返回中文
+    return {
+      justNow: '刚刚',
+      minutesAgo: '分钟前',
+      hoursAgo: '小时前',
+      daysAgo: '天前',
+      weeksAgo: '周前',
+      monthsAgo: '个月前',
+      yearsAgo: '年前',
+      in: '后',
+      minutes: '分钟',
+      hours: '小时',
+      days: '天',
+      weeks: '周',
+      months: '个月',
+      years: '年',
+      yesterday: '昨天',
+      today: '今天',
+      tomorrow: '明天',
+      am: '上午',
+      pm: '下午'
+    };
+  }
+
+  /**
+   * 自定义格式化核心逻辑
+   *
+   * 解析格式字符串并替换为实际的日期时间值
+   *
+   * @param date Date对象
+   * @param format 格式字符串
+   * @param locale 本地化设置
+   * @returns 格式化后的字符串
+   *
+   * @private
+   * @static
+   */
+  private static customFormat(date: Date, format: string, locale: string): string {
+    const strings = DateUtil.getLocaleStrings(locale);
+
+    // 创建格式映射
+    const formatMap = new Map<string, string>();
+
+    // 年份格式
+    formatMap.set('yyyy', date.getFullYear().toString());
+    formatMap.set('yy', date.getFullYear().toString().slice(-2));
+
+    // 月份格式
+    formatMap.set('MMMM', DateUtil.getMonthName(date.getMonth(), 'long', locale));
+    formatMap.set('MMM', DateUtil.getMonthName(date.getMonth(), 'short', locale));
+    formatMap.set('MM', (date.getMonth() + 1).toString().padStart(2, '0'));
+    formatMap.set('M', (date.getMonth() + 1).toString());
+
+    // 日期格式
+    formatMap.set('dd', date.getDate().toString().padStart(2, '0'));
+    formatMap.set('d', date.getDate().toString());
+
+    // 年份中的天数格式
+    const dayOfYear = DateUtil.getDayOfYear(date);
+    formatMap.set('DDD', dayOfYear.toString().padStart(3, '0'));
+    formatMap.set('DD', dayOfYear.toString().padStart(2, '0'));
+    formatMap.set('D', dayOfYear.toString());
+
+    // 星期格式
+    formatMap.set('EEEE', DateUtil.getWeekdayName(date.getDay(), 'long', locale));
+    formatMap.set('EEE', DateUtil.getWeekdayName(date.getDay(), 'short', locale));
+    formatMap.set('EE', DateUtil.getWeekdayName(date.getDay(), 'short', locale));
+    formatMap.set('E', DateUtil.getWeekdayName(date.getDay(), 'narrow', locale));
+
+    // 小时格式
+    formatMap.set('HH', date.getHours().toString().padStart(2, '0'));
+    formatMap.set('H', date.getHours().toString());
+    formatMap.set('hh', DateUtil.get12Hour(date.getHours()).toString().padStart(2, '0'));
+    formatMap.set('h', DateUtil.get12Hour(date.getHours()).toString());
+
+    // 分钟格式
+    formatMap.set('mm', date.getMinutes().toString().padStart(2, '0'));
+    formatMap.set('m', date.getMinutes().toString());
+
+    // 秒钟格式
+    formatMap.set('ss', date.getSeconds().toString().padStart(2, '0'));
+    formatMap.set('s', date.getSeconds().toString());
+
+    // 毫秒格式
+    formatMap.set('SSS', date.getMilliseconds().toString().padStart(3, '0'));
+    formatMap.set('SS', date.getMilliseconds().toString().padStart(3, '0').slice(0, 2));
+    formatMap.set('S', Math.floor(date.getMilliseconds() / 100).toString());
+
+    // 上午/下午标识
+    formatMap.set('a', date.getHours() < 12 ? strings.am : strings.pm);
+
+    // 时区信息（简化处理）
+    formatMap.set('z', 'CST');
+    formatMap.set('Z', '+0800');
+
+    return format.replace(DateUtil.FORMAT_REGEX, (match) => {
+      return formatMap.get(match) || match;
+    });
+  }
+
+  /**
+   * 生成相对时间描述字符串
+   *
+   * @param value 数值
+   * @param unit 时间单位
+   * @param isFuture 是否为未来时间
+   * @param strings 本地化字符串
+   * @returns 相对时间字符串
+   *
+   * @private
+   * @static
+   */
+  private static formatRelativeTimeString(
+    value: number,
+    unit: string,
+    isFuture: boolean,
+    strings: LocaleStrings
+  ): string {
+    let unitString = '';
+    if (unit === 'minute') {
+      unitString = strings.minutes;
+    } else if (unit === 'hour') {
+      unitString =
+        strings.hours;
+    } else if (unit === 'day') {
+      unitString = strings.days;
+    } else if (unit === 'week') {
+      unitString =
+        strings.weeks;
+    } else if (unit === 'month') {
+      unitString = strings.months;
+    } else if (unit === 'year') {
+      unitString =
+        strings.years;
+    }
+
+    if (isFuture) {
+      return `${value}${unitString}${strings.in}`;
+    } else {
+      return `${value}${unitString}${strings.minutesAgo.includes('前') ? '前' : ' ago'}`;
+    }
+  }
+
+  /**
+   * 获取本地化的月份名称
+   *
+   * @param month 月份索引（0-11）
+   * @param style 显示样式：'long'完整名称, 'short'缩写
+   * @param locale 语言设置
+   * @returns 月份名称
+   *
+   * @private
+   * @static
+   */
+  private static getMonthName(month: number, style: 'long' | 'short', locale: string): string {
+    if (locale === 'zh-CN') {
+      if (style === 'long') {
+        const months =
+          ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+        return months[month] || `${month + 1}月`;
+      } else {
+        return `${month + 1}月`;
+      }
+    } else {
+      if (style === 'long') {
+        const months =
+          ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November',
+            'December'];
+        return months[month] || `${month + 1}`;
+      } else {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return months[month] || `${month + 1}`;
+      }
+    }
+  }
+
+  /**
+   * 获取本地化的星期名称
+   *
+   * @param day 星期索引（0-6，0代表星期日）
+   * @param style 显示样式：'long'完整名称, 'short'缩写, 'narrow'最短形式
+   * @param locale 语言设置
+   * @returns 星期名称
+   *
+   * @private
+   * @static
+   */
+  private static getWeekdayName(day: number, style: 'long' | 'short' | 'narrow', locale: string): string {
+    if (locale === 'zh-CN') {
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      return style === 'long' ? `星期${weekdays[day]}` : weekdays[day] || day.toString();
+    } else {
+      if (style === 'long') {
+        const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return weekdays[day] || day.toString();
+      } else {
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        return weekdays[day] || day.toString();
+      }
+    }
+  }
+
+  /**
+   * 将24小时制转换为12小时制
+   *
+   * @param hour 24小时制的小时数（0-23）
+   * @returns 12小时制的小时数（1-12）
+   *
+   * @private
+   * @static
+   */
+  private static get12Hour(hour: number): number {
+    return hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  }
+
+  /**
+   * 计算指定日期是该年的第几天
+   *
+   * @param date 要计算的日期
+   * @returns 年份中的天数（1-366）
+   *
+   * @example
+   * ```typescript
+   * // 1月1日是第1天
+   * DateUtil.getDayOfYear(new Date('2024-01-01'))  // 1
+   *
+   * // 12月31日是第365天（非闰年）或第366天（闰年）
+   * DateUtil.getDayOfYear(new Date('2024-12-31'))  // 366 (2024是闰年)
+   * DateUtil.getDayOfYear(new Date('2023-12-31'))  // 365 (2023不是闰年)
+   * ```
+   *
+   * @private
+   * @static
+   */
+  private static getDayOfYear(date: Date): number {
+    const start = new Date(date.getFullYear(), 0, 1); // 当年1月1日
+    const diff = date.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24; // 一天的毫秒数
+    return Math.floor(diff / oneDay) + 1;
+  }
+
+  /**
    * 判断两个日期是否为同一天
    *
    * 只比较年月日，忽略时分秒
@@ -1381,8 +1479,8 @@ export class DateUtil {
    */
   private static isSameDay(date1: Date, date2: Date): boolean {
     return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate();
   }
 }
 
