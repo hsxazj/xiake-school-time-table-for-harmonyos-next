@@ -1,38 +1,39 @@
+import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
+
 @Component
 export struct HomePage {
-  @State private username: string = '';
-  @State private collegeName: string = '';
+  @State private userInfo: UserSchoolInfo | null = null;
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
-    // 这里可以加载用户信息
-    this.username = '同学';
-    this.collegeName = '计算机学院';
+    this.loadUserInfo();
   }
 
   build() {
     Column() {
-      // 顶部问候语
+      // 顶部问候语（删除右上角通知图标）
       Row() {
         Column() {
-          Text(`你好，${this.username}`)
+          Text(`你好，同学`)
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
             .margin({ bottom: 4 })
-          Text(`${this.collegeName}`)
-            .fontSize(14)
-            .fontColor('#666666')
+          
+          // 显示学院+班级信息
+          if (this.userInfo) {
+            Text(`${this.userInfo.collegeName} ${this.userInfo.className}`)
+              .fontSize(14)
+              .fontColor('#666666')
+          } else {
+            Text('学院信息加载中...')
+              .fontSize(14)
+              .fontColor('#666666')
+          }
         }
         .alignItems(HorizontalAlign.Start)
 
         Blank()
-
-        // 消息图标
-        Text('🔔')
-          .fontSize(24)
-          .onClick(() => {
-            // 消息点击事件
-          })
       }
       .width('100%')
       .padding({
@@ -42,117 +43,47 @@ export struct HomePage {
         bottom: 20
       })
 
-      // 功能区域
+      // 今日课程区域（拉长并删除查看更多）
       Column() {
-        // 今日课程卡片
-        Column() {
-          Row() {
-            Text('今日课程')
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
-            Blank()
-            Text('查看更多 >')
-              .fontSize(14)
-              .fontColor('#45CAD9')
-              .onClick(() => {
-                // 跳转到课表页
-              })
-          }
+        Text('今日课程')
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
           .width('100%')
           .margin({ bottom: 15 })
 
-          // 课程列表
-          Column() {
-            Text('暂无今日课程')
-              .fontSize(16)
-              .fontColor('#999999')
-              .margin({ top: 20, bottom: 20 })
-          }
-          .width('100%')
-          .height(100)
-          .justifyContent(FlexAlign.Center)
-        }
-        .width('100%')
-        .padding(20)
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .shadow({
-          radius: 8,
-          color: 'rgba(0, 0, 0, 0.1)',
-          offsetY: 2
-        })
-        .margin({ bottom: 20 })
-
-        // 快捷功能
+        // 课程列表区域 - 增加高度
         Column() {
-          Text('快捷功能')
-            .fontSize(18)
-            .fontWeight(FontWeight.Medium)
-            .fontColor('#333333')
-            .width('100%')
-            .margin({ bottom: 15 })
-
-          Grid() {
-            GridItem() {
-              this.FunctionCard('📅', '我的课表', '#E3F2FD')
-            }
-
-            GridItem() {
-              this.FunctionCard('⭐', '课程评价', '#F3E5F5')
-            }
-
-            GridItem() {
-              this.FunctionCard('📢', '系统通知', '#E8F5E8')
-            }
-
-            GridItem() {
-              this.FunctionCard('❓', '问题反馈', '#FFF3E0')
-            }
-          }
-          .rowsTemplate('1fr 1fr')
-          .columnsTemplate('1fr 1fr')
-          .rowsGap(15)
-          .columnsGap(15)
-          .height(200)
+          Text('暂无今日课程')
+            .fontSize(16)
+            .fontColor('#999999')
+            .margin({ top: 50, bottom: 50 })
         }
         .width('100%')
-        .padding(20)
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .shadow({
-          radius: 8,
-          color: 'rgba(0, 0, 0, 0.1)',
-          offsetY: 2
-        })
+        .height(300) // 从100增加到300
+        .justifyContent(FlexAlign.Center)
       }
-      .width('90%')
-      .layoutWeight(1)
+      .width('100%')
+      .padding(20)
+      .backgroundColor('#F0F2F5') // 今日课程区域使用稍深的灰蓝色
+      .borderRadius(12)
+      .shadow({
+        radius: 8,
+        color: 'rgba(0, 0, 0, 0.08)',
+        offsetY: 2
+      })
+      .margin({ bottom: 20 })
+      .layoutWeight(1) // 让今日课程区域占用更多空间
 
       Blank()
     }
-    .width('100%')
+    .width('90%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Color.White) // 背景改为白色
+    .justifyContent(FlexAlign.Start)
   }
 
-  @Builder
-  FunctionCard(icon: string, title: string, bgColor: string) {
-    Column() {
-      Text(icon)
-        .fontSize(32)
-        .margin({ bottom: 8 })
-      Text(title)
-        .fontSize(14)
-        .fontColor('#333333')
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(bgColor)
-    .borderRadius(8)
-    .justifyContent(FlexAlign.Center)
-    .onClick(() => {
-      // 处理点击事件
-    })
+  private loadUserInfo(): void {
+    this.userInfo = this.userInfoManager.getUserInfo();
   }
 }
