@@ -17,15 +17,15 @@ export interface ClassInfo {
 
 export interface ApiResponse<T> {
   code: number;
-  msg: string; // 改为msg以匹配实际API响应
+  msg: string;
   data: T;
 }
 
 export interface UserSelection {
-  collegeId: string; // 改为string类型
+  collegeId: string;
   collegeName: string;
-  majorId: string; // 改为string类型
+  majorId: string;
   majorName: string;
-  classId: string; // 改为string类型
+  classId: string;
   className: string;
 }

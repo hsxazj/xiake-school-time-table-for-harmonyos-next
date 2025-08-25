@@ -180,19 +180,19 @@ export class HttpService {
         }
 
         // 打印请求日志
-        console.info(`🚀 [HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        console.info(`[HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         if (config.data) {
-          console.info(`📤 [Request Data]`, JSON.stringify(config.data));
+          console.info(`[Request Data]`, JSON.stringify(config.data));
         }
         if (config.params) {
-          console.info(`🔗 [Request Params]`, JSON.stringify(config.params));
+          console.info(`[Request Params]`, JSON.stringify(config.params));
         }
-        console.info(`⏰ [Request Time] ${new Date().toLocaleTimeString()}`);
+        console.info(`[Request Time] ${new Date().toLocaleTimeString()}`);
 
         return config;
       },
       (error: AxiosError) => {
-        console.error('❌ [Request Error]', JSON.stringify(error));
+        console.error('[Request Error]', JSON.stringify(error));
         return Promise.reject(error);
       }
     );
@@ -204,10 +204,10 @@ export class HttpService {
         const config = response.config as CustomAxiosRequestConfig;
         const duration = config.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
 
-        console.info(`✅ [HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
-        console.info(`📥 [Response Data]`, JSON.stringify(response.data));
-        console.info(`⚡ [Response Time] ${duration}ms`);
-        console.info(`📊 [Response Size] ${JSON.stringify(response.data).length} bytes`);
+        console.info(`[HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
+        console.info(`[Response Data]`, JSON.stringify(response.data));
+        console.info(`[Response Time] ${duration}ms`);
+        console.info(`[Response Size] ${JSON.stringify(response.data).length} bytes`);
 
         return response;
       },
@@ -216,20 +216,20 @@ export class HttpService {
         const config = error.config as CustomAxiosRequestConfig;
         const duration = config?.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
 
-        console.error(`💥 [HTTP Error] ${error.response?.status || 'Network Error'} ${config?.method?.toUpperCase() ||
+        console.error(`[HTTP Error] ${error.response?.status || 'Network Error'} ${config?.method?.toUpperCase() ||
           'UNKNOWN'} ${config?.url || 'UNKNOWN'}`);
-        console.error(`⚠️ [Error Message] ${error.message}`);
-        console.error(`⏱️ [Error Time] ${duration}ms`);
+        console.error(`[Error Message] ${error.message}`);
+        console.error(`⏱[Error Time] ${duration}ms`);
 
         if (error.response?.data) {
-          console.error(`📛 [Error Response]`, JSON.stringify(error.response.data));
+          console.error(`[Error Response]`, JSON.stringify(error.response.data));
         }
 
         // 统一错误处理
         if (error.response?.status === 401) {
           // Token过期，清除本地token
           AppStorage.setOrCreate('token', '');
-          console.warn('🔐 [Auth] Token expired, cleared from storage');
+          console.warn('[Auth] Token expired, cleared from storage');
         }
 
         return Promise.reject(error);
@@ -275,7 +275,7 @@ export class HttpService {
       errorMessage = error.message || '未知错误';
     }
 
-    console.error('🚨 [Error Handler]', errorMessage);
+    console.error('[Error Handler]', errorMessage);
     return new Error(errorMessage);
   }
 }
