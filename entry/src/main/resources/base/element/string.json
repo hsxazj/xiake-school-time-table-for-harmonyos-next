@@ -15,6 +15,22 @@
     {
       "name": "internet_permission_reason",
       "value": "访问网络获取课程数据和学院信息"
+    },
+    {
+      "name": "EntryFormAbility_desc",
+      "value": "form_description"
+    },
+    {
+      "name": "EntryFormAbility_label",
+      "value": "form_label"
+    },
+    {
+      "name": "todayCourse_desc",
+      "value": "This is a service widget."
+    },
+    {
+      "name": "todayCourse_display_name",
+      "value": "todayCourse"
     }
   ]
 }

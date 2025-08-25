@@ -3,7 +3,6 @@ import { CourseApiService, CourseInfo, CoursePosition } from '../../services/api
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/constants/PreferencesUtil';
 import { curves } from '@kit.ArkUI';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -47,12 +46,6 @@ interface SectionsConfig {
   value6: number[];
 }
 
-// 课程颜色配置
-interface CourseColors {
-  backgroundColor: string;
-  textColor: string;
-  borderColor: string;
-}
 
 @Component
 export struct SchedulePage {
@@ -74,7 +67,6 @@ export struct SchedulePage {
   @State private startPosition: number = 0;
   @State private endPosition: number = 0;
   // 新增课程数据相关状态
-  @State private coursePositions: CoursePosition[] = [];
   @State private isLoadingCourses: boolean = false;
   private configService: ConfigApiService = ConfigApiService.getInstance();
   private courseService: CourseApiService = CourseApiService.getInstance();
@@ -101,7 +93,6 @@ export struct SchedulePage {
     classList: []
   };
   // 课程颜色映射
-  private courseColorMap: Map<string, CourseColors> = new Map();
   // 实际课程数据 - 移除模拟数据，使用接口数据
   @State private courseList: CourseInfo[] = [];
   // 动画支持

@@ -46,7 +46,7 @@
         ]
       }
     ],
-    "routerMap": "$profile:route_map" ,
+    "routerMap": "$profile:route_map",
     "extensionAbilities": [
       {
         "name": "EntryBackupAbility",
@@ -59,6 +59,19 @@
             "resource": "$profile:backup_config"
           }
         ],
+      },
+      {
+        "name": "EntryFormAbility",
+        "srcEntry": "./ets/entryformability/EntryFormAbility.ets",
+        "label": "$string:EntryFormAbility_label",
+        "description": "$string:EntryFormAbility_desc",
+        "type": "form",
+        "metadata": [
+          {
+            "name": "ohos.extension.form",
+            "resource": "$profile:form_config"
+          }
+        ]
       }
     ]
   }

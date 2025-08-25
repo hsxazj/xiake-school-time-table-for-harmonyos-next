@@ -1,18 +1,22 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
+import { CourseInfo } from '../../models/CourseModels';
+import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
 
 @Component
 export struct HomePage {
   @State private userInfo: UserSchoolInfo | null = null;
+  @State private todayCourses: CourseInfo[] = [];
+  @State private isLoading: boolean = false;
   @Consume('NavStack') pathStack: NavPathStack;
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     this.loadUserInfo();
+    this.loadTodayCourses();
   }
 
   build() {
     Column() {
-      // 顶部问候语（删除右上角通知图标）
       Row() {
         Column() {
           Text(`你好，同学`)
@@ -80,15 +84,38 @@ export struct HomePage {
           .margin({ bottom: 15 })
 
         // 课程列表区域 - 增加高度
-        Column() {
-          Text('暂无今日课程')
-            .fontSize(16)
-            .fontColor('#999999')
-            .margin({ top: 50, bottom: 50 })
+        if (this.isLoading) {
+          Column() {
+            Text('加载中...')
+              .fontSize(16)
+              .fontColor('#999999')
+              .margin({ top: 50, bottom: 50 })
+          }
+          .width('100%')
+          .height(300)
+          .justifyContent(FlexAlign.Center)
+        } else if (this.todayCourses.length > 0) {
+          List() {
+            ForEach(this.todayCourses, (course: CourseInfo) => {
+              ListItem() {
+                this.CourseCard(course)
+              }
+            })
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .scrollBar(BarState.Off)
+        } else {
+          Column() {
+            Text('暂无今日课程')
+              .fontSize(16)
+              .fontColor('#999999')
+              .margin({ top: 50, bottom: 50 })
+          }
+          .width('100%')
+          .height(300)
+          .justifyContent(FlexAlign.Center)
         }
-        .width('100%')
-        .height(300) // 从100增加到300
-        .justifyContent(FlexAlign.Center)
       }
       .width('100%')
       .padding(20)
@@ -109,6 +136,79 @@ export struct HomePage {
     .backgroundColor(Color.White) // 背景改为白色
     .justifyContent(FlexAlign.Start)
   }
+
+  @Builder
+  CourseCard(courseInfo: CourseInfo) {
+    Column() {
+      Text(courseInfo.courseName || '')
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor('#333333')
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .margin({ bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+
+      Text(courseInfo.teacher || '')
+        .fontSize(14)
+        .fontColor('#666666')
+        .margin({ bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+
+      Text(courseInfo.classroom || '')
+        .fontSize(14)
+        .fontColor('#666666')
+        .margin({ bottom: 6 })
+        .alignSelf(ItemAlign.Start)
+
+      Text(this.getTimeRange(courseInfo.courseTime))
+        .fontSize(14)
+        .fontColor('#24C2C6')
+        .fontWeight(FontWeight.Medium)
+        .alignSelf(ItemAlign.Start)
+    }
+    .width('100%')
+    .backgroundColor(Color.White)
+    .borderRadius(12)
+    .padding({
+      left: 16,
+      right: 16,
+      top: 16,
+      bottom: 16
+    })
+    .margin({ bottom: 12 })
+    .shadow({
+      radius: 4,
+      color: 'rgba(0, 0, 0, 0.1)',
+      offsetY: 2
+    })
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  private getTimeRange(courseTime?: string[]): string {
+    if (!courseTime || courseTime.length === 0) {
+      return '';
+    }
+    
+    const firstTime = courseTime[0];
+    const lastTime = courseTime[courseTime.length - 1];
+    
+    const startTime = firstTime.split('-')[0];
+    const endTime = lastTime.split('-')[1];
+    
+    return `${startTime}-${endTime}`;
+  }
+
+  private async loadTodayCourses(): Promise<void> {
+    this.isLoading = true;
+    
+    // 模拟加载延迟
+    setTimeout(() => {
+      this.todayCourses = MOCK_TODAY_COURSES;
+      this.isLoading = false;
+    }, 500);
+  }
+
 
   private loadUserInfo(): void {
     this.userInfo = this.userInfoManager.getUserInfo();

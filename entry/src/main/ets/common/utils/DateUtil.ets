@@ -1483,17 +1483,3 @@ export class DateUtil {
       date1.getDate() === date2.getDate();
   }
 }
-
-
-// const eventStart = new Date('2025-08-01');
-// const eventEnd = new Date('2025-08-31');
-// const now = new Date();
-
-// if (DateUtil.isBetween(now, eventStart, eventEnd)) {
-//   console.log('活动进行中 🎉');
-// } else if (DateUtil.isBefore(now, eventStart)) {
-//   console.log('活动未开始 ⏰');
-// } else {
-//   console.log('活动已结束 ✅');
-// }
-

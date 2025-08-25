@@ -31,7 +31,7 @@ export class PreferencesUtil {
     let options: dataPreferences.Options = { name: this.preferenceName };
     console.debug(`name: ${this.preferenceName}, groupID: ${this.groupId}`);
 
-    if (!this.groupId) {
+    if (this.groupId) {
       options.dataGroupId = this.groupId;
     }
     return dataPreferences.getPreferencesSync(getContext(this), options);
