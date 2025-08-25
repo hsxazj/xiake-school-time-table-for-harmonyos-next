@@ -10,11 +10,11 @@ let localStorage = new LocalStorage();
 @Component
 struct TodayCourseCard {
   @LocalStorageProp('formId') formId: string = '';
-  
   readonly ACTION_TYPE: string = 'router';
   readonly ABILITY_NAME: string = 'EntryAbility';
   readonly MESSAGE: string = 'open today course';
-  
+  readonly FONT_COLOR: Color = Color.Black;
+  readonly BG_COLOR: Color = Color.White;
   // 静态测试数据
   private testCourses: SimpleCourse[] = [
     {
@@ -24,7 +24,7 @@ struct TodayCourseCard {
     },
     {
       courseName: "大学英语（1）",
-      classroom: "博学3＃－语音301", 
+      classroom: "博学3＃－语音301",
       timeRange: "10:15-11:50"
     },
     {
@@ -35,66 +35,75 @@ struct TodayCourseCard {
   ];
 
   build() {
-    Swiper() {
-      ForEach(this.testCourses, (course: SimpleCourse) => {
-        Column() {
-          Text(course.courseName)
-            .maxLines(2)
-            .fontColor(Color.White)
-            .fontSize(17)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .fontWeight(FontWeight.Bold)
-            .margin({
-              left: 12,
-              top: 12,
-              right: 12
-            })
+    Column() {
+      Row() {
+        Text('今日课程')
+          .fontColor(this.FONT_COLOR)
+          .fontSize(12)
+          .fontWeight(FontWeight.Bold)
+      }
+      .margin({ bottom: 5 })
+      .width('100%')
+      .justifyContent(FlexAlign.Start)
 
-          Blank()
-
+      Swiper() {
+        ForEach(this.testCourses, (course: SimpleCourse) => {
           Column() {
-            Text(course.timeRange)
-              .fontColor(Color.White)
-              .fontSize(18)
-              .fontWeight(FontWeight.Bold)
-              .margin({ bottom: 6 })
-
-            Text(course.classroom)
-              .fontColor(Color.White)
-              .fontWeight(FontWeight.Bold)
+            Text(course.courseName)
+              .maxLines(1)
+              .fontColor(this.FONT_COLOR)
+              .fontSize(15)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .maxLines(2)
-              .fontSize(17)
-              .opacity(0.9)
+              .fontWeight(FontWeight.Bold)
+
+            Column() {
+              Text(course.timeRange)
+                .fontColor(Color.Brown)
+                .fontSize(15)
+                .fontWeight(FontWeight.Bold)
+                .margin({ bottom: 6 })
+
+              Text(course.classroom)
+                .fontColor(this.FONT_COLOR)
+                .fontWeight(FontWeight.Bold)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .maxLines(2)
+                .fontSize(15)
+                .opacity(0.9)
+            }
+            .alignItems(HorizontalAlign.Start)
+            .width('100%')
           }
-          .alignItems(HorizontalAlign.End)
+          .justifyContent(FlexAlign.SpaceBetween)
           .width('100%')
-          .padding({
-            left: 12,
-            right: 12,
-            bottom: 12
-          })
-        }
-        .width('100%')
-        .height('100%')
-        .alignItems(HorizontalAlign.Start)
-      }, (course: SimpleCourse) => course.courseName)
+          .height('100%')
+          .alignItems(HorizontalAlign.Start)
+        }, (course: SimpleCourse) => course.courseName)
+      }
+      .layoutWeight(1)
+      .loop(false)
+      .autoPlay(false)
+      .borderRadius(5)
+      .indicator(false)
+      .onClick(() => {
+        postCardAction(this, {
+          action: this.ACTION_TYPE,
+          abilityName: this.ABILITY_NAME,
+          params: {
+            message: this.MESSAGE
+          }
+        });
+      })
     }
-    .loop(false)
-    .autoPlay(false)
+    .padding({
+      top: 13,
+      left: 12,
+      right: 12,
+      bottom: 13
+    })
     .width('100%')
     .height('100%')
-    .backgroundColor('#4A90E2')
-    .borderRadius(12)
-    .indicator(false)
-    .onClick(() => {
-      postCardAction(this, {
-        action: this.ACTION_TYPE,
-        abilityName: this.ABILITY_NAME,
-        params: {
-          message: this.MESSAGE
-        }
-      });
-    })
+    .backgroundColor(this.BG_COLOR)
+
   }
 }

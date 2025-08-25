@@ -17,7 +17,9 @@ OpenHarmony，并沿用其现有用法和特性。
 ## 下载安装
 
 ```javascript
-ohpm install @ohos/axios
+ohpm
+install @
+ohos / axios
 ```
 
 OpenHarmony ohpm
@@ -69,90 +71,164 @@ axios支持泛型参数，由于ArkTS不再支持any类型，需指定参数的�
 
 ```javascript
 import axios from '@ohos/axios'
-interface userInfo{
-  id: number
-  name: string,
-  phone: number
+
+interface
+userInfo
+{
+    id: number
+    name: string,
+    phone:
+    number
 }
 
 // 向给定ID的用户发起请求
-axios.get<userInfo, AxiosResponse<userInfo>, null>('/user?ID=12345')
-.then((response: AxiosResponse<userInfo>)=> {
-  // 处理成功情况
-  console.info("id" + response.data.id)
-  console.info(JSON.stringify(response));
-})
-.catch((error: AxiosError)=> {
-  // 处理错误情况
-  console.info(JSON.stringify(error));
-})
-.then(()=> {
-  // 总是会执行
+axios.get<
+userInfo, AxiosResponse<
+userInfo >, null > ('/user?ID=12345')
+    .then((response:
+AxiosResponse<
+userInfo >
+)
+=>
+{
+    // 处理成功情况
+    console.info("id" + response.data.id)
+    console.info(JSON.stringify(response));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    // 处理错误情况
+    console.info(JSON.stringify(error));
+}
+)
+.
+then(() => {
+    // 总是会执行
 });
 
 // 上述请求也可以按以下方式完成（可选）
-axios.get<userInfo, AxiosResponse<userInfo>, null>('/user', {
-  params: {
-    ID: 12345
-  }
+axios.get<
+userInfo, AxiosResponse<
+userInfo >, null > ('/user', {
+    params: {
+        ID: 12345
+    }
 })
-.then((response:AxiosResponse<userInfo>) => {
-  console.info("id" + response.data.id)
-  console.info(JSON.stringify(response));
-})
-.catch((error:AxiosError) => {
-  console.info(JSON.stringify(error));
-})
-.then(() => {
-  // 总是会执行
+    .then((response:
+AxiosResponse<
+userInfo >
+)
+=>
+{
+    console.info("id" + response.data.id)
+    console.info(JSON.stringify(response));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    console.info(JSON.stringify(error));
+}
+)
+.
+then(() => {
+    // 总是会执行
 });
 
 // 支持async/await用法
 async function getUser() {
-  try {
-        const response:AxiosResponse = await axios.get<string, AxiosResponse<string>, null>(this.getUrl);
+    try {
+        const response
+        :
+        AxiosResponse = await axios.get<
+        string, AxiosResponse<
+        string >, null > (this.getUrl);
         console.log(JSON.stringify(response));
-      } catch (error) {
-    console.error(JSON.stringify(error));
-  }
+    } catch (error) {
+        console.error(JSON.stringify(error));
+    }
 }
 ```
 
 发送一个 POST 请求
 
 ```javascript
-interface user {
-  firstName: string,
-  lastName: string
+interface
+user
+{
+    firstName: string,
+    lastName:
+    string
 }
-   axios.post<string, AxiosResponse<string>, user>('/user', {
-     firstName: 'Fred',
-     lastName: 'Flintstone'
-   })
-   .then((response: AxiosResponse<string>) => {
-     console.info(JSON.stringify(response));
-   })
-   .catch((error) => {
-  console.info(JSON.stringify(error));
+axios.post<
+string, AxiosResponse<
+string >, user > ('/user', {
+    firstName: 'Fred',
+    lastName: 'Flintstone'
+})
+    .then((response:
+AxiosResponse<
+string >
+)
+=>
+{
+    console.info(JSON.stringify(response));
+}
+)
+.
+catch((error) => {
+    console.info(JSON.stringify(error));
 });
 ```
 
 发起多个并发请求
 
 ```javascript
- const getUserAccount = ():Promise<AxiosResponse> => {
-      return axios.get<string, AxiosResponse<string>, null>('/user/12345');
-    }
+ const getUserAccount = ()
+ :
+ Promise<
+ AxiosResponse > =>
+ {
+    return axios.get
+    <
+    string, AxiosResponse<
+    string >, null > ('/user/12345');
+}
 
- const getUserPermissions = ():Promise<AxiosResponse> => {
-      return axios.get<string, AxiosResponse<string>, null>('/user/12345/permissions');
-    }
+ const getUserPermissions = ()
+ :
+ Promise<
+ AxiosResponse > =>
+ {
+    return axios.get
+    <
+    string, AxiosResponse<
+    string >, null > ('/user/12345/permissions');
+}
 
- Promise.all<AxiosResponse>([getUserAccount(), getUserPermissions()])
- .then((results:AxiosResponse[]) => {
-        const acct = results[0].data as string;
-        const perm = results[1].data as string;
-      });
+ Promise.all<
+ AxiosResponse > ([getUserAccount(), getUserPermissions()])
+     .then((results:
+ AxiosResponse[]
+ )
+ =>
+ {
+    const acct = results[0].data
+    as
+    string;
+    const perm = results[1].data
+    as
+    string;
+}
+ );
 ```
 
 ## 使用说明
@@ -165,27 +241,54 @@ interface user {
 
 ```javascript
 // 发送一个get请求
-axios<string, AxiosResponse<string>, null>({
-  method: "get",
-  url: 'https://www.xxx.com/info'
-}).then((res: AxiosResponse) => {
-  console.info('result:' + JSON.stringify(res.data));
-}).catch((error: AxiosError) => {
-  console.error(error.message);
-})
+axios<
+string, AxiosResponse<
+string >, null > ({
+    method: "get",
+    url: 'https://www.xxx.com/info'
+}).then((res:
+AxiosResponse
+)
+=>
+{
+    console.info('result:' + JSON.stringify(res.data));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    console.error(error.message);
+}
+)
 ```
 
 ##### axios(url[, config])
 
 ```javascript
 // 发送一个get请求（默认请求方式）
-axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { params: { key: "value" } })
-.then((response: AxiosResponse) => {
-  console.info("result:" + JSON.stringify(response.data));
-})
-.catch((error: AxiosError) => {
-  console.error("result:" + error.message);
-});
+axios.get<
+string, AxiosResponse<
+string >, null > ('https://www.xxx.com/info', { params: { key: "value" } })
+    .then((response:
+AxiosResponse
+)
+=>
+{
+    console.info("result:" + JSON.stringify(response.data));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    console.error("result:" + error.message);
+}
+);
 ```
 
 #### 请求方法的 别名方式 来创建请求
@@ -203,13 +306,26 @@ axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { par
 
 ```javascript
 // 发送get请求
-axios.get<string, AxiosResponse<string>, null>('https://www.xxx.com/info', { params: { key: "value" } })
-.then((response: AxiosResponse) => {
-  console.info("result:" + JSON.stringify(response.data));
-})
-.catch((error: AxiosError) => {
-  console.error("result:" + error.message);
-});
+axios.get<
+string, AxiosResponse<
+string >, null > ('https://www.xxx.com/info', { params: { key: "value" } })
+    .then((response:
+AxiosResponse
+)
+=>
+{
+    console.info("result:" + JSON.stringify(response.data));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    console.error("result:" + error.message);
+}
+);
 ```
 
 ### axios 实例
@@ -221,9 +337,9 @@ axios.create([config])
 
 ```javascript
 const instance = axios.create({
-  baseURL: 'https://www.xxx.com/info',
-  timeout: 1000,
-  headers: {'X-Custom-Header': 'foobar'}
+    baseURL: 'https://www.xxx.com/info',
+    timeout: 1000,
+    headers: { 'X-Custom-Header': 'foobar' }
 });
 ```
 
@@ -243,123 +359,160 @@ const instance = axios.create({
 {
     // `url` 是用于请求的服务器 URL
     url: '/user',
-    
+
     // `method` 是创建请求时使用的方法 支持post/get/put/delete方法，不区分大小写，默认为get方法
-    method: 'get', // default
-    
+    method:
+    'get', // default
+
     // `baseURL` 将自动加在 `url` 前面，除非 `url` 是一个完整的 URL。
     // 它可以通过设置一个 `baseURL` 便于为 axios 实例的方法传递相对 URL
-    baseURL: 'https://www.xxx.com/info',
+    baseURL:
+    'https://www.xxx.com/info',
     
     // `transformRequest` 允许在向服务器发送前，修改请求数据
     // 它只能用于 'PUT', 'POST' 和 'PATCH' 这几个请求方法
     // 数组中最后一个函数必须返回一个字符串， 一个Buffer实例，ArrayBuffer，FormData，或 Stream
     // 修改请求头。
-    transformRequest: [(data: ESObject, headers: AxiosRequestHeaders) => {
-       // 对发送的 data 进行任意转换处理
-       return data;
-     }],
+    transformRequest: [(data: ESObject, headers: AxiosRequestHeaders) =>
+    {
+        // 对发送的 data 进行任意转换处理
+        return data;
+    }
+    ]
+    ,
 
     // `transformResponse` 在传递给 then/catch 前，允许修改响应数据
-    transformResponse: [ (data: ESObject, headers: AxiosResponseHeaders, status?: number)=> {
-      // 对接收的 data 进行任意转换处理
-      return data;
-    }],
-    
+    transformResponse: [(data:
+    ESObject, headers:
+    AxiosResponseHeaders, status ? : number
+    )
+    =>
+    {
+        // 对接收的 data 进行任意转换处理
+        return data;
+    }
+    ]
+    ,
+
     // `headers` 是即将被发送的自定义请求头
-    headers: {'Content-Type': 'application/json'},
-    
+    headers: {
+        'Content-Type':
+        'application/json'
+    }
+    ,
+
     // `params` 是即将与请求一起发送的 URL 参数
     // 必须是一个无格式对象(plain object)，其它对象如 URLSearchParams ，必须使用 paramsSerializer 进行序列化
     params: {
-      ID: 12345
-    },
-    
+        ID: 12345
+    }
+    ,
+
     // `paramsSerializer` 是一个负责 `params` 序列化的函数
-    paramsSerializer: function(params) {
-      return params
+    paramsSerializer: function (params) {
+        return params
     },
-    
+
     // `data` 是作为请求主体被发送的数据
     // 只适用于这些请求方法 'PUT', 'POST', 和 'PATCH'
     // 在没有设置 `transformRequest` 时，必须是以下类型之一，其它类型使用 transformRequest 转换处理
     // - string, plain object, ArrayBuffer
-    data: {
-      firstName: 'Fred'
-    },
-    
+    data:
+    {
+        firstName: 'Fred'
+    }
+    ,
+
     // 发送请求体数据的可选语法
     // 请求方式 post
     // 只有 value 会被发送，key 则不会
     data: 'Country=Brasil&City=Belo Horizonte',
-    
+
     // `timeout` 指定请求超时的毫秒数(0 表示无超时时间)
     // 如果请求超过 `timeout` 的时间，请求将被中断
-    timeout: 1000,
+    timeout:
+    1000,
     // `readTimeout` 指定请求超时的毫秒数(0 表示无超时时间)
     // 如果请求超过 `readTimeout` 的时间，请求将被中断
-    readTimeout: 1000,
+    readTimeout:
+    1000,
     // `connectTimeout` 指定请求连接服务器超时的毫秒数(0 表示无超时时间)
     // 如果请求连接服务器超过 `connectTimeout` 的时间，请求将被中断
-    connectTimeout: 60000,
+    connectTimeout:
+    60000,
     // `maxBodyLength`，指定网络请求内容的最大字节数(-1 表示无最大限制)
     // 如果请求内容的字节数超过 `maxBodyLength`，请求将被中断并抛出异常
-    maxBodyLength: 5*1024*1024,
+    maxBodyLength:
+    5 * 1024 * 1024,
     // `maxContentLength`，指定HTTP响应的最大字节数(-1 表示放开axios层限制),默认值为5*1024*1024，以字节为单位。最大值为100*1024*1024，以字节为单位
     // 如果响应的最大字节数超过 `maxContentLength`，请求将被中断并抛出异常
-    maxContentLength: 5*1024*1024,
+    maxContentLength:
+    5 * 1024 * 1024,
     // `adapter` 允许自定义处理请求，这使测试更加容易。
     // 返回一个 promise 并提供一个有效的响应 （参见 lib/adapters/README.md）。
-    adapter: function (config) {
-      /* ... */
+    adapter:
+    function (config) {
+        /* ... */
     },
     // 如果设置了此参数，系统将使用用户指定路径的CA证书，(开发者需保证该路径下CA证书的可访问性)，否则将使用系统预设CA证书，系统预设CA证书位置：/etc/ssl/certs/cacert.pem。证书路径为沙箱映射路径（开发者可通过Global.getContext().filesDir获取应用沙箱路径）。
-    caPath: '',
+    caPath:
+    '',
 
     // 客户端证书的clientCert字段，包括4个属性：
     // 客户端证书（cert）、客户端证书类型（certType）、证书私钥（key）和密码短语（keyPasswd）。certPath和keyPath为证书沙箱映射路径
-    clientCert:{
-        certPath: '',  // 客户端证书路径
-        certType: '',  // 客户端证书类型，包括pem、der、p12三种
-        keyPath: '',   // 证书私钥路径
-        keyPasswd: ''  // 密码短语
+    clientCert:
+    {
+        certPath: '', // 客户端证书路径
+        certType:
+        '', // 客户端证书类型，包括pem、der、p12三种
+        keyPath:
+        '', // 证书私钥路径
+        keyPasswd:
+        '' // 密码短语
     }
     // 自API 18开始支持该属性。通过RemoteValidation配置使用系统CA或跳过验证远程服务器CA.
     remoteValidation: 'system', // 选项包括'system'和'skip'。system: 表示使用系统CA配置验证; skip: 跳过验证远程服务器CA;如果未设置此字段，系统CA将用于验证远程服务器的标识。
 
     // 优先级，范围[1,1000]，默认是1，值越大，优先级越高；
-    priority: 1,
+    priority:
+    1,
 
     //  `responseType` 指定返回数据的类型，默认无此字段。如果设置了此参数，系统将优先返回指定的类型。
     // 选项包括: string:字符串类型; object:对象类型; array_buffer:二进制数组类型。
-    responseType: 'string', 
+    responseType:
+    'string',
 
     //  `proxy`
     // 是否使用HTTP代理，默认为false，不使用代理。
     // 当proxy为AxiosProxyConfig类型时，使用指定网络代理。
-    proxy: {
+    proxy:
+    {
         host: 'xx', // Host port
-        port: xx, // Host port
+        port:
+        xx, // Host port
         exclusionList: [] // Do not use a blocking list for proxy servers
     }
-    
+
     // `onUploadProgress` 允许为上传处理进度事件
     onUploadProgress: function (progressEvent) {
-      // 对原生进度事件的处理
+        // 对原生进度事件的处理
     },
-    
+
     // `onDownloadProgress` 允许为下载处理进度事件，下载文件必须设置该事件
-    onDownloadProgress: function (progressEvent) {
-      // 对原生进度事件的处理
+    onDownloadProgress:
+    function (progressEvent) {
+        // 对原生进度事件的处理
     },
-    
+
     // 基于应用程序的上下文，只适用于上传/下载请求
-    context: context,
-    
+    context:
+    context,
+
     // 下载路径。此参数，只适用于下载请求，
     // Stage模型下使用AbilityContext 类获取文件路径，比如：'${getContext(this).cacheDir}/test.txt’并将文件存储在此路径下
-    filePath: context,
-    }
+    filePath:
+    context,
+}
 
 
 ```
@@ -370,28 +523,37 @@ const instance = axios.create({
 
 ```javascript
 {
-  // `data` 由服务器提供的响应
-  data: {},
+    // `data` 由服务器提供的响应
+    data: {
+    }
+    ,
 
-  // `status` 来自服务器响应的 HTTP 状态码
-  status: 200,
+    // `status` 来自服务器响应的 HTTP 状态码
+    status: 200,
 
-  // `statusText` 来自服务器响应的 HTTP 状态信息
-  statusText: 'OK',
+    // `statusText` 来自服务器响应的 HTTP 状态信息
+    statusText:
+    'OK',
 
-  // `headers` 是服务器响应头
-  // 所有的 header 名称都是小写，而且可以使用方括号语法访问
-  // 例如: `response.headers['content-type']`
-  headers: {},
+    // `headers` 是服务器响应头
+    // 所有的 header 名称都是小写，而且可以使用方括号语法访问
+    // 例如: `response.headers['content-type']`
+    headers:
+    {
+    }
+    ,
 
-  // `config` 是 `axios` 请求的配置信息
-  config: {},
-  
-  // `request` 是生成此响应的请求
-  request: {}
+    // `config` 是 `axios` 请求的配置信息
+    config: {
+    }
+    ,
 
-  // `performanceTiming` 计算HTTP请求的各个阶段所花费的时间
-  performanceTiming: http.PerformanceTiming
+    // `request` 是生成此响应的请求
+    request: {
+    }
+
+    // `performanceTiming` 计算HTTP请求的各个阶段所花费的时间
+    performanceTiming: http.PerformanceTiming
 }
 ```
 
@@ -400,14 +562,22 @@ PerformanceTiming[属性介绍](https://gitcode.com/openharmony/docs/blob/master
 当使用 then 时，您将接收如下响应:
 
 ```javascript
-axios.get<string, AxiosResponse<string>, null>(this.getUrl)
- .then( (response:AxiosResponse<string>)=> {
-   console.log("result data: " + response.data);
-   console.log("result status: " + response.status);
-   console.log("result statusText: " + response.statusText);
-   console.log("result headers: " + response.headers);
-   console.log("result config: " + response.config);
- });
+axios.get<
+string, AxiosResponse<
+string >, null > (this.getUrl)
+    .then((response:
+AxiosResponse<
+string >
+)
+=>
+{
+    console.log("result data: " + response.data);
+    console.log("result status: " + response.status);
+    console.log("result statusText: " + response.statusText);
+    console.log("result headers: " + response.headers);
+    console.log("result config: " + response.config);
+}
+);
 
 ```
 
@@ -428,7 +598,7 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 ```javascript
 // 创建实例时配置默认值
 const instance = axios.create({
-  baseURL: 'https://www.xxx.com'
+    baseURL: 'https://www.xxx.com'
 });
 
 // 创建实例后修改默认值
@@ -449,8 +619,10 @@ const instance = axios.create();
 instance.defaults.timeout = 2500;
 
 // 重写此请求的超时时间，因为该请求需要很长时间
-instance.get<string, AxiosResponse<string>, null>(this.getUrl, {
-  timeout: 5000
+instance.get<
+string, AxiosResponse<
+string >, null > (this.getUrl, {
+    timeout: 5000
 })
 ```
 
@@ -460,30 +632,59 @@ instance.get<string, AxiosResponse<string>, null>(this.getUrl, {
 
 ```javascript
 // 添加请求拦截器
-axios.interceptors.request.use((config:InternalAxiosRequestConfig) => {
-  // 对请求数据做点什么
-  return config;
-}, (error:AxiosError) => {
-  // 对请求错误做些什么
-  return Promise.reject(error);
-});
+axios.interceptors.request.use((config:
+InternalAxiosRequestConfig
+)
+=>
+{
+    // 对请求数据做点什么
+    return config;
+}
+,
+(error:
+AxiosError
+)
+=>
+{
+    // 对请求错误做些什么
+    return Promise.reject(error);
+}
+);
 
 
 // 添加响应拦截器
-axios.interceptors.response.use((response:AxiosResponse)=> {
-  // 对响应数据做点什么
-  return response;
-}, (error:AxiosError)=> {
-  // 对响应错误做点什么
-  return Promise.reject(error);
-});
+axios.interceptors.response.use((response:
+AxiosResponse
+)
+=>
+{
+    // 对响应数据做点什么
+    return response;
+}
+,
+(error:
+AxiosError
+)
+=>
+{
+    // 对响应错误做点什么
+    return Promise.reject(error);
+}
+);
 
 ```
 
 移除拦截器
 
 ```javascript
-const myInterceptor = axios.interceptors.request.use((response: AxiosResponse)=> {/*...*/});
+const myInterceptor = axios.interceptors.request.use((response
+:
+AxiosResponse
+)
+=>
+{ /*...*/
+}
+);
 axios.interceptors.request.eject(myInterceptor);
 ```
 
@@ -491,7 +692,13 @@ axios.interceptors.request.eject(myInterceptor);
 
 ```javascript
 const instance = axios.create();
-instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/});
+instance.interceptors.request.use((config:
+InternalAxiosRequestConfig
+)
+=>
+{ /*...*/
+}
+);
 ```
 
 ### 指定返回数据的类型
@@ -501,94 +708,164 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 设置responseType后，response.data中的数据将为指定类型
 
 ```javascript
- axios<string, AxiosResponse<string>, null>({
-    url: 'https://www.xxx.com/info',
-    method: 'get',
-    responseType: 'array_buffer', 
-  }).then((res: AxiosResponse) => {
-   // 处理请求成功的逻辑
-  })
+ axios<
+ string, AxiosResponse<
+ string >, null > ({
+     url: 'https://www.xxx.com/info',
+     method: 'get',
+     responseType: 'array_buffer',
+ }).then((res:
+ AxiosResponse
+ )
+ =>
+ {
+    // 处理请求成功的逻辑
+}
+ )
 ```
 
 > 注意：也可以通过重写transformResponse方法，修改返回数据；
 
 ```javascript
- axios<string, AxiosResponse<string>, null>({
-    url: 'https://www.xxx.com/info',
-    method: 'get',
-    responseType: 'array_buffer', 
-    transformResponse:(data)=>{
-      return data
-    }
-  }).then((res: AxiosResponse) => {
-   // 处理请求成功的逻辑
-  })
+ axios<
+ string, AxiosResponse<
+ string >, null > ({
+     url: 'https://www.xxx.com/info',
+     method: 'get',
+     responseType: 'array_buffer',
+     transformResponse: (data) => {
+         return data
+     }
+ }).then((res:
+ AxiosResponse
+ )
+ =>
+ {
+    // 处理请求成功的逻辑
+}
+ )
 ```
 
 ### 自定义ca证书
 
 ```javascript
-  axios<infoModel, AxiosResponse<infoModel>, null>({
-    url: 'https://www.xxx.com/xx',
-    method: 'get',
-    caPath: '', //ca证书路径
-  }).then((res: AxiosResponse) => {
+  axios<
+  infoModel, AxiosResponse<
+  infoModel >, null > ({
+      url: 'https://www.xxx.com/xx',
+      method: 'get',
+      caPath: '', //ca证书路径
+  }).then((res:
+  AxiosResponse
+  )
+  =>
+  {
     // 
-  }).catch((err: AxiosError) => {
+}
+  )
+  .
+  catch((err:
+  AxiosError
+  )
+  =>
+  {
     //
-  })
+}
+  )
 ```
 
 ### 自定义客户端证书
 
 ```javascript
-  axios<infoModel, AxiosResponse<infoModel>, null>({
-    url: 'https://www.xxx.com/xx',
-    method: 'get',
-    caPath: '', //ca证书路径
-    clientCert: {
-        certPath: '', //客户端证书路径
-        certType: 'p12', // 客户端证书类型，包括pem、der、p12三种
-        keyPath: '', //客户端私钥路径
-        keyPasswd: '' // 密码
+  axios<
+  infoModel, AxiosResponse<
+  infoModel >, null > ({
+      url: 'https://www.xxx.com/xx',
+      method: 'get',
+      caPath: '', //ca证书路径
+      clientCert: {
+          certPath: '', //客户端证书路径
+          certType: 'p12', // 客户端证书类型，包括pem、der、p12三种
+          keyPath: '', //客户端私钥路径
+          keyPasswd: '' // 密码
       }
-  }).then((res: AxiosResponse) => {
+  }).then((res:
+  AxiosResponse
+  )
+  =>
+  {
     // 
-  }).catch((err: AxiosError) => {
+}
+  )
+  .
+  catch((err:
+  AxiosError
+  )
+  =>
+  {
     //
-  })
+}
+  )
 ```
 
 ### 配置使用系统CA或跳过验证远程服务器CA<sup>18+</sup>
 
 ```javascript
-  axios<infoModel, AxiosResponse<infoModel>, null>({
-    url: 'https://www.xxx.com/xx',
-    method: 'post',
-    remoteValidation: 'skip',
-  }).then((res: AxiosResponse) => {
+  axios<
+  infoModel, AxiosResponse<
+  infoModel >, null > ({
+      url: 'https://www.xxx.com/xx',
+      method: 'post',
+      remoteValidation: 'skip',
+  }).then((res:
+  AxiosResponse
+  )
+  =>
+  {
     // 
-  }).catch((err: AxiosError) => {
+}
+  )
+  .
+  catch((err:
+  AxiosError
+  )
+  =>
+  {
     //
-  })
+}
+  )
 ```
 
 ### 设置代理
 
 ```javascript
-    axios<string, AxiosResponse<string>, null>({
-      url: 'xxx',
-      method: 'get',
-      proxy:{
-        host: 'xxx',
-        port: xx,
-        exclusionList: []
-      }
-    }).then((res: AxiosResponse) => {
-      // 
-    }).catch((err: AxiosError) => {
-      //
-    })
+    axios<
+    string, AxiosResponse<
+    string >, null > ({
+        url: 'xxx',
+        method: 'get',
+        proxy: {
+            host: 'xxx',
+            port: xx,
+            exclusionList: []
+        }
+    }).then((res:
+    AxiosResponse
+    )
+    =>
+    {
+    // 
+}
+    )
+    .
+    catch((err:
+    AxiosError
+    )
+    =>
+    {
+    //
+}
+    )
 ```
 
 ### 证书锁定
@@ -601,27 +878,35 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 
 ```javascript
 {
-  "network-security-config": {
-    "domain-config": [
-      {
-        "domains": [
-          {
-            "include-subdomains": true,
-            "name": "x.x.x.x"  // ip地址或域名
-          }
-        ],
-        "pin-set": {
-          "expiration": "2024-8-6", //证书锁定的有效期
-          "pin": [
+    "network-security-config":
+    {
+        "domain-config": [
+        {
+            "domains": [
             {
-              "digest-algorithm": "sha256", //消息摘要的哈希算法，支持格式是sha256 
-              "digest": "WAFcHG6pAINrztx343ccddfzLOdfoDS9pPgMv2XHk=" //消息摘要
+                "include-subdomains":
+                true,
+                "name":
+                "x.x.x.x" // ip地址或域名
             }
-          ]
+            ]
+            ,
+            "pin-set":
+            {
+                "expiration":
+                "2024-8-6", //证书锁定的有效期
+                "pin": [
+                {
+                    "digest-algorithm":
+                    "sha256", //消息摘要的哈希算法，支持格式是sha256 
+                    "digest":
+                    "WAFcHG6pAINrztx343ccddfzLOdfoDS9pPgMv2XHk=" //消息摘要
+                }
+                ]
+            }
         }
-      }
-    ]
-  }
+        ]
+    }
 }
 ```
 
@@ -630,12 +915,26 @@ instance.interceptors.request.use((config:InternalAxiosRequestConfig)=> {/*...*/
 使用openssl从服务器获取证书，并提取出消息摘要
 
 ```javascript
-openssl s_client -connect host:port 2>&1 < /dev/null \
-                    | sed -n '/-----BEGIN/,/-----END/p' \
-                    | openssl x509 -noout -pubkey \
-                    | openssl pkey -pubin -outform der \
-                    | openssl dgst -sha256 -binary \
-                    | openssl enc -base64
+openssl
+s_client - connect
+host: port
+2 > & 1 < / dev / null \
+|
+sed - n
+'/-----BEGIN/,/-----END/p' \
+|
+openssl
+x509 - noout - pubkey \
+|
+openssl
+pkey - pubin - outform
+der \
+|
+openssl
+dgst - sha256 - binary \
+|
+openssl
+enc - base64
 ```
 
 ### 上传下载文件
@@ -662,38 +961,93 @@ import fs from '@ohos.file.fs';
 let formData = new FormData()
 let cacheDir = getContext(this).cacheDir
 try {
-  // 写入
-  let path = cacheDir + '/hello.txt';
-  let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE)
-  fs.writeSync(file.fd, "hello, world"); // 以同步方法将数据写入文件
-  fs.fsyncSync(file.fd); // 以同步方法同步文件数据。
-  fs.closeSync(file.fd);
+    // 写入
+    let path = cacheDir + '/hello.txt';
+    let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE)
+    fs.writeSync(file.fd, "hello, world"); // 以同步方法将数据写入文件
+    fs.fsyncSync(file.fd); // 以同步方法同步文件数据。
+    fs.closeSync(file.fd);
 
-  // 读取
-  let file2 = fs.openSync(path, 0o2);
-  let stat = fs.lstatSync(path);
-  let buf2 = new ArrayBuffer(stat.size);
-  fs.readSync(file2.fd, buf2); // 以同步方法从流文件读取数据。
-  fs.fsyncSync(file2.fd);
-  fs.closeSync(file2.fd);
+    // 读取
+    let file2 = fs.openSync(path, 0o2);
+    let stat = fs.lstatSync(path);
+    let buf2 = new ArrayBuffer(stat.size);
+    fs.readSync(file2.fd, buf2); // 以同步方法从流文件读取数据。
+    fs.fsyncSync(file2.fd);
+    fs.closeSync(file2.fd);
 
-  formData.append('file', buf2);
-  // formData.append('file', buf2, { filename: 'text.txt', type: 'text/plain'}); 设置多部分表单数据的数据名称和数据类型类型
+    formData.append('file', buf2);
+    // formData.append('file', buf2, { filename: 'text.txt', type: 'text/plain'}); 设置多部分表单数据的数据名称和数据类型类型
 } catch (err) {
-  console.info('err:' + JSON.stringify(err));
+    console.info('err:' + JSON.stringify(err));
 }
 // 发送请求
-axios.post<string, AxiosResponse<string>, FormData>(this.uploadUrl, formData, {
-  headers: { 'Content-Type': 'multipart/form-data' },
-  context: getContext(this),
-  onUploadProgress: (progressEvent: AxiosProgressEvent): void => {
-  console.info(progressEvent && progressEvent.loaded && progressEvent.total ? Math.ceil(progressEvent.loaded / progressEvent.total * 100) + '%' : '0%');
+axios.post<
+string, AxiosResponse<
+string >, FormData > (this.uploadUrl, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    context: getContext(this),
+    onUploadProgress: (progressEvent
+    :
+    AxiosProgressEvent
+    )
+    :
+    void
+    =>
+    {
+    console
+    .
+    info
+    (
+    progressEvent
+    &&
+    progressEvent
+    .
+    loaded
+    &&
+    progressEvent
+    .
+    total
+    ?
+    Math
+    .
+    ceil
+    (
+    progressEvent
+    .
+    loaded
+    /
+    progressEvent
+    .
+    total
+    *
+    100
+    )
+    +
+    '%': '0%'
+    )
+    ;
 },
-}).then((res: AxiosResponse) => {
-  console.info("result" + JSON.stringify(res.data));
-}).catch((error: AxiosError) => {
-  console.error("error:" + JSON.stringify(error));
-})
+}
+)
+.
+then((res:
+AxiosResponse
+)
+=>
+{
+    console.info("result" + JSON.stringify(res.data));
+}
+)
+.
+catch((error:
+AxiosError
+)
+=>
+{
+    console.error("error:" + JSON.stringify(error));
+}
+)
 ```
 
 ##### 当上传的uri时，用法如下
@@ -707,17 +1061,73 @@ formData.append('file', 'internal://cache/blue.jpg')
 // formData.append('file', cacheDir + '/hello.txt'); uri支持传入沙箱路径
 
 // 发送请求
-axios.post<string, AxiosResponse<string>, FormData>('https://www.xxx.com/upload', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' },
-  context: getContext(this),
-  onUploadProgress: (progressEvent: AxiosProgressEvent): void => {
-    console.info(progressEvent && progressEvent.loaded && progressEvent.total ? Math.ceil(progressEvent.loaded / progressEvent.total * 100) + '%' : '0%');
-  },
-}).then((res: AxiosResponse<string>) => {
-  console.info("result" + JSON.stringify(res.data));
-}).catch((err: AxiosError) => {
-  console.error("error:" + JSON.stringify(err));
-})
+axios.post<
+string, AxiosResponse<
+string >, FormData > ('https://www.xxx.com/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    context: getContext(this),
+    onUploadProgress: (progressEvent
+    :
+    AxiosProgressEvent
+    )
+    :
+    void
+    =>
+    {
+    console
+    .
+    info
+    (
+    progressEvent
+    &&
+    progressEvent
+    .
+    loaded
+    &&
+    progressEvent
+    .
+    total
+    ?
+    Math
+    .
+    ceil
+    (
+    progressEvent
+    .
+    loaded
+    /
+    progressEvent
+    .
+    total
+    *
+    100
+    )
+    +
+    '%': '0%'
+    )
+    ;
+},
+}
+)
+.
+then((res:
+AxiosResponse<
+string >
+)
+=>
+{
+    console.info("result" + JSON.stringify(res.data));
+}
+)
+.
+catch((err:
+AxiosError
+)
+=>
+{
+    console.error("error:" + JSON.stringify(err));
+}
+)
 ```
 
 ##### FormData介绍
@@ -753,22 +1163,65 @@ formData.append("file", "internal://cache/xx/file.txt", { filename: "text.txt", 
 let filePath = getContext(this).cacheDir + '/blue.jpg'
 // 下载。如果文件已存在，则先删除文件。
 try {
-  fs.accessSync(filePath);
-  fs.unlinkSync(filePath);
-} catch(err) {}
+    fs.accessSync(filePath);
+    fs.unlinkSync(filePath);
+} catch (err) {
+}
 
 axios({
-  url: 'https://www.xxx.com/blue.jpg',
-  method: 'get',
-  // context: getContext(this),
-  filePath: filePath ,
-  onDownloadProgress: (progressEvent: AxiosProgressEvent): void => {
-    console.info("progress: " + progressEvent && progressEvent.loaded && progressEvent.total ? Math.ceil(progressEvent.loaded / progressEvent.total * 100) : 0)
-  }
-}).then((res)=>{
-  console.info("result: " + JSON.stringify(res.data));
-}).catch((error)=>{
-  console.error("error:" + JSON.stringify(error));
+    url: 'https://www.xxx.com/blue.jpg',
+    method: 'get',
+    // context: getContext(this),
+    filePath: filePath,
+    onDownloadProgress: (progressEvent
+    :
+    AxiosProgressEvent
+    )
+    :
+    void
+    =>
+    {
+    console
+    .
+    info
+    (
+    "progress: "
+    +
+    progressEvent
+    &&
+    progressEvent
+    .
+    loaded
+    &&
+    progressEvent
+    .
+    total
+    ?
+    Math
+    .
+    ceil
+    (
+    progressEvent
+    .
+    loaded
+    /
+    progressEvent
+    .
+    total
+    *
+    100
+    )
+    :
+    0
+    )
+}
+}
+)
+.
+then((res) => {
+    console.info("result: " + JSON.stringify(res.data));
+}).catch((error) => {
+    console.error("error:" + JSON.stringify(error));
 })
 ```
 
@@ -777,18 +1230,27 @@ axios({
 #### 错误处理示例代码
 
 ```javascript
-axios.get<string, AxiosResponse<string>, null>('/user/12345')
-  .catch((error:AxiosError)=> {
+axios.get<
+string, AxiosResponse<
+string >, null > ('/user/12345')
+    .catch((error:
+AxiosError
+)
+=>
+{
     console.log(JSON.stringify(error.message));
     console.log(JSON.stringify(error.code));
     console.log(JSON.stringify(error.config));
-  });
+}
+);
 ```
 
 #### 错误码
 
 -
+
 以下错误码的详细介绍参见 [HTTP错误码](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/reference/apis-network-kit/errorcode-net-http.md)
+
 - HTTP 错误关系映射：2300000 + curl错误码。 更多错误码，可参考：[curl错误码](https://curl.se/libcurl/c/libcurl-errors.html)
 
 | 名称                                      | 参数类型   | 可读 | 可写 | 说明                                       |
@@ -817,7 +1279,9 @@ axios.get<string, AxiosResponse<string>, null>('/user/12345')
 ## 关于混淆
 
 -
+
 代码混淆，请查看[代码混淆简介](https://docs.openharmony.cn/pages/v5.0/zh-cn/application-dev/arkts-utils/source-obfuscation.md)
+
 - 如果希望axios库在代码混淆过程中不会被混淆，需要在混淆规则配置文件obfuscation-rules.txt中添加相应的排除规则：
 
 ```
@@ -844,22 +1308,39 @@ DevEco Studio: NEXT Developer Beta1(5.0.3.122), SDK: API12(5.0.0.18)
 ## 目录结构
 
 ```javascript
-|---- axios
-|     |---- AppScope  # 示例代码文件夹
-|     |---- entry  # 示例代码文件夹
-|     |---- screenshots #截图
-|     |---- library  # axios库文件夹
-|           |---- build  # axios模块打包后的文件
-|           |---- src  # 模块代码
-|                |---- ets/components   # 模块代码
-|                     |---- lib         # axios 网络请求核心代码
-|            |---- index.js        # 入口文件
-|            |---- index.d.ts      # 声明文件
-|            |---- *.json5      # 配置文件
-|     |---- README.md     # 安装使用方法
-|     |---- README_zh.md  # 安装使用方法
-|     |---- README.OpenSource  # 开源说明
-|     |---- CHANGELOG.md  # 更新日志
+|
+----axios
+    | | ----AppScope  #
+示例代码文件夹
+    | | ----entry  #
+示例代码文件夹
+    | | ----screenshots #
+截图
+    | | ----library  #
+axios库文件夹
+    | | ----build  #
+axios模块打包后的文件
+    | | ----src  #
+模块代码
+    | | ----ets / components   #
+模块代码
+    | | ----lib         #
+axios
+网络请求核心代码
+    | | ----index.js        #
+入口文件
+    | | ----index.d.ts      #
+声明文件
+    | | ---- *.json5      #
+配置文件
+    | | ----README.md     #
+安装使用方法
+    | | ----README_zh.md  #
+安装使用方法
+    | | ----README.OpenSource  #
+开源说明
+    | | ----CHANGELOG.md  #
+更新日志
 ```
 
 ## 贡献代码

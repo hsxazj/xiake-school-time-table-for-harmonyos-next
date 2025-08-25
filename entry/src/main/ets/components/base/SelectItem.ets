@@ -43,7 +43,7 @@ export struct SelectItem {
     .height(80)
     .backgroundColor(Color.White)
     .borderRadius(12)
-    .border( {style: BorderStyle.Solid, width: 1, color: this.iconShadowColor})
+    .border({ style: BorderStyle.Solid, width: 1, color: this.iconShadowColor })
     .padding({
       left: 15,
       right: 15,

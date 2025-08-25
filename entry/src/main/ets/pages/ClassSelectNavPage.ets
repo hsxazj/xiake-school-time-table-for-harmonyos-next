@@ -1,4 +1,3 @@
-import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';

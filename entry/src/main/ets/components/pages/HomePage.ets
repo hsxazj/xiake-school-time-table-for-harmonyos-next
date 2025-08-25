@@ -4,10 +4,10 @@ import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
 
 @Component
 export struct HomePage {
+  @Consume('NavStack') pathStack: NavPathStack;
   @State private userInfo: UserSchoolInfo | null = null;
   @State private todayCourses: CourseInfo[] = [];
   @State private isLoading: boolean = false;
-  @Consume('NavStack') pathStack: NavPathStack;
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
@@ -189,26 +189,25 @@ export struct HomePage {
     if (!courseTime || courseTime.length === 0) {
       return '';
     }
-    
+
     const firstTime = courseTime[0];
     const lastTime = courseTime[courseTime.length - 1];
-    
+
     const startTime = firstTime.split('-')[0];
     const endTime = lastTime.split('-')[1];
-    
+
     return `${startTime}-${endTime}`;
   }
 
   private async loadTodayCourses(): Promise<void> {
     this.isLoading = true;
-    
+
     // 模拟加载延迟
     setTimeout(() => {
       this.todayCourses = MOCK_TODAY_COURSES;
       this.isLoading = false;
     }, 500);
   }
-
 
   private loadUserInfo(): void {
     this.userInfo = this.userInfoManager.getUserInfo();

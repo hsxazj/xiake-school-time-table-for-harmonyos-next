@@ -1,5 +1,5 @@
 import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
-import { CourseApiService, CourseInfo, CoursePosition } from '../../services/api/CourseApiService';
+import { CourseApiService, CourseInfo } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/constants/PreferencesUtil';
 import { curves } from '@kit.ArkUI';
@@ -144,7 +144,7 @@ export struct SchedulePage {
         })
         .backgroundColor(Color.White)
         .bindSheet($$this.showWeekPicker, this.WeekPickerBuilder(), {
-          showClose:false,
+          showClose: false,
           height: 500,
           dragBar: true,
           maskColor: 'rgba(0, 0, 0, 0.4)',
@@ -186,7 +186,7 @@ export struct SchedulePage {
       Row() {
         // 左上角月份显示区域
         Column() {
-          Text(this.currentMonth.substring(0,this.currentMonth.length-1))
+          Text(this.currentMonth.substring(0, this.currentMonth.length - 1))
             .fontSize(14)
             .fontColor('#333333')
             .fontWeight(FontWeight.Medium)
@@ -310,10 +310,10 @@ export struct SchedulePage {
   @Builder
   buildCourseBlock(course: ScheduleCourse, length: number, dayIndex: number, courseIndex: number) {
     // 所有课程一次性显示，只在动画状态控制显示/隐藏
-    if (this.courseBlockVisible.length === 0 || 
-        !this.courseBlockVisible[dayIndex] || 
-        this.courseBlockVisible[dayIndex].length === 0 ||
-        this.courseBlockVisible[dayIndex][courseIndex] !== false) {
+    if (this.courseBlockVisible.length === 0 ||
+      !this.courseBlockVisible[dayIndex] ||
+      this.courseBlockVisible[dayIndex].length === 0 ||
+      this.courseBlockVisible[dayIndex][courseIndex] !== false) {
       Column() {
         // 课程名称
         Text(course.courseName)
@@ -363,6 +363,128 @@ export struct SchedulePage {
         this.onCourseBlockClick(course, dayIndex, courseIndex);
       })
     }
+  }
+
+  @Builder
+  WeekPickerBuilder() {
+    Column() {
+      // 学期信息和切换按钮
+      Row() {
+        // 上一个学期按钮
+        Button('< 上学期')
+          .fontSize(14)
+          .fontColor('#45CAD9')
+          .backgroundColor(Color.Transparent)
+          .height(30)
+          .onClick(async () => {
+            await this.triggerCourseBlockExitAnimation();
+            this.switchSemester('prev');
+          })
+
+        Blank()
+
+        // 当前学期信息
+        Text(`${this.currentSemester?.academicYear || '2024'}学年第${this.currentSemester?.semester || 1}学期`)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
+
+        Blank()
+
+        // 下一个学期按钮
+        Button('下学期 >')
+          .fontSize(14)
+          .fontColor('#45CAD9')
+          .backgroundColor(Color.Transparent)
+          .height(30)
+          .onClick(async () => {
+            await this.triggerCourseBlockExitAnimation();
+            this.switchSemester('next');
+          })
+      }
+      .width('100%')
+      .padding({ bottom: 10 })
+
+      Divider()
+        .color('#F0F0F0')
+        .strokeWidth(0.5)
+        .margin({ bottom: 10 })
+
+      Text('选择周次')
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#333333')
+        .margin({ bottom: 20 })
+
+      Scroll() {
+        Column() {
+          ForEach(this.getWeekNumbersList(), (weekNum: number) => {
+            Row() {
+              Text(`第${weekNum}周`)
+                .fontSize(16)
+                .fontColor(this.currentWeek === weekNum ? '#45CAD9' : '#333333')
+                .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
+
+              Blank()
+
+              if (this.currentWeek === weekNum) {
+                Text('✓')
+                  .fontSize(16)
+                  .fontColor('#45CAD9')
+              }
+            }
+            .width('100%')
+            .height(50)
+            .padding({ left: 20, right: 20 })
+            .onClick(async () => {
+              // 跳转到指定周：计算目标日期并更新
+              if (this.currentSemester) {
+                // 先播放退场动画
+                await this.triggerCourseBlockExitAnimation();
+
+                const semesterStartDate = new Date(this.currentSemester.startDate);
+                const targetDate = new Date(semesterStartDate);
+                targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
+
+                this.currentDate = targetDate;
+                this.updateCurrentSemesterFromDate(this.currentDate);
+                this.calculateWeekDatesFromCurrentDate();
+
+                // 重新请求接口获取课程数据
+                await this.loadCourseData();
+              }
+              this.showWeekPicker = false;
+            })
+
+            if (weekNum < this.totalWeeks) {
+              Divider()
+                .color('#F0F0F0')
+                .strokeWidth(0.5)
+            }
+          })
+        }
+      }
+      .layoutWeight(1) // 使用layoutWeight让列表占据剩余空间
+
+      Row() {
+        Button('取消')
+          .width('80%')
+          .height(45)
+          .fontSize(16)
+          .fontColor('#666666')
+          .backgroundColor('#F5F5F5')
+          .onClick(() => {
+            this.showWeekPicker = false;
+          })
+      }
+      .width('100%')
+      .margin({ top: 20 })
+      .justifyContent(FlexAlign.Center)
+    }
+    .width('100%')
+    .padding(20)
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 20, topRight: 20 })
   }
 
   /**
@@ -422,7 +544,7 @@ export struct SchedulePage {
       courseNameSet.add(course.courseName);
     });
     this.scheduleGrid.classList = Array.from(courseNameSet);
-    
+
     // 触发入场动画
     this.triggerCourseBlockEnterAnimation();
 
@@ -761,7 +883,7 @@ export struct SchedulePage {
   private async navigateToPreviousWeek(): Promise<void> {
     // 先播放退场动画
     await this.triggerCourseBlockExitAnimation();
-    
+
     // 当前日期减去7天
     const newDate = new Date(this.currentDate);
     newDate.setDate(this.currentDate.getDate() - 7);
@@ -782,7 +904,7 @@ export struct SchedulePage {
   private async navigateToNextWeek(): Promise<void> {
     // 先播放退场动画
     await this.triggerCourseBlockExitAnimation();
-    
+
     // 当前日期加上7天
     const newDate = new Date(this.currentDate);
     newDate.setDate(this.currentDate.getDate() + 7);
@@ -885,128 +1007,6 @@ export struct SchedulePage {
       weekNumbers.push(i);
     }
     return weekNumbers;
-  }
-
-  @Builder
-  WeekPickerBuilder() {
-    Column() {
-      // 学期信息和切换按钮
-      Row() {
-        // 上一个学期按钮
-        Button('< 上学期')
-          .fontSize(14)
-          .fontColor('#45CAD9')
-          .backgroundColor(Color.Transparent)
-          .height(30)
-          .onClick(async () => {
-            await this.triggerCourseBlockExitAnimation();
-            this.switchSemester('prev');
-          })
-
-        Blank()
-
-        // 当前学期信息
-        Text(`${this.currentSemester?.academicYear || '2024'}学年第${this.currentSemester?.semester || 1}学期`)
-          .fontSize(16)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#333333')
-
-        Blank()
-
-        // 下一个学期按钮
-        Button('下学期 >')
-          .fontSize(14)
-          .fontColor('#45CAD9')
-          .backgroundColor(Color.Transparent)
-          .height(30)
-          .onClick(async () => {
-            await this.triggerCourseBlockExitAnimation();
-            this.switchSemester('next');
-          })
-      }
-      .width('100%')
-      .padding({  bottom: 10 })
-
-      Divider()
-        .color('#F0F0F0')
-        .strokeWidth(0.5)
-        .margin({ bottom: 10 })
-
-      Text('选择周次')
-        .fontSize(18)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#333333')
-        .margin({ bottom: 20 })
-
-      Scroll() {
-        Column() {
-          ForEach(this.getWeekNumbersList(), (weekNum: number) => {
-            Row() {
-              Text(`第${weekNum}周`)
-                .fontSize(16)
-                .fontColor(this.currentWeek === weekNum ? '#45CAD9' : '#333333')
-                .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
-
-              Blank()
-
-              if (this.currentWeek === weekNum) {
-                Text('✓')
-                  .fontSize(16)
-                  .fontColor('#45CAD9')
-              }
-            }
-            .width('100%')
-            .height(50)
-            .padding({ left: 20, right: 20 })
-            .onClick(async () => {
-              // 跳转到指定周：计算目标日期并更新
-              if (this.currentSemester) {
-                // 先播放退场动画
-                await this.triggerCourseBlockExitAnimation();
-                
-                const semesterStartDate = new Date(this.currentSemester.startDate);
-                const targetDate = new Date(semesterStartDate);
-                targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
-
-                this.currentDate = targetDate;
-                this.updateCurrentSemesterFromDate(this.currentDate);
-                this.calculateWeekDatesFromCurrentDate();
-                
-                // 重新请求接口获取课程数据
-                await this.loadCourseData();
-              }
-              this.showWeekPicker = false;
-            })
-
-            if (weekNum < this.totalWeeks) {
-              Divider()
-                .color('#F0F0F0')
-                .strokeWidth(0.5)
-            }
-          })
-        }
-      }
-      .layoutWeight(1) // 使用layoutWeight让列表占据剩余空间
-
-      Row() {
-        Button('取消')
-          .width('80%')
-          .height(45)
-          .fontSize(16)
-          .fontColor('#666666')
-          .backgroundColor('#F5F5F5')
-          .onClick(() => {
-            this.showWeekPicker = false;
-          })
-      }
-      .width('100%')
-      .margin({ top: 20 })
-      .justifyContent(FlexAlign.Center)
-    }
-    .width('100%')
-    .padding(20)
-    .backgroundColor(Color.White)
-    .borderRadius({ topLeft: 20, topRight: 20 })
   }
 
   /**
@@ -1122,7 +1122,7 @@ export struct SchedulePage {
    */
   private triggerCourseBlockEnterAnimation(): void {
     console.info('📅 [Animation] 开始触发课程块入场动画（一次性显示）');
-    
+
     // 简单延迟后一次性显示所有课程
     setTimeout(() => {
       // 清空控制状态，让所有课程显示
@@ -1137,17 +1137,17 @@ export struct SchedulePage {
   private triggerCourseBlockExitAnimation(): Promise<void> {
     return new Promise((resolve) => {
       console.info('📅 [Animation] 开始退场动画');
-      
+
       // 初始化隐藏状态
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         this.courseBlockVisible[dayIndex] = [];
         const courseCount = this.scheduleGrid.nowClassList[dayIndex]?.length || 0;
-        
+
         for (let courseIndex = 0; courseIndex < courseCount; courseIndex++) {
           this.courseBlockVisible[dayIndex][courseIndex] = false;
         }
       }
-      
+
       // 等待转场动画完成
       setTimeout(() => {
         console.info('📅 [Animation] 退场动画完成');
@@ -1155,5 +1155,4 @@ export struct SchedulePage {
       }, 100); // 从200减少到100，进一步加快消失速度
     });
   }
-
 }

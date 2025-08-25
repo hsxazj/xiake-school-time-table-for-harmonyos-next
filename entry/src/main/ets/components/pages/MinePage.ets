@@ -35,29 +35,6 @@ export struct MinePage {
     this.loadUserInfo();
   }
 
-  private loadUserInfo(): void {
-    const schoolInfo = this.userInfoManager.getUserInfo();
-    console.info('获取到的用户信息:', JSON.stringify(schoolInfo));
-
-    // 更新学院、专业、班级信息
-    if (schoolInfo.collegeName) {
-      this.userInfo.college = schoolInfo.collegeName;
-    }
-
-    if (schoolInfo.majorName) {
-      this.userInfo.major = schoolInfo.majorName;
-    }
-
-    if (schoolInfo.className) {
-      this.userInfo.className = schoolInfo.className;
-    }
-
-    // 如果没有完整信息，显示提示
-    if (!schoolInfo.collegeName || !schoolInfo.majorName || !schoolInfo.className) {
-      console.info('用户信息不完整，建议用户完善信息');
-    }
-  }
-
   build() {
     Column() {
       // 用户信息卡片
@@ -184,6 +161,29 @@ export struct MinePage {
       .backgroundColor(Color.White)
       .borderRadius(12)
       .margin({ bottom: 20 })
+    }
+  }
+
+  private loadUserInfo(): void {
+    const schoolInfo = this.userInfoManager.getUserInfo();
+    console.info('获取到的用户信息:', JSON.stringify(schoolInfo));
+
+    // 更新学院、专业、班级信息
+    if (schoolInfo.collegeName) {
+      this.userInfo.college = schoolInfo.collegeName;
+    }
+
+    if (schoolInfo.majorName) {
+      this.userInfo.major = schoolInfo.majorName;
+    }
+
+    if (schoolInfo.className) {
+      this.userInfo.className = schoolInfo.className;
+    }
+
+    // 如果没有完整信息，显示提示
+    if (!schoolInfo.collegeName || !schoolInfo.majorName || !schoolInfo.className) {
+      console.info('用户信息不完整，建议用户完善信息');
     }
   }
 

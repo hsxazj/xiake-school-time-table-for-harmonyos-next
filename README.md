@@ -48,16 +48,19 @@ entry/src/main/ets/
 ## 📱 核心功能
 
 ### 应用初始化
+
 - **智能启动**：自动检查用户信息完整性，智能跳转
 - **配置管理**：统一的应用配置初始化和状态管理
 - **学期计算**：自动计算当前学期状态和周次信息
 
 ### 用户体验
+
 - **学院选择**：支持学院、专业、班级三级联动选择
 - **数据持久化**：用户选择自动保存，支持记忆功能
 - **加载状态**：完善的加载状态提示和错误处理
 
 ### 技术特性
+
 - **模块化设计**：清晰的服务层分离，便于维护扩展
 - **类型安全**：完整的 TypeScript 类型定义
 - **网络请求**：基于 @ohos/axios 的统一HTTP服务
@@ -84,18 +87,21 @@ entry/src/main/ets/
 ### 安装与运行
 
 #### 1. 克隆项目
+
 ```bash
 git clone https://github.com/your-repo/XIAKE_KB.git
 cd XIAKE_KB
 ```
 
 #### 2. 安装依赖
+
 ```bash
 # 安装 HarmonyOS 依赖
 ohpm install
 ```
 
 #### 3. 构建与运行
+
 ```bash
 # 构建项目
 hvigor build
@@ -111,6 +117,7 @@ hvigor build
 ### 代码规范
 
 项目严格遵循 HarmonyOS ArkTS 开发规范：
+
 - 文件名使用 PascalCase 命名
 - 组件使用 @Entry/@Component 装饰器
 - 严格的TypeScript类型检查
@@ -119,21 +126,25 @@ hvigor build
 ### 核心组件说明
 
 #### 1. 应用入口 (`Index.ets`)
+
 - 启动页面展示和初始化处理
 - `AppConfigManager` 配置初始化
 - 智能路由跳转逻辑
 
 #### 2. 配置管理 (`AppConfigManager.ets`)
+
 - 单例模式的全局配置管理
 - 学期状态自动计算
 - 配置数据缓存和初始化
 
 #### 3. 网络服务 (`HttpService.ets`)
+
 - 基于 axios 的统一HTTP请求封装
 - 请求/响应拦截器
 - 错误处理和重试机制
 
 #### 4. 学院选择 (`ClassSelectPage.ets`)
+
 - 三级联动选择器实现
 - 用户选择数据持久化
 - 自定义Dialog组件使用
@@ -141,6 +152,7 @@ hvigor build
 ### 权限配置
 
 应用需要以下权限：
+
 ```json
 {
   "name": "ohos.permission.INTERNET",
@@ -165,8 +177,8 @@ hvigor test
 2. **配置初始化**：`AppConfigManager` 获取配置数据
 3. **状态检查**：检查用户信息完整性
 4. **智能跳转**：
-   - 有完整信息 → 跳转到主页Tab
-   - 无完整信息 → 跳转到学院选择页
+    - 有完整信息 → 跳转到主页Tab
+    - 无完整信息 → 跳转到学院选择页
 5. **正常使用**：进入主要功能页面
 
 ## 📊 项目状态
