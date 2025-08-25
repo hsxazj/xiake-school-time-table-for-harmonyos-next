@@ -167,7 +167,7 @@ struct WelcomeNavPage {
               offsetY: 0
             })
             .onClick(() => {
-              this.pathStack.replacePathByName('MainTabPage', null)
+              this.pathStack.replacePathByName('MainTabNavPage', null)
             })
         }
       }

@@ -58,6 +58,10 @@ struct MainTabNavPage {
       })
     }
     .hideTitleBar(true)
+    .onBackPressed(() => {
+      this.getUIContext().getRouter().back();
+      return true;
+    })
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
       console.info('all path stack:', this.pathStack.getAllPathName())
