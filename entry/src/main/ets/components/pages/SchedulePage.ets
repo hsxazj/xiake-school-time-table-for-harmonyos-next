@@ -61,7 +61,6 @@ export struct SchedulePage {
   @State private currentMonth: string = '';
   @State private weekDates: WeekDateRange | null = null;
   @State private showWeekPicker: boolean = false;
-  @State private weekPickerVisible: boolean = false;
   // 新增学期管理相关状态
   @State private currentStatus: CurrentSemesterStatus | null = null;
   @State private currentSemester: SemesterInfo | null = null;
@@ -141,7 +140,7 @@ export struct SchedulePage {
           })
           .borderRadius(4)
           .onClick(() => {
-            this.openWeekPickerWithAnimation();
+            this.showWeekPicker = true;
           })
         }
         .width('100%')
@@ -152,6 +151,18 @@ export struct SchedulePage {
           bottom: 5
         })
         .backgroundColor(Color.White)
+        .bindSheet($$this.showWeekPicker, this.WeekPickerBuilder(), {
+          showClose:false,
+          height: 500,
+          dragBar: true,
+          maskColor: 'rgba(0, 0, 0, 0.4)',
+          onAppear: () => {
+            console.log("周选择器显示");
+          },
+          onDisappear: () => {
+            console.log("周选择器隐藏");
+          }
+        })
 
         // 课表内容区域 - 支持触摸滑动手势
         Column() {
@@ -171,31 +182,6 @@ export struct SchedulePage {
       .width('100%')
       .height('100%')
       .backgroundColor(Color.White)
-
-      // 周选择器弹窗
-      if (this.showWeekPicker) {
-        Column()
-          .width('100%')
-          .height('100%')
-          .backgroundColor('rgba(0, 0, 0, 0.5)')
-          .opacity(this.weekPickerVisible ? 1 : 0)  // 透明度动画
-          .animation({
-            duration: 300,
-            curve: Curve.EaseOut
-          })
-          .onClick(() => {
-            this.closeWeekPickerWithAnimation();
-          })
-
-        Column() {
-          Blank()
-
-          this.buildWeekPickerContent()
-        }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.End)
-      }
     }
     .width('100%')
     .height('100%')
@@ -910,7 +896,7 @@ export struct SchedulePage {
   }
 
   @Builder
-  private buildWeekPickerContent() {
+  WeekPickerBuilder() {
     Column() {
       // 学期信息和切换按钮
       Row() {
@@ -947,7 +933,7 @@ export struct SchedulePage {
           })
       }
       .width('100%')
-      .padding({ left: 20, right: 20, bottom: 10 })
+      .padding({  bottom: 10 })
 
       Divider()
         .color('#F0F0F0')
@@ -997,7 +983,7 @@ export struct SchedulePage {
                 // 重新请求接口获取课程数据
                 await this.loadCourseData();
               }
-              this.closeWeekPickerWithAnimation();
+              this.showWeekPicker = false;
             })
 
             if (weekNum < this.totalWeeks) {
@@ -1008,7 +994,7 @@ export struct SchedulePage {
           })
         }
       }
-      .height(300)
+      .layoutWeight(1) // 使用layoutWeight让列表占据剩余空间
 
       Row() {
         Button('取消')
@@ -1018,7 +1004,7 @@ export struct SchedulePage {
           .fontColor('#666666')
           .backgroundColor('#F5F5F5')
           .onClick(() => {
-            this.closeWeekPickerWithAnimation();
+            this.showWeekPicker = false;
           })
       }
       .width('100%')
@@ -1029,14 +1015,6 @@ export struct SchedulePage {
     .padding(20)
     .backgroundColor(Color.White)
     .borderRadius({ topLeft: 20, topRight: 20 })
-    .opacity(this.weekPickerVisible ? 1 : 0)  // 透明度动画
-    .translate({
-      y: this.weekPickerVisible ? 0 : 350  // 位移动画：显示时y=0，隐藏时y=350向下偏移
-    })
-    .animation({
-      duration: 300,
-      curve: Curve.EaseOut
-    })
   }
 
   /**
@@ -1186,38 +1164,4 @@ export struct SchedulePage {
     });
   }
 
-  /**
-   * 打开周选择器并播放入场动画
-   */
-  private openWeekPickerWithAnimation(): void {
-    this.showWeekPicker = true;
-    
-    // 延迟一帧后开始进入动画，确保初始状态渲染完成
-    setTimeout(() => {
-      animateTo({
-        duration: 300,
-        curve: Curve.EaseOut
-      }, () => {
-        this.weekPickerVisible = true;
-      });
-    }, 16);
-  }
-
-  /**
-   * 关闭周选择器并播放退场动画
-   */
-  private closeWeekPickerWithAnimation(): void {
-    // 退出动画
-    animateTo({
-      duration: 250,
-      curve: Curve.EaseIn
-    }, () => {
-      this.weekPickerVisible = false;
-    });
-
-    // 动画完成后关闭弹窗
-    setTimeout(() => {
-      this.showWeekPicker = false;
-    }, 250);
-  }
 }

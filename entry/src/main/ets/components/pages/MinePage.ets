@@ -1,6 +1,9 @@
+import { UserInfoManager } from '../../common/constants/PreferencesUtil';
+import router from '@ohos.router';
+
 // 用户信息接口
 interface UserInfo {
-  avatar: string;
+  avatar: Resource;
   username: string;
   studentId: string;
   college: string;
@@ -10,7 +13,7 @@ interface UserInfo {
 
 // 菜单项类型接口
 interface MenuItemType {
-  icon: string;
+  icon: Resource;
   title: string;
   desc: string;
 }
@@ -18,13 +21,41 @@ interface MenuItemType {
 @Component
 export struct MinePage {
   @State private userInfo: UserInfo = {
-    avatar: '👤',
-    username: '霞客同学',
+    avatar: $r('app.media.defaultAvatar'),
+    username: 'FJUTER',
     studentId: '2024001',
-    college: '计算机学院',
-    major: '软件工程',
-    className: '软工2024-1班'
+    college: '加载中...',
+    major: '加载中...',
+    className: '加载中...'
   };
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+
+  aboutToAppear(): void {
+    this.loadUserInfo();
+  }
+
+  private loadUserInfo(): void {
+    const schoolInfo = this.userInfoManager.getUserInfo();
+    console.info('获取到的用户信息:', JSON.stringify(schoolInfo));
+
+    // 更新学院、专业、班级信息
+    if (schoolInfo.collegeName) {
+      this.userInfo.college = schoolInfo.collegeName;
+    }
+
+    if (schoolInfo.majorName) {
+      this.userInfo.major = schoolInfo.majorName;
+    }
+
+    if (schoolInfo.className) {
+      this.userInfo.className = schoolInfo.className;
+    }
+
+    // 如果没有完整信息，显示提示
+    if (!schoolInfo.collegeName || !schoolInfo.majorName || !schoolInfo.className) {
+      console.info('用户信息不完整，建议用户完善信息');
+    }
+  }
 
   build() {
     Column() {
@@ -32,13 +63,10 @@ export struct MinePage {
       Column() {
         Row() {
           // 头像
-          Text(this.userInfo.avatar)
-            .fontSize(48)
-            .width(80)
-            .height(80)
-            .backgroundColor('#E3F2FD')
+          Image(this.userInfo.avatar)
+            .height(45)
+            .width(45)
             .borderRadius(40)
-            .textAlign(TextAlign.Center)
             .margin({ right: 16 })
 
           // 用户信息
@@ -48,11 +76,15 @@ export struct MinePage {
               .fontWeight(FontWeight.Bold)
               .fontColor('#333333')
               .margin({ bottom: 4 })
-            Text(`学号：${this.userInfo.studentId}`)
-              .fontSize(14)
-              .fontColor('#666666')
+            // Text(`学号：${this.userInfo.studentId}`)
+            //   .fontSize(14)
+            //   .fontColor('#666666')
+            //   .margin({ bottom: 2 })
+            Text(`${this.userInfo.college}`)
+              .fontSize(12)
+              .fontColor('#999999')
               .margin({ bottom: 2 })
-            Text(`${this.userInfo.college} · ${this.userInfo.major}`)
+            Text(`${this.userInfo.major}`)
               .fontSize(12)
               .fontColor('#999999')
               .margin({ bottom: 2 })
@@ -76,34 +108,18 @@ export struct MinePage {
         offsetY: 2
       })
       .margin({ top: 50, bottom: 20 })
+      .onClick(() => {
+        this.navigateToClassSelect();
+      })
 
-      // 功能列表
+      // 功能列表 - 只保留问题反馈和关于我们
       Column() {
-        this.MenuSection('个人信息', this.getPersonalItems())
-        this.MenuSection('学习相关', this.getStudyItems())
-        this.MenuSection('系统功能', this.getSystemItems())
+        this.MenuSection('帮助与信息', this.getHelpItems())
       }
       .width('90%')
       .layoutWeight(1)
 
       Blank()
-
-      // 退出登录按钮
-      Button('退出登录')
-        .width('60%')
-        .height(45)
-        .fontSize(16)
-        .fontColor('#FF5722')
-        .backgroundColor(Color.White)
-        .borderRadius(22)
-        .border({
-          width: 1,
-          color: '#FF5722'
-        })
-        .margin({ bottom: 60 })
-        .onClick(() => {
-          // 退出登录逻辑
-        })
     }
     .width('100%')
     .height('100%')
@@ -123,11 +139,10 @@ export struct MinePage {
       Column() {
         ForEach(items, (item: MenuItemType, index: number) => {
           Row() {
-            Text(item.icon)
-              .fontSize(24)
-              .width(40)
-              .textAlign(TextAlign.Center)
-              .margin({ right: 12 })
+            Image(item.icon)
+              .height(24)
+              .width(24)
+              .margin({ right: 16})
 
             Column() {
               Text(item.title)
@@ -171,26 +186,24 @@ export struct MinePage {
     }
   }
 
-  private getPersonalItems(): MenuItemType[] {
+  private getHelpItems(): MenuItemType[] {
     return [
-      { icon: '📝', title: '个人资料', desc: '修改个人信息' },
-      { icon: '🔒', title: '账号安全', desc: '密码修改等' }
+      { icon: $r("app.media.problemFeedback"), title: '问题反馈', desc: '反馈使用问题和建议' },
+      { icon: $r("app.media.aboutUs"), title: '关于我们', desc: '应用信息和版本' }
     ];
   }
 
-  private getStudyItems(): MenuItemType[] {
-    return [
-      { icon: '⭐', title: '我的评价', desc: '课程和教师评价' },
-      { icon: '📊', title: '学习统计', desc: '课程统计信息' },
-      { icon: '📅', title: '课表管理', desc: '自定义课表' }
-    ];
-  }
-
-  private getSystemItems(): MenuItemType[] {
-    return [
-      { icon: '📢', title: '系统通知', desc: '查看系统消息' },
-      { icon: '❓', title: '帮助反馈', desc: '问题反馈和帮助' },
-      { icon: 'ℹ️', title: '关于我们', desc: '应用信息' }
-    ];
+  /**
+   * 跳转到班级选择页面
+   */
+  private navigateToClassSelect(): void {
+    try {
+      router.pushUrl({
+        url: 'pages/ClassSelectPage'
+      });
+      console.info('跳转到班级选择页面');
+    } catch (error) {
+      console.error('跳转到班级选择页面失败:', error);
+    }
   }
 }

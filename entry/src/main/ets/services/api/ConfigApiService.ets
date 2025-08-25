@@ -2,6 +2,9 @@ import { ApiResponse, HttpService } from './HttpService';
 import { DateUtil } from '../../common/utils/DateUtil';
 import { ConfigApiResponseData, CurrentSemesterStatus, SemesterInfo, WeekDateRange } from '../../models/ConfigModels';
 
+// 导出类型
+export { CurrentSemesterStatus, SemesterInfo } from '../../models/ConfigModels';
+
 
 export class ConfigApiService {
   private static instance: ConfigApiService;

@@ -1,7 +1,6 @@
 import router from '@ohos.router';
 import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
-import { CustomPicker, PickerItem } from '../components/base/CustomPicker';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager } from '../common/constants/PreferencesUtil';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
@@ -25,52 +24,186 @@ struct CollegeSelectPage {
   @State private selectedClassIndex: number = 0;
   private collegeApiService: CollegeApiService = CollegeApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
-  private collegePickerController: CustomDialogController = new CustomDialogController({
-    builder: CustomPicker({
-      items: [],
-      selectedIndex: 0,
-      title: '选择学院',
-      onConfirm: (item: PickerItem, index: number) => {
-        this.handleCollegeSelect(index);
-      }
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    autoCancel: false, // 禁用自动取消，让我们的动画处理
-    maskColor: Color.Transparent  // 透明蒙版，我们自己处理
-  });
-  private majorPickerController: CustomDialogController = new CustomDialogController({
-    builder: CustomPicker({
-      items: [],
-      selectedIndex: 0,
-      title: '选择专业',
-      onConfirm: (item: PickerItem, index: number) => {
-        this.handleMajorSelect(index);
-      }
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    autoCancel: false,
-    maskColor: Color.Transparent
-  });
-  private classPickerController: CustomDialogController = new CustomDialogController({
-    builder: CustomPicker({
-      items: [],
-      selectedIndex: 0,
-      title: '选择班级',
-      onConfirm: (item: PickerItem, index: number) => {
-        this.handleClassSelect(index);
-      }
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    autoCancel: false,
-    maskColor: Color.Transparent
-  });
+  @State private showCollegePicker: boolean = false;
+  @State private showMajorPicker: boolean = false;
+  @State private showClassPicker: boolean = false;
+  @State private tempCollegeIndex: number = 0; // 临时学院选择索引
+  @State private tempMajorIndex: number = 0; // 临时专业选择索引  
+  @State private tempClassIndex: number = 0; // 临时班级选择索引
 
   aboutToAppear(): void {
     console.info('ClassSelectPage aboutToAppear 开始');
     this.loadInitialData();
+  }
+
+  @Builder
+  CollegePickerBuilder() {
+    Column() {
+      // 标题栏
+      Row() {
+        Text('选择学院')
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
+      }
+      .width('100%')
+      .height(56)
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 16, right: 16 })
+      .borderRadius({ topLeft: 16, topRight: 16 })
+      .backgroundColor(Color.White)
+      
+      // 分割线
+      Divider()
+        .color('#F0F0F0')
+      
+      // 使用TextPicker实现滚轮选择
+      TextPicker({ 
+        range: this.collegeList.map(college => college.collegeName), 
+        selected: this.tempCollegeIndex 
+      })
+        .defaultPickerItemHeight(52)
+        .width('100%')
+        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .backgroundColor(Color.White)
+        .padding(0) // 去除默认内边距
+        .margin(0) // 去除默认外边距
+        .onChange((value: string | string[], index: number | number[]) => {
+          const selectedValue = Array.isArray(value) ? value[0] : value;
+          const selectedIndex = Array.isArray(index) ? index[0] : index;
+          console.info(`临时选择学院: ${selectedValue}, index: ${selectedIndex}`);
+          this.tempCollegeIndex = selectedIndex; // 只更新临时状态
+        })
+      
+      Button('确定')
+        .margin({ top: 16, bottom: 30 })
+        .width('80%')
+        .backgroundColor('#45CAD9')
+        .fontColor(Color.White)
+        .onClick(() => {
+          // 确定时才真正选择
+          this.selectedCollegeIndex = this.tempCollegeIndex;
+          this.handleCollegeSelect(this.tempCollegeIndex);
+          this.showCollegePicker = false;
+        })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 16, topRight: 16 })
+  }
+
+  @Builder
+  MajorPickerBuilder() {
+    Column() {
+      // 标题栏
+      Row() {
+        Text('选择专业')
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
+      }
+      .width('100%')
+      .height(56)
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 16, right: 16 })
+      .borderRadius({ topLeft: 16, topRight: 16 })
+      .backgroundColor(Color.White)
+      
+      // 分割线
+      Divider()
+        .color('#F0F0F0')
+      
+      // 使用TextPicker实现滚轮选择
+      TextPicker({ 
+        range: this.majorList.map(major => major.majorName), 
+        selected: this.tempMajorIndex 
+      })
+        .defaultPickerItemHeight(52)
+        .width('100%')
+        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .backgroundColor(Color.White)
+        .padding(0) // 去除默认内边距
+        .margin(0) // 去除默认外边距
+        .onChange((value: string | string[], index: number | number[]) => {
+          const selectedValue = Array.isArray(value) ? value[0] : value;
+          const selectedIndex = Array.isArray(index) ? index[0] : index;
+          console.info(`临时选择专业: ${selectedValue}, index: ${selectedIndex}`);
+          this.tempMajorIndex = selectedIndex; // 只更新临时状态
+        })
+
+      Button('确定')
+        .margin({ top: 16, bottom: 30 })
+        .width('80%')
+        .backgroundColor('#45CAD9')
+        .fontColor(Color.White)
+        .onClick(() => {
+          // 确定时才真正选择
+          this.selectedMajorIndex = this.tempMajorIndex;
+          this.handleMajorSelect(this.tempMajorIndex);
+          this.showMajorPicker = false;
+        })
+    }
+    .width('100%')
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 16, topRight: 16 })
+  }
+
+  @Builder
+  ClassPickerBuilder() {
+    Column() {
+      // 标题栏
+      Row() {
+        Text('选择班级')
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#333333')
+      }
+      .width('100%')
+      .height(56)
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 16, right: 16 })
+      .borderRadius({ topLeft: 16, topRight: 16 })
+      .backgroundColor(Color.White)
+      
+      // 分割线
+      Divider()
+        .color('#F0F0F0')
+      
+      // 使用TextPicker实现滚轮选择
+      TextPicker({ 
+        range: this.classList.map(classInfo => classInfo.className), 
+        selected: this.tempClassIndex 
+      })
+        .defaultPickerItemHeight(52)
+        .width('100%')
+        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .backgroundColor(Color.White)
+        .padding(0) // 去除默认内边距
+        .margin(0) // 去除默认外边距
+        .onChange((value: string | string[], index: number | number[]) => {
+          const selectedValue = Array.isArray(value) ? value[0] : value;
+          const selectedIndex = Array.isArray(index) ? index[0] : index;
+          console.info(`临时选择班级: ${selectedValue}, index: ${selectedIndex}`);
+          this.tempClassIndex = selectedIndex; // 只更新临时状态
+        })
+        
+      Button('确定')
+        .margin({ top: 16, bottom: 30 })
+        .width('80%')
+        .backgroundColor('#45CAD9')
+        .fontColor(Color.White)
+        .onClick(() => {
+          // 确定时才真正选择
+          this.selectedClassIndex = this.tempClassIndex;
+          this.handleClassSelect(this.tempClassIndex);
+          this.showClassPicker = false;
+        })
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 16, topRight: 16 })
   }
 
   build() {
@@ -101,6 +234,18 @@ struct CollegeSelectPage {
             }
           }
         })
+          .bindSheet($$this.showCollegePicker, this.CollegePickerBuilder(), {
+            showClose: false,
+            height: 400,
+            dragBar: true,
+            maskColor: 'rgba(0, 0, 0, 0.4)',
+            onAppear: () => {
+              console.log("学院选择器显示");
+            },
+            onDisappear: () => {
+              console.log("学院选择器隐藏");
+            }
+          })
 
         SelectItem({
           icon: $r('app.media.major'),
@@ -117,6 +262,18 @@ struct CollegeSelectPage {
             }
           }
         })
+          .bindSheet($$this.showMajorPicker, this.MajorPickerBuilder(), {
+            showClose: false,
+            height: 400,
+            dragBar: true,
+            maskColor: 'rgba(0, 0, 0, 0.4)',
+            onAppear: () => {
+              console.log("专业选择器显示");
+            },
+            onDisappear: () => {
+              console.log("专业选择器隐藏");
+            }
+          })
 
         SelectItem({
           icon: $r('app.media.class_icon'),
@@ -133,6 +290,18 @@ struct CollegeSelectPage {
             }
           }
         })
+          .bindSheet($$this.showClassPicker, this.ClassPickerBuilder(), {
+            showClose: false,
+            height: 400,
+            dragBar: true,
+            maskColor: 'rgba(0, 0, 0, 0.4)',
+            onAppear: () => {
+              console.log("班级选择器显示");
+            },
+            onDisappear: () => {
+              console.log("班级选择器隐藏");
+            }
+          })
       }
       .width('90%')
       .margin({ top: 20 })
@@ -144,7 +313,7 @@ struct CollegeSelectPage {
         .height(45)
         .fontSize(16)
         .fontColor(Color.White)
-        .backgroundColor(this.isInitializing ? '#CCCCCC' : '#45CAD9') // 初始化时灰色
+        .backgroundColor(this.isInitializing ? '#CCCCCC' : '#45CAD9')// 初始化时灰色
         .borderRadius(22)
         .margin({ bottom: 60 })
         .shadow({
@@ -164,7 +333,7 @@ struct CollegeSelectPage {
             .width(50)
             .height(50)
             .color('#45CAD9')
-          
+
           Text(this.isInitializing ? '正在加载用户信息...' : '加载中...')
             .fontSize(14)
             .fontColor('#666666')
@@ -187,7 +356,7 @@ struct CollegeSelectPage {
       const response = await this.collegeApiService.getAllColleges();
       this.collegeList = response.data;
       console.info(`学院列表加载完成，共${this.collegeList.length}个学院`);
-      
+
       // 学院列表加载完成后，加载用户之前的选择
       await this.loadUserPreviousSelections();
     } catch (error) {
@@ -209,55 +378,55 @@ struct CollegeSelectPage {
     try {
       const userInfo = this.userInfoManager.getUserInfo();
       console.info('用户信息:', JSON.stringify(userInfo));
-      
+
       // 先重置为默认状态
       this.collegeName = '请选择学院';
       this.majorName = '请选择专业';
       this.className = '请选择班级';
-      
+
       if (userInfo.collegeId && userInfo.collegeId !== '0') {
         // 用户之前已选择学院
         this.collegeId = userInfo.collegeId; // 直接使用字符串
         this.collegeName = userInfo.collegeName;
-        
+
         // 找到学院在列表中的索引 - 直接比较字符串ID
         const collegeIndex = this.collegeList.findIndex(college => college.collegeId === userInfo.collegeId);
         if (collegeIndex >= 0) {
           this.selectedCollegeIndex = collegeIndex;
         }
-        
+
         console.info(`已选择学院: ${this.collegeName} (ID: ${this.collegeId})`);
-        
+
         // 加载专业数据
         await this.loadMajorsForPreSelection();
-        
+
         if (userInfo.majorId && userInfo.majorId !== '0' && this.majorList.length > 0) {
           // 用户之前已选择专业，且专业列表不为空
           this.majorId = userInfo.majorId; // 直接使用字符串
           this.majorName = userInfo.majorName;
-          
+
           // 找到专业在列表中的索引 - 直接比较字符串ID
           const majorIndex = this.majorList.findIndex(major => major.majorId === userInfo.majorId);
           if (majorIndex >= 0) {
             this.selectedMajorIndex = majorIndex;
           }
-          
+
           console.info(`已选择专业: ${this.majorName} (ID: ${this.majorId})`);
-          
+
           // 加载班级数据
           await this.loadClassesForPreSelection();
-          
+
           if (userInfo.classId && userInfo.classId !== '0' && this.classList.length > 0) {
             // 用户之前已选择班级，且班级列表不为空
             this.classId = userInfo.classId; // 直接使用字符串
             this.className = userInfo.className;
-            
+
             // 找到班级在列表中的索引 - 直接比较字符串ID
             const classIndex = this.classList.findIndex(classInfo => classInfo.classId === userInfo.classId);
             if (classIndex >= 0) {
               this.selectedClassIndex = classIndex;
             }
-            
+
             console.info(`已选择班级: ${this.className} (ID: ${this.classId})`);
           }
         } else if (userInfo.majorId && userInfo.majorId !== '0') {
@@ -265,14 +434,14 @@ struct CollegeSelectPage {
           console.warn('专业列表为空，但保留用户之前的专业选择显示');
           this.majorId = userInfo.majorId; // 直接使用字符串
           this.majorName = userInfo.majorName;
-          
+
           if (userInfo.classId && userInfo.classId !== '0') {
             this.classId = userInfo.classId; // 直接使用字符串
             this.className = userInfo.className;
           }
         }
       }
-      
+
       console.info('用户之前的选择已加载完成');
     } catch (error) {
       console.error('加载用户之前选择失败:', error);
@@ -329,30 +498,9 @@ struct CollegeSelectPage {
     }
   }
 
-  private createCollegePickerData(): PickerItem[] {
-    return this.collegeList.map((item: College): PickerItem => {
-      const pickerItem: PickerItem = { id: item.collegeId, name: item.collegeName };
-      return pickerItem;
-    });
-  }
-
-  private createMajorPickerData(): PickerItem[] {
-    return this.majorList.map((item: Major): PickerItem => {
-      const pickerItem: PickerItem = { id: item.majorId, name: item.majorName };
-      return pickerItem;
-    });
-  }
-
-  private createClassPickerData(): PickerItem[] {
-    return this.classList.map((item: ClassInfo): PickerItem => {
-      const pickerItem: PickerItem = { id: item.classId, name: item.className };
-      return pickerItem;
-    });
-  }
-
   private async handleCollegeClick(): Promise<void> {
     console.info('点击学院选择');
-    
+
     if (this.collegeList.length === 0) {
       console.info('学院列表为空，重新加载');
       await this.loadInitialData();
@@ -360,20 +508,9 @@ struct CollegeSelectPage {
 
     if (this.collegeList.length > 0) {
       console.info(`准备显示学院选择器，共${this.collegeList.length}个学院`);
-      this.collegePickerController.close();
-      this.collegePickerController = new CustomDialogController({
-        builder: CustomPicker({
-          items: this.createCollegePickerData(),
-          selectedIndex: this.selectedCollegeIndex,
-          title: '选择学院',
-          onConfirm: (item: PickerItem, index: number) => {
-            this.handleCollegeSelect(index);
-          }
-        }),
-        alignment: DialogAlignment.Bottom,
-        customStyle: true
-      });
-      this.collegePickerController.open();
+      // 初始化临时选择状态为当前选择
+      this.tempCollegeIndex = this.selectedCollegeIndex;
+      this.showCollegePicker = true;
     } else {
       console.error('学院列表仍然为空，无法显示选择器');
     }
@@ -393,7 +530,7 @@ struct CollegeSelectPage {
 
   private async handleMajorClick(): Promise<void> {
     console.info('点击专业选择');
-    
+
     if (this.collegeId === '') {
       console.warn('未选择学院，无法选择专业');
       promptAction.showToast({
@@ -410,20 +547,9 @@ struct CollegeSelectPage {
 
     if (this.majorList.length > 0) {
       console.info(`准备显示专业选择器，共${this.majorList.length}个专业`);
-      this.majorPickerController.close();
-      this.majorPickerController = new CustomDialogController({
-        builder: CustomPicker({
-          items: this.createMajorPickerData(),
-          selectedIndex: this.selectedMajorIndex,
-          title: '选择专业',
-          onConfirm: (item: PickerItem, index: number) => {
-            this.handleMajorSelect(index);
-          }
-        }),
-        alignment: DialogAlignment.Bottom,
-        customStyle: true
-      });
-      this.majorPickerController.open();
+      // 初始化临时选择状态为当前选择
+      this.tempMajorIndex = this.selectedMajorIndex;
+      this.showMajorPicker = true;
     } else {
       console.error('专业列表仍然为空，无法显示选择器');
       promptAction.showToast({
@@ -447,7 +573,7 @@ struct CollegeSelectPage {
 
   private async handleClassClick(): Promise<void> {
     console.info('点击班级选择');
-    
+
     if (this.collegeId === '') {
       console.warn('未选择学院，无法选择班级');
       promptAction.showToast({
@@ -473,20 +599,9 @@ struct CollegeSelectPage {
 
     if (this.classList.length > 0) {
       console.info(`准备显示班级选择器，共${this.classList.length}个班级`);
-      this.classPickerController.close();
-      this.classPickerController = new CustomDialogController({
-        builder: CustomPicker({
-          items: this.createClassPickerData(),
-          selectedIndex: this.selectedClassIndex,
-          title: '选择班级',
-          onConfirm: (item: PickerItem, index: number) => {
-            this.handleClassSelect(index);
-          }
-        }),
-        alignment: DialogAlignment.Bottom,
-        customStyle: true
-      });
-      this.classPickerController.open();
+      // 初始化临时选择状态为当前选择
+      this.tempClassIndex = this.selectedClassIndex;
+      this.showClassPicker = true;
     } else {
       console.error('班级列表仍然为空，无法显示选择器');
       promptAction.showToast({

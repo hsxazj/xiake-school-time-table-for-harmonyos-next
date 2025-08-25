@@ -8,15 +8,14 @@ struct MainTabPage {
   @State currentTabIndex: number = 0;
 
   @Builder
-  TabBuilder(title: string, targetIndex: number) {
+  TabBuilder(title: string, targetIndex: number, icon: Resource, iconActive: Resource) {
     Column() {
-      Text(this.getTabIcon(targetIndex))
-        .fontSize(22)
-        .fontColor(this.currentTabIndex === targetIndex ? '#45CAD9' : '#999999')
-        .margin({ bottom: 4 })
+      Image(this.currentTabIndex === targetIndex ? iconActive : icon)
+        .height(26)
+        .width(26)
       Text(title)
         .fontColor(this.currentTabIndex === targetIndex ? '#45CAD9' : '#999999')
-        .fontSize(12)
+        .fontSize(16)
         .fontWeight(this.currentTabIndex === targetIndex ? FontWeight.Medium : FontWeight.Normal)
     }
     .width('100%')
@@ -30,17 +29,17 @@ struct MainTabPage {
       TabContent() {
         HomePage()
       }
-      .tabBar(this.TabBuilder('首页', 0))
+      .tabBar(this.TabBuilder('首页', 0, $r('app.media.home'), $r("app.media.homeActive")))
 
       TabContent() {
         SchedulePage()
       }
-      .tabBar(this.TabBuilder('课表', 1))
+      .tabBar(this.TabBuilder('课表', 1, $r('app.media.classList'), $r('app.media.classListActive')))
 
       TabContent() {
         MinePage()
       }
-      .tabBar(this.TabBuilder('我的', 2))
+      .tabBar(this.TabBuilder('我的', 2, $r('app.media.me'), $r("app.media.meActive")))
     }
     .width('100%')
     .height('100%')

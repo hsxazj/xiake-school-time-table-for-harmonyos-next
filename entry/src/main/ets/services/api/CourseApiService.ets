@@ -1,6 +1,9 @@
 import { CourseInfo, CoursePosition, CourseRequestParams } from '../../models/CourseModels';
 import { ApiResponse, HttpService } from './HttpService';
 
+// 导出类型
+export { CourseInfo, CoursePosition } from '../../models/CourseModels';
+
 export class CourseApiService {
   private static instance: CourseApiService;
   private httpService = HttpService.getInstance();
