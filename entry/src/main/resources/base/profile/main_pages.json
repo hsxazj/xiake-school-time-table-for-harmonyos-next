@@ -1,9 +1,5 @@
 {
   "src": [
-    "pages/Index",
-    "pages/ClassSelectPage",
-    "pages/MainTabPage",
-    "pages/HomePage",
-    "pages/TestPage"
+    "pages/OpenNavPage"
   ]
 }

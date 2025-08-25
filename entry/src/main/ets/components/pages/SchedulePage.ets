@@ -56,6 +56,7 @@ interface CourseColors {
 
 @Component
 export struct SchedulePage {
+  private pathStack: NavPathStack = new NavPathStack();
   @State private currentWeek: number = 1;
   @State private totalWeeks: number = 20;
   @State private currentMonth: string = '';

@@ -1,0 +1,28 @@
+{
+  "routerMap": [
+    {
+      "name": "MainTabNavPage",
+      "pageSourceFile": "src/main/ets/pages/MainTabNavPage.ets",
+      "buildFunction": "MainTabNavPageBuilder",
+      "data": {
+        "description": "this is MainTabPage"
+      }
+    },
+    {
+      "name": "ClassSelectNavPage",
+      "pageSourceFile": "src/main/ets/pages/ClassSelectNavPage.ets",
+      "buildFunction": "ClassSelectNavPageBuilder",
+      "data": {
+        "description": "this is ClassSelectNavPage"
+      }
+    },
+    {
+      "name": "WelcomeNavPage",
+      "pageSourceFile": "src/main/ets/pages/WelcomeNavPage.ets",
+      "buildFunction": "WelcomeNavPageBuilder",
+      "data": {
+        "description": "this is WelcomeNavPage"
+      }
+    }
+  ]
+}

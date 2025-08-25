@@ -5,9 +5,14 @@ import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager } from '../common/constants/PreferencesUtil';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 
-@Entry
+@Builder
+export function ClassSelectNavPageBuilder() {
+  ClassSelectNavPage();
+}
+
 @Component
-struct CollegeSelectPage {
+struct ClassSelectNavPage {
+  @Consume('NavStack') pathStack: NavPathStack;
   @State private isLoading: boolean = false;
   @State private isInitializing: boolean = true; // 新增初始化状态
   @State private collegeName: string = '加载中...'; // 初始显示加载中
@@ -52,29 +57,29 @@ struct CollegeSelectPage {
       .padding({ left: 16, right: 16 })
       .borderRadius({ topLeft: 16, topRight: 16 })
       .backgroundColor(Color.White)
-      
+
       // 分割线
       Divider()
         .color('#F0F0F0')
-      
+
       // 使用TextPicker实现滚轮选择
-      TextPicker({ 
-        range: this.collegeList.map(college => college.collegeName), 
-        selected: this.tempCollegeIndex 
+      TextPicker({
+        range: this.collegeList.map(college => college.collegeName),
+        selected: this.tempCollegeIndex
       })
         .defaultPickerItemHeight(52)
         .width('100%')
-        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .layoutWeight(1)// 使用layoutWeight占据剩余空间
         .backgroundColor(Color.White)
-        .padding(0) // 去除默认内边距
-        .margin(0) // 去除默认外边距
+        .padding(0)// 去除默认内边距
+        .margin(0)// 去除默认外边距
         .onChange((value: string | string[], index: number | number[]) => {
           const selectedValue = Array.isArray(value) ? value[0] : value;
           const selectedIndex = Array.isArray(index) ? index[0] : index;
           console.info(`临时选择学院: ${selectedValue}, index: ${selectedIndex}`);
           this.tempCollegeIndex = selectedIndex; // 只更新临时状态
         })
-      
+
       Button('确定')
         .margin({ top: 16, bottom: 30 })
         .width('80%')
@@ -109,22 +114,22 @@ struct CollegeSelectPage {
       .padding({ left: 16, right: 16 })
       .borderRadius({ topLeft: 16, topRight: 16 })
       .backgroundColor(Color.White)
-      
+
       // 分割线
       Divider()
         .color('#F0F0F0')
-      
+
       // 使用TextPicker实现滚轮选择
-      TextPicker({ 
-        range: this.majorList.map(major => major.majorName), 
-        selected: this.tempMajorIndex 
+      TextPicker({
+        range: this.majorList.map(major => major.majorName),
+        selected: this.tempMajorIndex
       })
         .defaultPickerItemHeight(52)
         .width('100%')
-        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .layoutWeight(1)// 使用layoutWeight占据剩余空间
         .backgroundColor(Color.White)
-        .padding(0) // 去除默认内边距
-        .margin(0) // 去除默认外边距
+        .padding(0)// 去除默认内边距
+        .margin(0)// 去除默认外边距
         .onChange((value: string | string[], index: number | number[]) => {
           const selectedValue = Array.isArray(value) ? value[0] : value;
           const selectedIndex = Array.isArray(index) ? index[0] : index;
@@ -165,29 +170,29 @@ struct CollegeSelectPage {
       .padding({ left: 16, right: 16 })
       .borderRadius({ topLeft: 16, topRight: 16 })
       .backgroundColor(Color.White)
-      
+
       // 分割线
       Divider()
         .color('#F0F0F0')
-      
+
       // 使用TextPicker实现滚轮选择
-      TextPicker({ 
-        range: this.classList.map(classInfo => classInfo.className), 
-        selected: this.tempClassIndex 
+      TextPicker({
+        range: this.classList.map(classInfo => classInfo.className),
+        selected: this.tempClassIndex
       })
         .defaultPickerItemHeight(52)
         .width('100%')
-        .layoutWeight(1) // 使用layoutWeight占据剩余空间
+        .layoutWeight(1)// 使用layoutWeight占据剩余空间
         .backgroundColor(Color.White)
-        .padding(0) // 去除默认内边距
-        .margin(0) // 去除默认外边距
+        .padding(0)// 去除默认内边距
+        .margin(0)// 去除默认外边距
         .onChange((value: string | string[], index: number | number[]) => {
           const selectedValue = Array.isArray(value) ? value[0] : value;
           const selectedIndex = Array.isArray(index) ? index[0] : index;
           console.info(`临时选择班级: ${selectedValue}, index: ${selectedIndex}`);
           this.tempClassIndex = selectedIndex; // 只更新临时状态
         })
-        
+
       Button('确定')
         .margin({ top: 16, bottom: 30 })
         .width('80%')
@@ -207,146 +212,153 @@ struct CollegeSelectPage {
   }
 
   build() {
-    Column() {
-      Text('选择要查看的班级')
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#179FA2')
-        .margin({
-          top: 120
-        })
-        .textAlign(TextAlign.Start)
-        .width('80%')
-
+    NavDestination() {
       Column() {
-        SelectItem({
-          icon: $r('app.media.college'),
-          title: this.collegeName,
-          iconBackgroundColor: '#F2FAF4',
-          iconShadowColor: 'rgba(36, 194, 198, 0.2)',
-          isSelected: this.collegeId !== '',
-          onTap: () => {
-            console.info(`学院点击事件触发，isInitializing=${this.isInitializing}`);
-            if (!this.isInitializing) {
-              this.handleCollegeClick();
-            } else {
-              console.info('初始化中，点击被忽略');
-            }
-          }
-        })
-          .bindSheet($$this.showCollegePicker, this.CollegePickerBuilder(), {
-            showClose: false,
-            height: 400,
-            dragBar: true,
-            maskColor: 'rgba(0, 0, 0, 0.4)',
-            onAppear: () => {
-              console.log("学院选择器显示");
-            },
-            onDisappear: () => {
-              console.log("学院选择器隐藏");
-            }
+        Text('选择要查看的班级')
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#179FA2')
+          .margin({
+            top: 120
           })
+          .textAlign(TextAlign.Start)
+          .width('80%')
 
-        SelectItem({
-          icon: $r('app.media.major'),
-          title: this.majorName,
-          iconBackgroundColor: '#E0EFFF',
-          iconShadowColor: 'rgba(126, 175, 252, 0.3)',
-          isSelected: this.majorId !== '',
-          onTap: () => {
-            console.info(`专业点击事件触发，isInitializing=${this.isInitializing}`);
-            if (!this.isInitializing) {
-              this.handleMajorClick();
-            } else {
-              console.info('初始化中，点击被忽略');
-            }
-          }
-        })
-          .bindSheet($$this.showMajorPicker, this.MajorPickerBuilder(), {
-            showClose: false,
-            height: 400,
-            dragBar: true,
-            maskColor: 'rgba(0, 0, 0, 0.4)',
-            onAppear: () => {
-              console.log("专业选择器显示");
-            },
-            onDisappear: () => {
-              console.log("专业选择器隐藏");
-            }
-          })
-
-        SelectItem({
-          icon: $r('app.media.class_icon'),
-          title: this.className,
-          iconBackgroundColor: '#FFF3E9',
-          iconShadowColor: 'rgba(250, 207, 94, 0.2)',
-          isSelected: this.classId !== '',
-          onTap: () => {
-            console.info(`班级点击事件触发，isInitializing=${this.isInitializing}`);
-            if (!this.isInitializing) {
-              this.handleClassClick();
-            } else {
-              console.info('初始化中，点击被忽略');
-            }
-          }
-        })
-          .bindSheet($$this.showClassPicker, this.ClassPickerBuilder(), {
-            showClose: false,
-            height: 400,
-            dragBar: true,
-            maskColor: 'rgba(0, 0, 0, 0.4)',
-            onAppear: () => {
-              console.log("班级选择器显示");
-            },
-            onDisappear: () => {
-              console.log("班级选择器隐藏");
-            }
-          })
-      }
-      .width('90%')
-      .margin({ top: 20 })
-
-      Blank()
-
-      Button('下一步')
-        .width('60%')
-        .height(45)
-        .fontSize(16)
-        .fontColor(Color.White)
-        .backgroundColor(this.isInitializing ? '#CCCCCC' : '#45CAD9')// 初始化时灰色
-        .borderRadius(22)
-        .margin({ bottom: 60 })
-        .shadow({
-          radius: 20,
-          color: this.isInitializing ? 'rgba(204, 204, 204, 0.3)' : 'rgba(157, 224, 231, 0.6)',
-          offsetY: 0
-        })
-        .onClick(() => {
-          if (!this.isInitializing) {
-            this.handleNextStep();
-          }
-        })
-
-      if (this.isLoading || this.isInitializing) {
         Column() {
-          LoadingProgress()
-            .width(50)
-            .height(50)
-            .color('#45CAD9')
+          SelectItem({
+            icon: $r('app.media.college'),
+            title: this.collegeName,
+            iconBackgroundColor: '#F2FAF4',
+            iconShadowColor: 'rgba(36, 194, 198, 0.2)',
+            isSelected: this.collegeId !== '',
+            onTap: () => {
+              console.info(`学院点击事件触发，isInitializing=${this.isInitializing}`);
+              if (!this.isInitializing) {
+                this.handleCollegeClick();
+              } else {
+                console.info('初始化中，点击被忽略');
+              }
+            }
+          })
+            .bindSheet($$this.showCollegePicker, this.CollegePickerBuilder(), {
+              showClose: false,
+              height: 400,
+              dragBar: true,
+              maskColor: 'rgba(0, 0, 0, 0.4)',
+              onAppear: () => {
+                console.log("学院选择器显示");
+              },
+              onDisappear: () => {
+                console.log("学院选择器隐藏");
+              }
+            })
 
-          Text(this.isInitializing ? '正在加载用户信息...' : '加载中...')
-            .fontSize(14)
-            .fontColor('#666666')
-            .margin({ top: 10 })
+          SelectItem({
+            icon: $r('app.media.major'),
+            title: this.majorName,
+            iconBackgroundColor: '#E0EFFF',
+            iconShadowColor: 'rgba(126, 175, 252, 0.3)',
+            isSelected: this.majorId !== '',
+            onTap: () => {
+              console.info(`专业点击事件触发，isInitializing=${this.isInitializing}`);
+              if (!this.isInitializing) {
+                this.handleMajorClick();
+              } else {
+                console.info('初始化中，点击被忽略');
+              }
+            }
+          })
+            .bindSheet($$this.showMajorPicker, this.MajorPickerBuilder(), {
+              showClose: false,
+              height: 400,
+              dragBar: true,
+              maskColor: 'rgba(0, 0, 0, 0.4)',
+              onAppear: () => {
+                console.log("专业选择器显示");
+              },
+              onDisappear: () => {
+                console.log("专业选择器隐藏");
+              }
+            })
+
+          SelectItem({
+            icon: $r('app.media.class_icon'),
+            title: this.className,
+            iconBackgroundColor: '#FFF3E9',
+            iconShadowColor: 'rgba(250, 207, 94, 0.2)',
+            isSelected: this.classId !== '',
+            onTap: () => {
+              console.info(`班级点击事件触发，isInitializing=${this.isInitializing}`);
+              if (!this.isInitializing) {
+                this.handleClassClick();
+              } else {
+                console.info('初始化中，点击被忽略');
+              }
+            }
+          })
+            .bindSheet($$this.showClassPicker, this.ClassPickerBuilder(), {
+              showClose: false,
+              height: 400,
+              dragBar: true,
+              maskColor: 'rgba(0, 0, 0, 0.4)',
+              onAppear: () => {
+                console.log("班级选择器显示");
+              },
+              onDisappear: () => {
+                console.log("班级选择器隐藏");
+              }
+            })
         }
-        .position({ x: '50%', y: '50%' })
-        .translate({ x: '-50%', y: '-50%' })
+        .width('90%')
+        .margin({ top: 20 })
+
+        Blank()
+
+        Button('下一步')
+          .width('60%')
+          .height(45)
+          .fontSize(16)
+          .fontColor(Color.White)
+          .backgroundColor(this.isInitializing ? '#CCCCCC' : '#45CAD9')// 初始化时灰色
+          .borderRadius(22)
+          .margin({ bottom: 60 })
+          .shadow({
+            radius: 20,
+            color: this.isInitializing ? 'rgba(204, 204, 204, 0.3)' : 'rgba(157, 224, 231, 0.6)',
+            offsetY: 0
+          })
+          .onClick(() => {
+            if (!this.isInitializing) {
+              this.handleNextStep();
+            }
+          })
+
+        if (this.isLoading || this.isInitializing) {
+          Column() {
+            LoadingProgress()
+              .width(50)
+              .height(50)
+              .color('#45CAD9')
+
+            Text(this.isInitializing ? '正在加载用户信息...' : '加载中...')
+              .fontSize(14)
+              .fontColor('#666666')
+              .margin({ top: 10 })
+          }
+          .position({ x: '50%', y: '50%' })
+          .translate({ x: '-50%', y: '-50%' })
+        }
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Color.White)
+      .justifyContent(FlexAlign.Start)
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(Color.White)
-    .justifyContent(FlexAlign.Start)
+    .hideTitleBar(true)
+    .onReady((ctx: NavDestinationContext) => {
+      this.pathStack = ctx.pathStack;
+    })
+
   }
 
   private async loadInitialData(): Promise<void> {
@@ -726,14 +738,10 @@ struct CollegeSelectPage {
     setTimeout(() => {
       if (hadCompleteInfo) {
         // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
-        router.replaceUrl({
-          url: 'pages/MainTabPage'
-        });
+        this.pathStack.replacePathByName('MainTabNavPage', null);
       } else {
         // 用户之前没有完整信息，说明是首次设置，跳转到欢迎页面
-        router.replaceUrl({
-          url: 'pages/HomePage'
-        });
+        this.pathStack.replacePathByName('WelcomeNavPage', null);
       }
     }, 1000);
   }

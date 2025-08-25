@@ -20,6 +20,7 @@ interface MenuItemType {
 
 @Component
 export struct MinePage {
+  private pathStack: NavPathStack = new NavPathStack();
   @State private userInfo: UserInfo = {
     avatar: $r('app.media.defaultAvatar'),
     username: 'FJUTER',
@@ -142,7 +143,7 @@ export struct MinePage {
             Image(item.icon)
               .height(24)
               .width(24)
-              .margin({ right: 16})
+              .margin({ right: 16 })
 
             Column() {
               Text(item.title)
