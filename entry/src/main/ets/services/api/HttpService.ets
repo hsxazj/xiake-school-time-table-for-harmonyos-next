@@ -1,6 +1,11 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from '@ohos/axios';
 import { API_CONFIG } from '../../common/constants/AppConstants';
-import { ApiResponse } from '../../models/CollegeModels';
+
+export interface ApiResponse<T> {
+  code: number;
+  msg: string;
+  data: T;
+}
 
 // 扩展配置接口以包含自定义属性
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {

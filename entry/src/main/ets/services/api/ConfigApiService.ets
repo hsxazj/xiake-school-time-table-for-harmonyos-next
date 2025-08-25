@@ -1,40 +1,7 @@
-import { HttpService } from './HttpService';
+import { ApiResponse, HttpService } from './HttpService';
 import { DateUtil } from '../../common/utils/DateUtil';
+import { ConfigApiResponseData, CurrentSemesterStatus, SemesterInfo, WeekDateRange } from '../../models/ConfigModels';
 
-// 真实的/config API返回数据结构
-export interface ConfigApiResponseData {
-  start: Map<string, string[]>;
-  end: Map<string, string[]>;
-}
-
-export interface ConfigApiResponse {
-  msg: string;
-  code: number;
-  data: ConfigApiResponseData;
-}
-
-// 处理后的学期信息
-export interface SemesterInfo {
-  academicYear: string; // 学年，如 "2024" 表示2024学年
-  semester: number; // 1: 第一学期(秋季学期), 2: 第二学期(春季学期) 
-  startDate: string;
-  endDate: string;
-  totalWeeks: number;
-}
-
-// 当前状态信息
-export interface CurrentSemesterStatus {
-  isInSemester: boolean;
-  isInHoliday: boolean;
-  currentSemester?: SemesterInfo;
-  currentWeek: number;
-  statusText: string; // "第X周" 或 "假期中"
-}
-
-export interface WeekDateRange {
-  startDate: Date;
-  endDate: Date;
-}
 
 export class ConfigApiService {
   private static instance: ConfigApiService;
@@ -54,7 +21,7 @@ export class ConfigApiService {
   /**
    * 获取配置信息
    */
-  public async getConfig(): Promise<ConfigApiResponse> {
+  public async getConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
       const response = await HttpService.getInstance().get<Record<string, Object>>('/config');
 
@@ -76,7 +43,7 @@ export class ConfigApiService {
       }
 
       // 构建完整的响应对象
-      const configResponse: ConfigApiResponse = {
+      const configResponse: ApiResponse<ConfigApiResponseData> = {
         msg: "操作成功",
         code: response.code || 200,
         data: { start: startMap, end: endMap }

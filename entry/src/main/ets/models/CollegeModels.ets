@@ -15,12 +15,6 @@ export interface ClassInfo {
   majorId: string;
 }
 
-export interface ApiResponse<T> {
-  code: number;
-  msg: string;
-  data: T;
-}
-
 export interface UserSelection {
   collegeId: string;
   collegeName: string;
