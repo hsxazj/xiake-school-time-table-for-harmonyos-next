@@ -79,11 +79,14 @@ export struct MinePage {
       .width('90%')
       .padding(20)
       .backgroundColor(Color.White)
-      .borderRadius(12)
+      .borderRadius(24)
+      .borderWidth(1)
+      .borderColor('#F2F2F2')
       .shadow({
-        radius: 8,
-        color: 'rgba(0, 0, 0, 0.1)',
-        offsetY: 2
+        radius: 10,
+        color: '#80000000',   // 半透明黑
+        offsetX: 0,
+        offsetY: 4
       })
       .margin({ top: 50, bottom: 20 })
       .onClick(() => {
@@ -101,7 +104,7 @@ export struct MinePage {
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F5F5F5')
+    .backgroundColor(Color.White)
   }
 
   @Builder
@@ -161,6 +164,12 @@ export struct MinePage {
       .backgroundColor(Color.White)
       .borderRadius(12)
       .margin({ bottom: 20 })
+      .shadow({
+        radius: 10,
+        color: '#80000000',   // 半透明黑
+        offsetX: 0,
+        offsetY: 4
+      })
     }
   }
 

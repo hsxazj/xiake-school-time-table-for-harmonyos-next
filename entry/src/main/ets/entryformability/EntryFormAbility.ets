@@ -5,7 +5,6 @@ import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { CourseApiService } from '../services/api/CourseApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
 import { CourseInfo } from '../models/CourseModels';
-import { MOCK_TODAY_COURSES } from '../common/constants/AppConstants';
 
 interface TodayParm {
   year: number;
@@ -97,15 +96,13 @@ export default class EntryFormAbility extends FormExtensionAbility {
       hilog.info(0x0000, TAG, `👤 [FormAbility] 用户班级: ${classId}`);
       
       if (!classId) {
-        hilog.warn(0x0000, TAG, '未找到用户班级信息，使用模拟数据');
-        this.updateFormData(formId, MOCK_TODAY_COURSES, false);
+        hilog.warn(0x0000, TAG, '未找到用户班级信息');
         return;
       }
 
       const todayParams = this.initTodayParams();
       if (!todayParams) {
-        hilog.warn(0x0000, TAG, '无法获取今日课程参数，使用模拟数据');
-        this.updateFormData(formId, MOCK_TODAY_COURSES, false);
+        hilog.warn(0x0000, TAG, '无法获取今日课程参数');
         return;
       }
 
@@ -124,13 +121,11 @@ export default class EntryFormAbility extends FormExtensionAbility {
       if (response.code === 200 && response.data) {
         this.updateFormData(formId, response.data, false);
       } else {
-        hilog.warn(0x0000, TAG, '获取今日课程失败，使用模拟数据');
-        this.updateFormData(formId, MOCK_TODAY_COURSES, false);
+        hilog.warn(0x0000, TAG, '获取今日课程失败');
       }
 
     } catch (error) {
       hilog.error(0x0000, TAG, '加载今日课程失败:', JSON.stringify(error));
-      this.updateFormData(formId, MOCK_TODAY_COURSES, false);
     }
   }
 

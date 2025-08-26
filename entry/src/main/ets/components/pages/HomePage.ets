@@ -1,6 +1,5 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/utils/UserInfoManager';
 import { CourseInfo } from '../../models/CourseModels';
-import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
 import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
@@ -128,10 +127,13 @@ export struct HomePage {
           .scrollBar(BarState.Off)
         } else {
           Column() {
-            Text('暂无今日课程')
+            Text('今日无课😋')
               .fontSize(16)
               .fontColor('#999999')
               .margin({ top: 50, bottom: 50 })
+            Text('去做点喜欢的事☝️🤓')
+              .fontSize(16)
+              .fontColor('#999999')
           }
           .width('100%')
           .height(300)
@@ -140,12 +142,13 @@ export struct HomePage {
       }
       .width('100%')
       .padding(20)
-      .backgroundColor('#F0F2F5') // 今日课程区域使用稍深的灰蓝色
+      .backgroundColor(Color.White) // 今日课程区域使用稍深的灰蓝色
       .borderRadius(24)
       .shadow({
-        radius: 8,
-        color: 'rgba(0, 0, 0, 0.08)',
-        offsetY: 2
+        radius: 10,
+        color: '#80000000',   // 半透明黑
+        offsetX: 0,
+        offsetY: 4
       })
       .margin({ bottom: 20 })
       .layoutWeight(1) // 让今日课程区域占用更多空间
@@ -232,7 +235,6 @@ export struct HomePage {
       const userInfo = this.userInfoManager.getUserInfo(getContext(this));
       if (!userInfo || !userInfo.classId) {
         console.warn('未找到用户班级信息');
-        this.todayCourses = MOCK_TODAY_COURSES; // 使用模拟数据作为备用
         return;
       }
 
@@ -242,8 +244,7 @@ export struct HomePage {
       }
 
       if (!this.todayParams) {
-        console.warn('无法获取今日课程参数，使用模拟数据');
-        this.todayCourses = MOCK_TODAY_COURSES;
+        console.warn('无法获取今日课程参数');
         return;
       }
 
@@ -262,13 +263,11 @@ export struct HomePage {
       if (response.code === 200 && response.data) {
         this.todayCourses = response.data;
       } else {
-        console.warn('获取今日课程失败，使用模拟数据');
-        this.todayCourses = MOCK_TODAY_COURSES;
+        console.warn('获取今日课程失败');
       }
 
     } catch (error) {
       console.error('加载今日课程失败:', error);
-      this.todayCourses = MOCK_TODAY_COURSES; // 降级到模拟数据
     } finally {
       this.isLoading = false;
     }

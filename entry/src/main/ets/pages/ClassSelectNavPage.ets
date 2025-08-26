@@ -66,6 +66,7 @@ struct ClassSelectNavPage {
         range: this.collegeList.map(college => college.collegeName),
         selected: this.tempCollegeIndex
       })
+        .selectedTextStyle({ color: '#45CAD9'})
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -123,6 +124,7 @@ struct ClassSelectNavPage {
         range: this.majorList.map(major => major.majorName),
         selected: this.tempMajorIndex
       })
+        .selectedTextStyle({ color: '#45CAD9'})
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -179,6 +181,7 @@ struct ClassSelectNavPage {
         range: this.classList.map(classInfo => classInfo.className),
         selected: this.tempClassIndex
       })
+        .selectedTextStyle({ color: '#45CAD9'})
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -313,7 +316,7 @@ struct ClassSelectNavPage {
 
         Blank()
 
-        Button('下一步')
+        Button('保存')
           .width('60%')
           .height(45)
           .fontSize(16)

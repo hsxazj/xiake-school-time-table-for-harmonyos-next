@@ -87,9 +87,13 @@ struct TodayCourseCard {
         .indicator(false)
       } else {
         Column() {
-          Text('暂无今日课程')
+          Text('今日无课😋')
             .fontColor(this.FONT_COLOR)
             .fontSize(14)
+            .margin({ bottom: 8 })
+          Text('去做点喜欢的事☝️🤓')
+            .fontSize(14)
+            .fontColor(this.FONT_COLOR)
         }
         .justifyContent(FlexAlign.Center)
         .layoutWeight(1)
