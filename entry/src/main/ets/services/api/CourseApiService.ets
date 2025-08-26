@@ -1,4 +1,4 @@
-import { CourseInfo, CoursePosition, CourseRequestParams } from '../../models/CourseModels';
+import { CourseInfo, CoursePosition, CourseRequestParams, TodayCourseRequestParams } from '../../models/CourseModels';
 import { ApiResponse, HttpService } from './HttpService';
 
 // 导出类型
@@ -54,6 +54,42 @@ export class CourseApiService {
     } catch (error) {
       console.error('获取课程列表失败:', error);
       throw new Error('获取课程列表失败');
+    }
+  }
+
+  /**
+   * 获取今日课程列表 (使用getCourseFilter接口)
+   */
+  public async getTodayCourseList(classId: string, year: number, term: string, weeks: number, weekday: string): Promise<ApiResponse<CourseInfo[]>> {
+    try {
+      // 构建请求参数，使用接口类型
+      const params: TodayCourseRequestParams = {
+        classId: classId,
+        year: year,
+        term: term,
+        weeks: weeks,
+        weekday: weekday
+      };
+
+      // 转换为HttpService需要的类型
+      const paramsObj: Record<string, Object> = {
+        "classId": params.classId,
+        "year": params.year,
+        "term": params.term,
+        "weeks": params.weeks,
+        "weekday": params.weekday
+      };
+
+      const response = await this.httpService.get<CourseInfo[]>('/course/getCourseFilter', paramsObj);
+
+      return {
+        msg: "操作成功",
+        code: response.code || 200,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('获取今日课程失败:', error);
+      throw new Error('获取今日课程失败');
     }
   }
 

@@ -7,6 +7,15 @@ export interface CourseRequestParams {
   username?: string; // 学生用户名
 }
 
+// 今日课程过滤请求参数
+export interface TodayCourseRequestParams {
+  classId: string;
+  year: number;
+  term: string;
+  weeks: number;
+  weekday: string;
+}
+
 // 课程信息
 export interface CourseInfo {
   courseId: number; // 课程ID为数字

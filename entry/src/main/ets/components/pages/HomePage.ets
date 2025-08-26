@@ -1,6 +1,16 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/utils/PreferencesUtil';
 import { CourseInfo } from '../../models/CourseModels';
 import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
+import { curves } from '@kit.ArkUI';
+import { CourseApiService } from '../../services/api/CourseApiService';
+import { AppConfigManager } from '../../services/AppConfigManager';
+
+interface TodayParm{
+  year: number;
+  week: number;
+  termCode: string;
+  weekDay: string;
+}
 
 @Component
 export struct HomePage {
@@ -10,6 +20,15 @@ export struct HomePage {
   @State private todayCourses: CourseInfo[] = [];
   @State private isLoading: boolean = false;
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+  private courseApiService: CourseApiService = CourseApiService.getInstance();
+  private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  // 今日课程参数缓存
+  private todayParams: TodayParm | null = null;
+  // 动画支持 - 与周课程页保持一致
+  private effect: TransitionEffect =
+    TransitionEffect.OPACITY
+      .combine(TransitionEffect.scale({ x: 0, y: 0 }))
+      .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
 
   aboutToAppear(): void {
     this.loadUserInfo();
@@ -103,6 +122,7 @@ export struct HomePage {
               }
             })
           }
+          .borderRadius(24)
           .width('100%')
           .layoutWeight(1)
           .scrollBar(BarState.Off)
@@ -165,13 +185,12 @@ export struct HomePage {
       Text(courseInfo.classroom || '')
         .fontSize(14)
         .fontColor('#666666')
-        .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
     }
     .width('100%')
     .backgroundColor(Color.White)
-    .borderRadius(12)
+    .borderRadius(24)
     .padding({
       left: 16,
       right: 16,
@@ -185,6 +204,7 @@ export struct HomePage {
       offsetY: 2
     })
     .alignItems(HorizontalAlign.Start)
+    .transition(this.effect) // 应用转场动画
   }
 
   private getTimeRange(courseTime?: string[]): string {
@@ -204,11 +224,80 @@ export struct HomePage {
   private async loadTodayCourses(): Promise<void> {
     this.isLoading = true;
 
-    // 模拟加载延迟
-    setTimeout(() => {
-      this.todayCourses = MOCK_TODAY_COURSES;
+    try {
+      // 等待配置管理器初始化
+      await this.appConfigManager.initialize();
+      
+      // 获取用户信息
+      const userInfo = this.userInfoManager.getUserInfo();
+      if (!userInfo || !userInfo.classId) {
+        console.warn('未找到用户班级信息');
+        this.todayCourses = MOCK_TODAY_COURSES; // 使用模拟数据作为备用
+        return;
+      }
+
+      // 如果还没有缓存今日课程参数，则初始化
+      if (!this.todayParams) {
+        this.initTodayParams();
+      }
+
+      if (!this.todayParams) {
+        console.warn('无法获取今日课程参数，使用模拟数据');
+        this.todayCourses = MOCK_TODAY_COURSES;
+        return;
+      }
+
+      console.info(`🔍 [Today Course] 使用缓存参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
+
+      // 调用今日课程接口
+      const response = await this.courseApiService.getTodayCourseList(
+        userInfo.classId,
+        this.todayParams.year,
+        this.todayParams.termCode,
+        this.todayParams.week,
+        this.todayParams.weekDay
+      );
+
+      if (response.code === 200 && response.data) {
+        this.todayCourses = response.data;
+      } else {
+        console.warn('获取今日课程失败，使用模拟数据');
+        this.todayCourses = MOCK_TODAY_COURSES;
+      }
+
+    } catch (error) {
+      console.error('加载今日课程失败:', error);
+      this.todayCourses = MOCK_TODAY_COURSES; // 降级到模拟数据
+    } finally {
       this.isLoading = false;
-    }, 500);
+    }
+  }
+
+  /**
+   * 初始化今日课程参数缓存
+   */
+  private initTodayParams(): void {
+    // 获取已经计算好的当前学期状态
+    const currentStatus = this.appConfigManager.getCurrentStatus();
+    if (!currentStatus || !currentStatus.currentSemester) {
+      console.warn('未找到当前学期信息');
+      return;
+    }
+
+    // 获取今天是星期几
+    const today = new Date();
+    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const weekDayStr = weekdays[today.getDay()];
+
+    // 缓存今日课程参数
+    this.todayParams = {
+      year: parseInt(currentStatus.currentSemester.academicYear),
+      week: currentStatus.currentWeek,
+      termCode: currentStatus.currentSemester.semester === 1 ? '3' : '12',
+      weekDay: weekDayStr
+    };
+
+    console.info(`✅ [Today Params Cache] 已缓存参数: ${JSON.stringify(this.todayParams)}`);
   }
 
   private loadUserInfo(): void {

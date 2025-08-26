@@ -10,7 +10,6 @@ export class ConfigApiService {
   private static instance: ConfigApiService;
   private semesterList: SemesterInfo[] = [];
   private currentStatus: CurrentSemesterStatus | null = null;
-  private configData: ConfigApiResponseData | null = null;
 
   private constructor() {
   }
@@ -30,41 +29,28 @@ export class ConfigApiService {
       const response = await HttpService.getInstance().get<Record<string, Object>>('/config');
 
       // 转换原始数据为Map结构
-      const rawData = response.data as Record<string, Object>;
+      const rawData = response.data as Record<string, Record<string, string[]>>;
       const startMap = new Map<string, string[]>();
       const endMap = new Map<string, string[]>();
 
-      if (rawData.start && typeof rawData.start === 'object') {
-        const startData = rawData.start as Record<string, string[]>;
-        Object.keys(startData).forEach((key: string) => {
-          startMap.set(key, startData[key]);
+      if (rawData.start) {
+        Object.keys(rawData.start).forEach((key: string) => {
+          startMap.set(key, rawData.start[key]);
         });
       }
 
-      if (rawData.end && typeof rawData.end === 'object') {
-        const endData = rawData.end as Record<string, string[]>;
-        Object.keys(endData).forEach((key: string) => {
-          endMap.set(key, endData[key]);
+      if (rawData.end) {
+        Object.keys(rawData.end).forEach((key: string) => {
+          endMap.set(key, rawData.end[key]);
         });
       }
 
-      // 构建完整的响应对象，包含新的字段
+      // 构建完整的响应对象
       const configResponse: ApiResponse<ConfigApiResponseData> = {
         msg: "操作成功",
         code: response.code || 200,
-        data: { 
-          start: startMap, 
-          end: endMap,
-          week: rawData.week as number,
-          weekDayStr: rawData.weekDayStr as string,
-          year: rawData.year as number,
-          termCode: rawData.termCode as string
-        }
+        data: { start: startMap, end: endMap }
       };
-
-      // 存储配置数据
-      this.configData = configResponse.data;
-
       // 处理学期数据
       this.processSemesterData(configResponse.data);
 
@@ -296,34 +282,6 @@ export class ConfigApiService {
   public calculateCurrentWeek(startDate: string, currentDate?: Date): number {
     const status = this.calculateCurrentSemesterStatus(currentDate);
     return status.currentWeek;
-  }
-
-  /**
-   * 获取当前周数 (从配置API返回的新字段)
-   */
-  public getCurrentWeekFromConfig(): number | undefined {
-    return this.configData?.week;
-  }
-
-  /**
-   * 获取当前星期字符串 (从配置API返回的新字段)
-   */
-  public getCurrentWeekDayString(): string | undefined {
-    return this.configData?.weekDayStr;
-  }
-
-  /**
-   * 获取当前年份 (从配置API返回的新字段)
-   */
-  public getCurrentYear(): number | undefined {
-    return this.configData?.year;
-  }
-
-  /**
-   * 获取学期代码 (从配置API返回的新字段)
-   */
-  public getTermCode(): string | undefined {
-    return this.configData?.termCode;
   }
 
   /**
