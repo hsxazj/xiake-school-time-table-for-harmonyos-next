@@ -1,7 +1,7 @@
 import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
-import { UserInfoManager } from '../common/utils/PreferencesUtil';
+import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 
 @Builder
@@ -387,7 +387,7 @@ struct ClassSelectNavPage {
    */
   private async loadUserPreviousSelections(): Promise<void> {
     try {
-      const userInfo = this.userInfoManager.getUserInfo();
+      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
       console.info('用户信息:', JSON.stringify(userInfo));
 
       // 先重置为默认状态
@@ -722,26 +722,64 @@ struct ClassSelectNavPage {
     };
 
     // 检查用户之前是否已有完整信息（用于判断是首次设置还是修改设置）
-    const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo();
+    const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo(getContext(this));
 
     // 保存用户选择到PreferencesUtil
-    this.userInfoManager.saveCollegeInfo(userSelection.collegeId, userSelection.collegeName);
-    this.userInfoManager.saveMajorInfo(userSelection.majorId, userSelection.majorName);
-    this.userInfoManager.saveClassInfo(userSelection.classId, userSelection.className);
+    console.info(`🔍 [ClassSelect] 开始保存用户信息...`);
+    console.info(`🔍 [ClassSelect] 学院: ${userSelection.collegeId} - ${userSelection.collegeName}`);
+    console.info(`🔍 [ClassSelect] 专业: ${userSelection.majorId} - ${userSelection.majorName}`);
+    console.info(`🔍 [ClassSelect] 班级: ${userSelection.classId} - ${userSelection.className}`);
+    
+    try {
+      // 创建符合UserSchoolInfo接口的对象
+      const userInfo: UserSchoolInfo = {
+        collegeId: userSelection.collegeId,
+        collegeName: userSelection.collegeName,
+        majorId: userSelection.majorId,
+        majorName: userSelection.majorName,
+        classId: userSelection.classId,
+        className: userSelection.className
+      };
+      
+      // 使用批量保存方法确保原子性
+      this.userInfoManager.saveCompleteUserInfo(getContext(this), userInfo);
+      
+      // 立即验证保存结果
+      const savedUserInfo = this.userInfoManager.getUserInfo(getContext(this));
+      
+      console.info(`✅ [ClassSelect] 保存验证:`);
+      console.info(`✅ [ClassSelect] 学院ID: ${savedUserInfo.collegeId} (期望: ${userSelection.collegeId})`);
+      console.info(`✅ [ClassSelect] 专业ID: ${savedUserInfo.majorId} (期望: ${userSelection.majorId})`);
+      console.info(`✅ [ClassSelect] 班级ID: ${savedUserInfo.classId} (期望: ${userSelection.classId})`);
+      
+      const saveSuccess = savedUserInfo.collegeId === userSelection.collegeId && 
+                         savedUserInfo.majorId === userSelection.majorId && 
+                         savedUserInfo.classId === userSelection.classId;
+      
+      console.info(`${saveSuccess ? '✅' : '❌'} [ClassSelect] 批量保存${saveSuccess ? '成功' : '失败'}`);
 
-    promptAction.showToast({
-      message: '保存成功',
-      duration: 1000
-    });
+      promptAction.showToast({
+        message: saveSuccess ? '保存成功' : '保存失败，请重试',
+        duration: 2000
+      });
 
-    setTimeout(() => {
-      if (hadCompleteInfo) {
-        // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
-        this.pathStack.replacePathByName('MainTabNavPage', null);
-      } else {
-        // 用户之前没有完整信息，说明是首次设置，跳转到欢迎页面
-        this.pathStack.replacePathByName('WelcomeNavPage', null);
+      if (saveSuccess) {
+        setTimeout(() => {
+          if (hadCompleteInfo) {
+            // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
+            this.pathStack.replacePathByName('MainTabNavPage', null);
+          } else {
+            // 用户之前没有完整信息，说明是首次设置，跳转到欢迎页面
+            this.pathStack.replacePathByName('WelcomeNavPage', null);
+          }
+        }, 1000);
       }
-    }, 1000);
+    } catch (error) {
+      console.error(`❌ [ClassSelect] 保存过程中发生错误: ${error}`);
+      promptAction.showToast({
+        message: '保存失败，请重试',
+        duration: 2000
+      });
+    }
   }
 }

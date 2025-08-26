@@ -1,4 +1,4 @@
-import { UserInfoManager } from '../../common/utils/PreferencesUtil';
+import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import router from '@ohos.router';
 
 // 用户信息接口
@@ -165,7 +165,7 @@ export struct MinePage {
   }
 
   private loadUserInfo(): void {
-    const schoolInfo = this.userInfoManager.getUserInfo();
+    const schoolInfo = this.userInfoManager.getUserInfo(getContext(this));
     console.info('获取到的用户信息:', JSON.stringify(schoolInfo));
 
     // 更新学院、专业、班级信息

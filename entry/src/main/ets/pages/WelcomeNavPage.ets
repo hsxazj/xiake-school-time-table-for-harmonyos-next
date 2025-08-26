@@ -1,5 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
-import { UserInfoManager, UserSchoolInfo } from '../common/utils/PreferencesUtil';
+import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { CurrentSemesterStatus } from '../services/api/ConfigApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
 
@@ -202,9 +202,9 @@ struct WelcomeNavPage {
 
   private async loadUserData(): Promise<void> {
     try {
-      this.userInfo = this.userInfoManager.getUserInfo();
+      this.userInfo = this.userInfoManager.getUserInfo(getContext(this));
 
-      if (!this.userInfoManager.hasCompleteUserInfo()) {
+      if (!this.userInfoManager.hasCompleteUserInfo(getContext(this))) {
         promptAction.showToast({
           message: '未找到用户信息，请重新选择',
           duration: 2000

@@ -1,6 +1,6 @@
 {
   "src": [
-    "pages/OpenNavPage",
+    "pages/OpenPage",
     "todaycourse/pages/TodayCourseCard"
   ]
 }

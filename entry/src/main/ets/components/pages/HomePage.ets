@@ -1,4 +1,4 @@
-import { UserInfoManager, UserSchoolInfo } from '../../common/utils/PreferencesUtil';
+import { UserInfoManager, UserSchoolInfo } from '../../common/utils/UserInfoManager';
 import { CourseInfo } from '../../models/CourseModels';
 import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
 import { curves } from '@kit.ArkUI';
@@ -229,7 +229,7 @@ export struct HomePage {
       await this.appConfigManager.initialize();
       
       // 获取用户信息
-      const userInfo = this.userInfoManager.getUserInfo();
+      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
       if (!userInfo || !userInfo.classId) {
         console.warn('未找到用户班级信息');
         this.todayCourses = MOCK_TODAY_COURSES; // 使用模拟数据作为备用
@@ -257,6 +257,7 @@ export struct HomePage {
         this.todayParams.week,
         this.todayParams.weekDay
       );
+
 
       if (response.code === 200 && response.data) {
         this.todayCourses = response.data;
@@ -301,6 +302,6 @@ export struct HomePage {
   }
 
   private loadUserInfo(): void {
-    this.userInfo = this.userInfoManager.getUserInfo();
+    this.userInfo = this.userInfoManager.getUserInfo(getContext(this));
   }
 }

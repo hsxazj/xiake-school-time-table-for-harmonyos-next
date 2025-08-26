@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "com.hsxazj.myapplication",
+    "bundleName": "com.fjutxiake.schooltimetable",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

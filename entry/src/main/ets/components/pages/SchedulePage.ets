@@ -1,7 +1,7 @@
 import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
 import { CourseApiService, CourseInfo } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
-import { UserInfoManager } from '../../common/utils/PreferencesUtil';
+import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { curves } from '@kit.ArkUI';
 
 // 周日期范围接口
@@ -785,7 +785,7 @@ export struct SchedulePage {
 
     try {
       // 从首选项获取用户班级信息
-      const userInfo = this.userInfoManager.getUserInfo();
+      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
       console.info(`📚 [Course] 当前用户信息: 学院=${userInfo.collegeName}, 专业=${userInfo.majorName}, 班级=${userInfo.className}`);
 
       const classId = userInfo.classId;

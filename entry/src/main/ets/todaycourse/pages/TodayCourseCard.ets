@@ -1,8 +1,4 @@
-interface SimpleCourse {
-  courseName: string;
-  classroom: string;
-  timeRange: string;
-}
+import { CourseInfo } from '../../models/CourseModels';
 
 let localStorage = new LocalStorage();
 
@@ -10,29 +6,24 @@ let localStorage = new LocalStorage();
 @Component
 struct TodayCourseCard {
   @LocalStorageProp('formId') formId: string = '';
+  @LocalStorageProp('todayCourses') @Watch('onCoursesChange') todayCourses: CourseInfo[] = [];
+  @LocalStorageProp('isLoading') isLoading: boolean = false;
+  
   readonly ACTION_TYPE: string = 'router';
   readonly ABILITY_NAME: string = 'EntryAbility';
   readonly MESSAGE: string = 'open today course';
   readonly FONT_COLOR: string = '#666666';
   readonly BG_COLOR: Color = Color.White;
-  // 静态测试数据
-  private testCourses: SimpleCourse[] = [
-    {
-      courseName: "高等数学（1）I",
-      classroom: "博学5＃－204",
-      timeRange: "8:20-10:00"
-    },
-    {
-      courseName: "大学英语（1）",
-      classroom: "博学3＃－语音301",
-      timeRange: "10:15-11:50"
-    },
-    {
-      courseName: "思想道德与法治",
-      classroom: "博学2＃－101",
-      timeRange: "14:30-16:10"
-    }
-  ];
+  readonly FULL_WIDTH_PERCENT: string = '100%';
+  readonly FULL_HEIGHT_PERCENT: string = '100%';
+
+  onCoursesChange() {
+    // 课程数据更新时的处理
+  }
+
+  aboutToAppear(): void {
+    // 组件即将出现时的处理
+  }
 
   build() {
     Column() {
@@ -43,57 +34,66 @@ struct TodayCourseCard {
           .fontWeight(FontWeight.Bold)
       }
       .margin({ bottom: 5 })
-      .width('100%')
+      .width(this.FULL_WIDTH_PERCENT)
       .justifyContent(FlexAlign.Start)
 
-      Swiper() {
-        ForEach(this.testCourses, (course: SimpleCourse) => {
-          Column() {
-            Text(course.courseName)
-              .maxLines(1)
-              .fontColor(this.FONT_COLOR)
-              .fontSize(18)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .fontWeight(FontWeight.Bold)
-
+      if (this.isLoading) {
+        Column() {
+          Text('加载中...')
+            .fontColor(this.FONT_COLOR)
+            .fontSize(14)
+        }
+        .justifyContent(FlexAlign.Center)
+        .layoutWeight(1)
+      } else if (this.todayCourses.length > 0) {
+        Swiper() {
+          ForEach(this.todayCourses, (course: CourseInfo, index: number) => {
             Column() {
-              Text(course.timeRange)
-                .fontColor(Color.Brown)
-                .fontSize(16)
-                .fontWeight(FontWeight.Bold)
-                .margin({ bottom: 6 })
-
-              Text(course.classroom)
+              Text(course.courseName || '')
+                .maxLines(1)
                 .fontColor(this.FONT_COLOR)
-                .fontWeight(FontWeight.Bold)
+                .fontSize(18)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .maxLines(2)
-                .fontSize(15)
-                .opacity(0.9)
+                .fontWeight(FontWeight.Bold)
+
+              Column() {
+                Text(this.getTimeRange(course.courseTime))
+                  .fontColor(Color.Brown)
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Bold)
+                  .margin({ bottom: 6 })
+
+                Text(course.classroom || '')
+                  .fontColor(this.FONT_COLOR)
+                  .fontWeight(FontWeight.Bold)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .maxLines(2)
+                  .fontSize(15)
+                  .opacity(0.9)
+              }
+              .alignItems(HorizontalAlign.Start)
+              .width(this.FULL_WIDTH_PERCENT)
             }
+            .justifyContent(FlexAlign.SpaceBetween)
+            .width(this.FULL_WIDTH_PERCENT)
+            .height(this.FULL_HEIGHT_PERCENT)
             .alignItems(HorizontalAlign.Start)
-            .width('100%')
-          }
-          .justifyContent(FlexAlign.SpaceBetween)
-          .width('100%')
-          .height('100%')
-          .alignItems(HorizontalAlign.Start)
-        }, (course: SimpleCourse) => course.courseName)
+          }, (course: CourseInfo) => course.courseName || '')
+        }
+        .layoutWeight(1)
+        .loop(false)
+        .autoPlay(false)
+        .borderRadius(5)
+        .indicator(false)
+      } else {
+        Column() {
+          Text('暂无今日课程')
+            .fontColor(this.FONT_COLOR)
+            .fontSize(14)
+        }
+        .justifyContent(FlexAlign.Center)
+        .layoutWeight(1)
       }
-      .layoutWeight(1)
-      .loop(false)
-      .autoPlay(false)
-      .borderRadius(5)
-      .indicator(false)
-      .onClick(() => {
-        postCardAction(this, {
-          action: this.ACTION_TYPE,
-          abilityName: this.ABILITY_NAME,
-          params: {
-            message: this.MESSAGE
-          }
-        });
-      })
     }
     .padding({
       top: 13,
@@ -101,9 +101,31 @@ struct TodayCourseCard {
       right: 12,
       bottom: 13
     })
-    .width('100%')
-    .height('100%')
+    .width(this.FULL_WIDTH_PERCENT)
+    .height(this.FULL_HEIGHT_PERCENT)
     .backgroundColor(this.BG_COLOR)
+    .onClick(() => {
+      postCardAction(this, {
+        action: this.ACTION_TYPE,
+        abilityName: this.ABILITY_NAME,
+        params: {
+          message: this.MESSAGE
+        }
+      });
+    })
+  }
 
+  private getTimeRange(courseTime?: string[]): string {
+    if (!courseTime || courseTime.length === 0) {
+      return '';
+    }
+
+    const firstTime = courseTime[0];
+    const lastTime = courseTime[courseTime.length - 1];
+
+    const startTime = firstTime.split('-')[0];
+    const endTime = lastTime.split('-')[1];
+
+    return `${startTime}-${endTime}`;
   }
 }

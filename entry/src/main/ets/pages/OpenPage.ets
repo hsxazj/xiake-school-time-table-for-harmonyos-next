@@ -1,5 +1,5 @@
 import { AppConfigManager } from '../services/AppConfigManager';
-import { UserInfoManager } from '../common/utils/PreferencesUtil';
+import { UserInfoManager } from '../common/utils/UserInfoManager';
 
 
 @Entry
@@ -67,7 +67,7 @@ struct OpenNavPage {
       this.initMessage = '加载完成！';
 
       // 检查是否已设置完整的学籍信息
-      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo();
+      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo(getContext(this));
 
       // 短暂延迟后跳转
       setTimeout(() => {
