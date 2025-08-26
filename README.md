@@ -18,7 +18,7 @@ entry/src/main/ets/
 │   ├── api/          # API服务（HTTP服务、各业务API）
 │   └── AppConfigManager.ets  # 全局配置管理
 ├── models/           # 数据模型
-└── todaycourse/      # 今日课程组件
+└── todaycourse/      # 今日课程桌面卡片
 ```
 
 ## 开发环境
