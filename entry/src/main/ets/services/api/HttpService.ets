@@ -59,9 +59,9 @@ export class HttpService {
   /**
    * GET请求
    */
-  public async get<T>(url: string, params?: Record<string, Object>): Promise<ApiResponse<T>> {
+  public async get<REQ,RES>(url: string, params?: REQ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.get<ApiResponse<T>>(url, { params });
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.get<ApiResponse<RES>>(url, { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);

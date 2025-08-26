@@ -24,27 +24,8 @@ export class CourseApiService {
    */
   public async getCourseList(params: CourseRequestParams): Promise<ApiResponse<CourseInfo[]>> {
     try {
-      // 构建请求参数
-      const requestParams = new Map<string, Object>();
-      requestParams.set('week', params.week);
-      requestParams.set('term', params.term);
-      requestParams.set('year', params.year);
 
-      if (params.classId) {
-        requestParams.set('classId', params.classId);
-      }
-
-      if (params.username) {
-        requestParams.set('username', params.username);
-      }
-
-      // 将Map转换为普通对象
-      const paramsObj: Record<string, Object> = {};
-      requestParams.forEach((value, key) => {
-        paramsObj[key] = value;
-      });
-
-      const response = await this.httpService.get<CourseInfo[]>('/course', paramsObj);
+      const response = await this.httpService.get<CourseRequestParams,CourseInfo[]>('/course', params);
 
       return {
         msg: "操作成功",
@@ -71,16 +52,7 @@ export class CourseApiService {
         weekday: weekday
       };
 
-      // 转换为HttpService需要的类型
-      const paramsObj: Record<string, Object> = {
-        "classId": params.classId,
-        "year": params.year,
-        "term": params.term,
-        "weeks": params.weeks,
-        "weekday": params.weekday
-      };
-
-      const response = await this.httpService.get<CourseInfo[]>('/course/getCourseFilter', paramsObj);
+      const response = await this.httpService.get<TodayCourseRequestParams,CourseInfo[]>('/course/getCourseFilter', params);
 
       return {
         msg: "操作成功",

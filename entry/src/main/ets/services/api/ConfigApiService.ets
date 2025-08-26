@@ -26,7 +26,7 @@ export class ConfigApiService {
    */
   public async getConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
-      const response = await HttpService.getInstance().get<Record<string, Object>>('/config');
+      const response = await HttpService.getInstance().get<null, Record<string, Object>>('/config');
 
       // 转换原始数据为Map结构
       const rawData = response.data as Record<string, Record<string, string[]>>;
