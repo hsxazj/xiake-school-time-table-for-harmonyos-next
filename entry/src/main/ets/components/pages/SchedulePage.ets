@@ -2,6 +2,7 @@ import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../ser
 import { CourseApiService, CourseInfo } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
+import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { curves } from '@kit.ArkUI';
 
 // 周日期范围接口
@@ -318,7 +319,7 @@ export struct SchedulePage {
         // 课程名称
         Text(course.courseName)
           .fontSize(11)
-          .fontColor(this.getCourseTextColor(course.courseName))
+          .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
           .fontWeight(FontWeight.Medium)
           .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -329,7 +330,7 @@ export struct SchedulePage {
         if (course.classroom && course.classroom.length > 0) {
           Text(course.classroom[0])
             .fontSize(9)
-            .fontColor(this.getCourseTextColor(course.courseName))
+            .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .textAlign(TextAlign.Center)
@@ -340,7 +341,7 @@ export struct SchedulePage {
         if (course.teacher && course.teacher.length > 0) {
           Text(course.teacher[0])
             .fontSize(8)
-            .fontColor(this.getCourseTextColor(course.courseName))
+            .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .textAlign(TextAlign.Center)
@@ -349,10 +350,10 @@ export struct SchedulePage {
       .transition(this.effect) // 应用转场动画
       .width('95%')
       .height(`${length * 8.33}%`)
-      .backgroundColor(this.getCourseBackgroundColor(course.courseName))
+      .backgroundColor(CourseColorUtil.getCourseBackgroundColor(course.courseName, this.scheduleGrid.classList))
       .border({
         width: 1,
-        color: this.getCourseBorderColor(course.courseName),
+        color: CourseColorUtil.getCourseBorderColor(course.courseName, this.scheduleGrid.classList),
         radius: 4
       })
       .padding(3)
@@ -1010,28 +1011,6 @@ export struct SchedulePage {
   }
 
   /**
-   * 获取课程颜色索引（参考class-schedule-c的颜色计算逻辑）
-   */
-  private getCourseColorIndex(courseName: string): number {
-    let index = this.scheduleGrid.classList.indexOf(courseName);
-    if (index === -1) {
-      // 如果找不到，使用hash算法计算
-      let hash = 0;
-      for (let i = 0; i < courseName.length; i++) {
-        hash = courseName.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      index = Math.abs(hash);
-    }
-
-    // 如果index大于10，取余操作（参考show-list.vue逻辑）
-    if (index > 10) {
-      index = index % 10;
-    }
-
-    return index;
-  }
-
-  /**
    * 获取指定key的时间段数组
    */
   private getSectionNumbers(key: string): number[] {
@@ -1070,51 +1049,6 @@ export struct SchedulePage {
 
     // TODO: 显示课程详情弹窗（参考class-schedule-c的课程详情显示）
     // 可以显示课程名、教师、教室、时间等信息
-  }
-
-  /**
-   * 获取课程背景颜色（参考show-list.vue的chooseColor方法）
-   */
-  private getCourseBackgroundColor(courseName: string): string {
-    const colorIndex = this.getCourseColorIndex(courseName);
-    const colors = [
-      '#E3F2FD', '#F3E5F5', '#E8F5E8', '#FFF3E0',
-      '#F1F8E9', '#FCE4EC', '#E0F2F1', '#FFF8E1',
-      '#F9FBE7', '#E1F5FE', '#FAE8E4', '#F3E5AB',
-      '#E8EAF6', '#FFEBEE', '#E0F7FA', '#FFF9C4',
-      '#F1F8F0', '#FFEAA7', '#DDD6FE', '#FEF3C7'
-    ];
-    return colors[colorIndex % colors.length];
-  }
-
-  /**
-   * 获取课程文字颜色（参考show-list.vue的chooseTxtColor方法）
-   */
-  private getCourseTextColor(courseName: string): string {
-    const colorIndex = this.getCourseColorIndex(courseName);
-    const colors = [
-      '#1565C0', '#7B1FA2', '#2E7D32', '#EF6C00',
-      '#558B2F', '#C2185B', '#00695C', '#F57F17',
-      '#689F38', '#0277BD', '#D84315', '#F9A825',
-      '#5E35B1', '#C62828', '#00838F', '#AFB42B',
-      '#388E3C', '#FF8F00', '#512DA8', '#FBC02D'
-    ];
-    return colors[colorIndex % colors.length];
-  }
-
-  /**
-   * 获取课程边框颜色（参考show-list.vue的borderColor方法）
-   */
-  private getCourseBorderColor(courseName: string): string {
-    const colorIndex = this.getCourseColorIndex(courseName);
-    const colors = [
-      '#42A5F5', '#BA68C8', '#66BB6A', '#FF9800',
-      '#8BC34A', '#E91E63', '#26A69A', '#FFEB3B',
-      '#9CCC65', '#29B6F6', '#FF5722', '#FDD835',
-      '#9575CD', '#F44336', '#00BCD4', '#CDDC39',
-      '#4CAF50', '#FFC107', '#673AB7', '#FFEB3B'
-    ];
-    return colors[colorIndex % colors.length];
   }
 
   /**

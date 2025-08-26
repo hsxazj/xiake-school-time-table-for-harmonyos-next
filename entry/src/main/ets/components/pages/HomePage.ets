@@ -1,5 +1,6 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/utils/UserInfoManager';
 import { CourseInfo } from '../../models/CourseModels';
+import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
@@ -28,6 +29,9 @@ export struct HomePage {
     TransitionEffect.OPACITY
       .combine(TransitionEffect.scale({ x: 0, y: 0 }))
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
+
+  // 课程颜色相关状态 - 与SchedulePage保持一致
+  @State private courseColorsList: string[] = [];
 
   aboutToAppear(): void {
     this.loadUserInfo();
@@ -167,7 +171,7 @@ export struct HomePage {
       Text(courseInfo.courseName || '')
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#333333')
+        .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .margin({ bottom: 6 })
@@ -175,25 +179,30 @@ export struct HomePage {
 
       Text(courseInfo.teacher || '')
         .fontSize(14)
-        .fontColor('#666666')
+        .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
       Text(this.getTimeRange(courseInfo.courseTime))
         .fontSize(14)
-        .fontColor('#24C2C6')
+        .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .fontWeight(FontWeight.Medium)
         .alignSelf(ItemAlign.Start)
 
       Text(courseInfo.classroom || '')
         .fontSize(14)
-        .fontColor('#666666')
+        .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .alignSelf(ItemAlign.Start)
 
     }
     .width('100%')
-    .backgroundColor(Color.White)
+    .backgroundColor(CourseColorUtil.getCourseBackgroundColor(courseInfo.courseName, this.courseColorsList))
     .borderRadius(24)
+    .border({
+      width: 1,
+      color: CourseColorUtil.getCourseBorderColor(courseInfo.courseName, this.courseColorsList),
+      radius: 24
+    })
     .padding({
       left: 16,
       right: 16,
@@ -262,6 +271,8 @@ export struct HomePage {
 
       if (response.code === 200 && response.data) {
         this.todayCourses = response.data;
+        // 更新课程颜色列表
+        this.courseColorsList = CourseColorUtil.extractCourseNamesList(response.data);
       } else {
         console.warn('获取今日课程失败');
       }
