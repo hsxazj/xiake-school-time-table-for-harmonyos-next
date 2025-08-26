@@ -59,7 +59,7 @@ export class HttpService {
   /**
    * GET请求
    */
-  public async get<REQ,RES>(url: string, params?: REQ): Promise<ApiResponse<RES>> {
+  public async get<REQ, RES>(url: string, params?: REQ): Promise<ApiResponse<RES>> {
     try {
       const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.get<ApiResponse<RES>>(url, { params });
       return response.data;
@@ -71,12 +71,12 @@ export class HttpService {
   /**
    * POST请求
    */
-  public async post<T>(
+  public async post<REQ, RES>(
     url: string,
-    data?: Record<string, Object>
-  ): Promise<ApiResponse<T>> {
+    param?: REQ
+  ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.post<ApiResponse<T>>(url, data);
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.post<ApiResponse<RES>>(url, { param });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -86,12 +86,12 @@ export class HttpService {
   /**
    * PUT请求
    */
-  public async put<T>(
+  public async put<REQ, RES>(
     url: string,
-    data?: Record<string, Object>
-  ): Promise<ApiResponse<T>> {
+    param?: REQ
+  ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.put<ApiResponse<T>>(url, data);
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.put<ApiResponse<RES>>(url, { param });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -101,9 +101,10 @@ export class HttpService {
   /**
    * DELETE请求
    */
-  public async delete<T>(url: string): Promise<ApiResponse<T>> {
+  public async delete<REQ, RES>(url: string, data?: REQ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<T>> = await this.axiosInstance.delete<ApiResponse<T>>(url);
+      const response: AxiosResponse<ApiResponse<RES>> =
+        await this.axiosInstance.delete<ApiResponse<RES>>(url, { data });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
