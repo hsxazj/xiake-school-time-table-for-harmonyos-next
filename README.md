@@ -1,93 +1,184 @@
-# 侠客课表 - HarmonyOS ArkTS
+# 霞客课表 HarmonyOS 应用
 
-一个基于HarmonyOS ArkTS开发的课程表管理应用，提供课程查看、学院选择、个人信息管理等功能。
+[![HarmonyOS](https://img.shields.io/badge/HarmonyOS-5.0.5-blue)](https://developer.harmonyos.com/)
+[![ArkTS](https://img.shields.io/badge/ArkTS-TypeScript-blue)](https://developer.harmonyos.com/cn/docs/documentation/doc-guides/arkts-get-started-0000001504769321)
 
-## 项目结构
+霞客课表是一款基于 HarmonyOS Next 原生开发的课程表管理应用，采用 ArkTS 语言开发，提供流畅的原生体验和完整的课表管理功能。
+
+## 🌟 项目特色
+
+- **HarmonyOS 原生**：基于 HarmonyOS 5.0.5 SDK 和 ArkTS 语言开发
+- **ArkTS 声明式UI**：使用现代化的 ArkTS 声明式UI开发
+- **智能配置管理**：自动初始化应用配置和学期状态管理
+- **模块化架构**：清晰的服务层、模型层、组件层分离
+- **完善的开发文档**：包含开发规范和技术文档
+
+## 🏗️ 项目架构
 
 ```
 entry/src/main/ets/
-├── common/              # 公共模块
-│   ├── constants/       # 常量定义（API配置、RSA密钥等）
-│   ├── utils/          # 工具类（日期、偏好设置、用户信息管理等）
-│   └── types/          # 类型定义
-├── components/         # 组件
-│   ├── base/          # 基础组件
-│   └── pages/         # 页面组件（首页、课表页、个人页）
-├── pages/             # 路由页面
-├── services/          # 服务层
-│   ├── api/          # API服务（HTTP服务、各业务API）
-│   └── AppConfigManager.ets  # 全局配置管理
-├── models/           # 数据模型
-└── todaycourse/      # 今日课程桌面卡片
+├── pages/                          # 路由页面
+│   ├── OpenPage.ets                # 应用启动页
+│   ├── WelcomeNavPage.ets          # 欢迎导航页
+│   ├── ClassSelectNavPage.ets      # 班级选择导航页
+│   └── MainTabNavPage.ets          # 主标签页导航
+├── components/                     # UI 组件
+│   ├── base/                       # 基础可复用组件
+│   │   ├── CustomPicker.ets        # 自定义选择器
+│   │   └── SelectItem.ets          # 选择项组件
+│   └── pages/                      # 页面级组件
+│       ├── HomePage.ets            # 首页组件
+│       ├── SchedulePage.ets        # 课表页组件
+│       └── MinePage.ets            # 我的页面组件
+├── services/                       # 业务服务层
+│   ├── AppConfigManager.ets        # 应用配置管理
+│   └── api/                        # API 服务层
+│       ├── HttpService.ets         # HTTP 请求封装
+│       ├── CollegeApiService.ets   # 学院数据 API
+│       ├── ConfigApiService.ets    # 配置数据 API
+│       └── CourseApiService.ets    # 课程数据 API
+├── models/                         # 数据模型
+│   ├── CollegeModels.ets           # 学院相关模型
+│   ├── ConfigModels.ets            # 配置数据模型
+│   └── CourseModels.ets            # 课程数据模型
+├── common/                         # 公共模块
+│   ├── constants/AppConstants.ets  # 应用常量配置
+│   ├── types/PickerTypes.ets       # 选择器类型定义
+│   └── utils/                      # 工具类
+│       ├── DateUtil.ets            # 日期工具
+│       ├── PreferencesUtil.ets     # 偏好设置
+│       ├── RsaPkcs1Util.ets        # RSA 加密工具
+│       └── UserInfoManager.ets     # 用户信息管理
+├── todaycourse/                    # 今日课程 Widget
+│   └── pages/TodayCourseCard.ets
+└── entryability/EntryAbility.ets   # 应用入口
 ```
 
-## 开发环境
+## 📱 核心功能
+
+### 应用初始化
+
+- **智能启动**：自动检查用户信息完整性，智能跳转
+- **配置管理**：统一的应用配置初始化和状态管理
+- **学期计算**：自动计算当前学期状态和周次信息
+
+### 用户体验
+
+- **学院选择**：支持学院、专业、班级三级联动选择
+- **数据持久化**：用户选择自动保存，支持记忆功能
+- **加载状态**：完善的加载状态提示和错误处理
+
+### 技术特性
+
+- **模块化设计**：清晰的服务层分离，便于维护扩展
+- **类型安全**：完整的 TypeScript 类型定义
+- **网络请求**：基于 @ohos/axios 的统一HTTP服务
+- **日志系统**：完善的hilog日志记录
+
+## 🛠️ 技术栈
+
+- **开发框架**：HarmonyOS 5.0.5 SDK
+- **开发语言**：ArkTS (TypeScript)
+- **UI框架**：ArkUI 声明式UI
+- **网络请求**：@ohos/axios
+- **构建工具**：hvigor
+- **测试框架**：@ohos/hypium, @ohos/hamock
+
+## ⚡ 快速开始
+
+### 环境要求
 
 - **HarmonyOS SDK**: 5.0.5(17)
-- **开发工具**: DevEco Studio
-- **目标设备**: 手机
+- **DevEco Studio**: 5.0.5.Release
+- **Node.js**: v18.20.8+
+- **ohpm**: HarmonyOS 包管理器
 
-## 主要功能
+## 🔧 开发指南
 
-- **课程表管理**: 查看今日课程、周视图完整课程表
-- **学院选择**: 支持多学院课程信息获取
-- **个人中心**: 用户信息管理、设置配置
-- **网络通信**: 基于axios的HTTP服务，支持RSA加密
-- **数据持久化**: 使用Preferences进行本地数据存储
+### 代码规范
 
-## 技术特性
+项目严格遵循 HarmonyOS ArkTS 开发规范：
 
-### 架构模式
-- **单例模式**: HttpService、AppConfigManager等核心服务
-- **响应式UI**: 使用@State、@Prop、@Consume装饰器
-- **导航管理**: 基于NavPathStack的页面导航
+- 文件名使用 PascalCase 命名
+- 组件使用 @Entry/@Component 装饰器
+- 严格的TypeScript类型检查
+- 安全代码检查（通过 `code-linter.json5` 配置）
 
-### 网络层
-- 基于@ohos/axios的HTTP客户端
-- 统一的ApiResponse<T>响应格式
-- 请求/响应拦截器支持
-- RSA加密通信支持
+### 核心组件说明
 
-### 组件化开发
-- 可复用的基础组件
-- @Builder模式的UI构建器
-- 资源引用: `$r('app.media.icon')`
+#### 1. 应用入口 (`OpenPage.ets`)
 
-## 依赖管理
+- 启动页面展示和初始化处理  
+- `AppConfigManager` 配置初始化
+- 智能路由跳转逻辑
 
-```json5
+#### 2. 配置管理 (`AppConfigManager.ets`)
+
+- 单例模式的全局配置管理
+- 学期状态自动计算
+- 配置数据缓存和初始化
+
+#### 3. 网络服务 (`HttpService.ets`)
+
+- 基于 @ohos/axios 的统一HTTP请求封装
+- 请求/响应拦截器
+- 错误处理和重试机制
+
+#### 4. 班级选择导航 (`ClassSelectNavPage.ets`)
+
+- 三级联动选择器实现
+- 用户选择数据持久化
+- 自定义选择器组件使用
+
+### 权限配置
+
+应用需要以下权限：
+
+```json
 {
-  "dependencies": {
-    "@ohos/axios": "^2.2.6"
-  },
-  "devDependencies": {
-    "@ohos/hypium": "1.0.21",
-    "@ohos/hamock": "1.0.0"
-  }
+  "name": "ohos.permission.INTERNET",
+  "reason": "访问网络获取课程数据和学院信息"
 }
 ```
 
-## 权限配置
+### 测试
 
-应用需要以下权限：
-- `ohos.permission.INTERNET`: 网络访问权限
+```bash
+# 运行单元测试
+# 测试文件位于 /entry/src/test/
+hvigor test
 
-## 开发指南
+# 运行集成测试
+# 测试文件位于 /entry/src/ohosTest/
+```
 
-### 组件开发
-- 遵循PascalCase命名规范
-- 页面组件使用"Page"后缀
-- 使用TypeScript严格类型检查
+## 🚀 应用流程
 
-### API集成
-- 所有网络请求通过HttpService统一管理
-- 敏感数据使用RsaPkcs1Util进行RSA加密
-- 遵循ApiResponse接口规范
+1. **应用启动**：`OpenPage.ets` 展示启动画面
+2. **配置初始化**：`AppConfigManager` 获取配置数据
+3. **状态检查**：检查用户信息完整性
+4. **智能跳转**：
+    - 有完整信息 → 跳转到主页Tab
+    - 无完整信息 → 跳转到学院选择页
+5. **正常使用**：进入主要功能页面
 
-## 构建配置
+## 📊 项目状态
 
-- **API类型**: Stage模式
-- **目标SDK版本**: 5.0.5(17)
-- **兼容SDK版本**: 5.0.5(17)
-- **运行系统**: HarmonyOS
-- **代码混淆**: 发布模式可选启用
+- **当前版本**: 1.0.0
+- **HarmonyOS SDK**: 5.0.5(17)
+- **开发状态**: 积极开发中
+- **测试状态**: 没有测试捏
+
+## 🤝 贡献
+
+欢迎贡献代码和提交问题！
+
+1. Fork 本项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+---
+
+**注意**: 本项目专注于 HarmonyOS 原生应用开发，提供最佳的鸿蒙系统原生体验。

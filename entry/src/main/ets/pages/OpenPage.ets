@@ -4,7 +4,7 @@ import { UserInfoManager } from '../common/utils/UserInfoManager';
 
 @Entry
 @Component
-struct OpenNavPage {
+struct OpenPage {
   @Provide('NavStack') pathStack: NavPathStack = new NavPathStack();
   @State message: string = '欢迎使用霞客课表';
   @State initMessage: string = '正在加载...';
