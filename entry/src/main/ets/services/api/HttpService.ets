@@ -73,10 +73,10 @@ export class HttpService {
    */
   public async post<REQ, RES>(
     url: string,
-    param?: REQ
+    params?: REQ
   ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.post<ApiResponse<RES>>(url, { param });
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.post<ApiResponse<RES>>(url, { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -88,10 +88,10 @@ export class HttpService {
    */
   public async put<REQ, RES>(
     url: string,
-    param?: REQ
+    params?: REQ
   ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.put<ApiResponse<RES>>(url, { param });
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.put<ApiResponse<RES>>(url, { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -101,10 +101,10 @@ export class HttpService {
   /**
    * DELETE请求
    */
-  public async delete<REQ, RES>(url: string, data?: REQ): Promise<ApiResponse<RES>> {
+  public async delete<REQ, RES>(url: string, params?: REQ): Promise<ApiResponse<RES>> {
     try {
       const response: AxiosResponse<ApiResponse<RES>> =
-        await this.axiosInstance.delete<ApiResponse<RES>>(url, { data });
+        await this.axiosInstance.delete<ApiResponse<RES>>(url, { params });
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);

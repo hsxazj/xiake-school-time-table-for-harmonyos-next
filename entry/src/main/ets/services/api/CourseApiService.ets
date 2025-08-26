@@ -7,7 +7,6 @@ export { CourseInfo, CoursePosition } from '../../models/CourseModels';
 export class CourseApiService {
   private static instance: CourseApiService;
   private httpService = HttpService.getInstance();
-  private coursePositions: CoursePosition[] = [];
 
   private constructor() {
   }
