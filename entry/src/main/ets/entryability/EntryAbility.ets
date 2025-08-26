@@ -9,7 +9,7 @@ export default class EntryAbility extends UIAbility {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+    this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
 
     // 初始化配置信息
@@ -23,6 +23,9 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
+
+    // 不支持暗色模式
+    // this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT)
 
     windowStage.loadContent('pages/OpenPage', (err) => {
       if (err.code) {
