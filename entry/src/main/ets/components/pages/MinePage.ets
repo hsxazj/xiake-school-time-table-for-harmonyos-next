@@ -1,4 +1,4 @@
-import { UserInfoManager } from '../../common/constants/PreferencesUtil';
+import { UserInfoManager } from '../../common/utils/PreferencesUtil';
 import router from '@ohos.router';
 
 // 用户信息接口

@@ -1,6 +1,10 @@
 export interface ConfigApiResponseData {
   start: Map<string, string[]>;
   end: Map<string, string[]>;
+  week?: number;
+  weekDayStr?: string;
+  year?: number;
+  termCode?: string;
 }
 
 // 处理后的学期信息

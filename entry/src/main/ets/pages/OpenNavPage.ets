@@ -1,5 +1,5 @@
 import { AppConfigManager } from '../services/AppConfigManager';
-import { UserInfoManager } from '../common/constants/PreferencesUtil';
+import { UserInfoManager } from '../common/utils/PreferencesUtil';
 
 
 @Entry
@@ -7,7 +7,7 @@ import { UserInfoManager } from '../common/constants/PreferencesUtil';
 struct OpenNavPage {
   @Provide('NavStack') pathStack: NavPathStack = new NavPathStack();
   @State message: string = '欢迎使用霞客课表';
-  @State initMessage: string = '正在初始化...';
+  @State initMessage: string = '正在加载...';
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
@@ -64,7 +64,7 @@ struct OpenNavPage {
       // 等待AppConfigManager初始化完成
       await this.appConfigManager.initialize();
 
-      this.initMessage = '初始化完成！';
+      this.initMessage = '加载完成！';
 
       // 检查是否已设置完整的学籍信息
       const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo();

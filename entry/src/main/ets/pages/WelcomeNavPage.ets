@@ -1,5 +1,5 @@
 import { promptAction } from '@kit.ArkUI';
-import { UserInfoManager, UserSchoolInfo } from '../common/constants/PreferencesUtil';
+import { UserInfoManager, UserSchoolInfo } from '../common/utils/PreferencesUtil';
 import { CurrentSemesterStatus } from '../services/api/ConfigApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
 

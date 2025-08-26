@@ -10,6 +10,7 @@ export function MainTabNavPageBuilder() {
 @Component
 struct MainTabNavPage {
   @State currentTabIndex: number = 0;
+  // @Consume('NavStack') pathStack: NavPathStack;
   @Consume('NavStack') pathStack: NavPathStack;
 
   @Builder

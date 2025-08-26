@@ -13,7 +13,7 @@ struct TodayCourseCard {
   readonly ACTION_TYPE: string = 'router';
   readonly ABILITY_NAME: string = 'EntryAbility';
   readonly MESSAGE: string = 'open today course';
-  readonly FONT_COLOR: Color = Color.Black;
+  readonly FONT_COLOR: string = '#666666';
   readonly BG_COLOR: Color = Color.White;
   // 静态测试数据
   private testCourses: SimpleCourse[] = [
@@ -52,14 +52,14 @@ struct TodayCourseCard {
             Text(course.courseName)
               .maxLines(1)
               .fontColor(this.FONT_COLOR)
-              .fontSize(15)
+              .fontSize(18)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
               .fontWeight(FontWeight.Bold)
 
             Column() {
               Text(course.timeRange)
                 .fontColor(Color.Brown)
-                .fontSize(15)
+                .fontSize(16)
                 .fontWeight(FontWeight.Bold)
                 .margin({ bottom: 6 })
 

@@ -1,10 +1,11 @@
-import { UserInfoManager, UserSchoolInfo } from '../../common/constants/PreferencesUtil';
+import { UserInfoManager, UserSchoolInfo } from '../../common/utils/PreferencesUtil';
 import { CourseInfo } from '../../models/CourseModels';
 import { MOCK_TODAY_COURSES } from '../../common/constants/AppConstants';
 
 @Component
 export struct HomePage {
   @Consume('NavStack') pathStack: NavPathStack;
+  // pathStack: NavPathStack = new NavPathStack();
   @State private userInfo: UserSchoolInfo | null = null;
   @State private todayCourses: CourseInfo[] = [];
   @State private isLoading: boolean = false;
@@ -120,7 +121,7 @@ export struct HomePage {
       .width('100%')
       .padding(20)
       .backgroundColor('#F0F2F5') // 今日课程区域使用稍深的灰蓝色
-      .borderRadius(12)
+      .borderRadius(24)
       .shadow({
         radius: 8,
         color: 'rgba(0, 0, 0, 0.08)',
@@ -155,17 +156,18 @@ export struct HomePage {
         .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
+      Text(this.getTimeRange(courseInfo.courseTime))
+        .fontSize(14)
+        .fontColor('#24C2C6')
+        .fontWeight(FontWeight.Medium)
+        .alignSelf(ItemAlign.Start)
+
       Text(courseInfo.classroom || '')
         .fontSize(14)
         .fontColor('#666666')
         .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
-      Text(this.getTimeRange(courseInfo.courseTime))
-        .fontSize(14)
-        .fontColor('#24C2C6')
-        .fontWeight(FontWeight.Medium)
-        .alignSelf(ItemAlign.Start)
     }
     .width('100%')
     .backgroundColor(Color.White)

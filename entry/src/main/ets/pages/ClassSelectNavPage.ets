@@ -1,7 +1,7 @@
 import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
-import { UserInfoManager } from '../common/constants/PreferencesUtil';
+import { UserInfoManager } from '../common/utils/PreferencesUtil';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 
 @Builder

@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@ohos/hypium';
 import { CollegeApiService } from '../../../main/ets/services/api/CollegeApiService';
-import { UserInfoManager } from '../../../main/ets/common/constants/PreferencesUtil';
+import { UserInfoManager } from '../../../main/ets/common/utils/PreferencesUtil';
 
 export default function CollegeSelectTest() {
   describe('CollegeSelect', () => {

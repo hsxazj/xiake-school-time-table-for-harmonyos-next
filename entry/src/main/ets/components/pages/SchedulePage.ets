@@ -1,7 +1,7 @@
 import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
 import { CourseApiService, CourseInfo } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
-import { UserInfoManager } from '../../common/constants/PreferencesUtil';
+import { UserInfoManager } from '../../common/utils/PreferencesUtil';
 import { curves } from '@kit.ArkUI';
 
 // 周日期范围接口
