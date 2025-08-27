@@ -72,29 +72,11 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
   onUpdateForm(formId: string, wantParams?: Record<string, Object> | undefined) {
     hilog.info(0x0000, TAG, `FormAbility onUpdateForm, formId = ${formId}`);
-    hilog.info(0x0000, TAG, `接收到的参数: ${JSON.stringify(wantParams)}`);
-    
-    // 检查是否传递了新的班级ID
-    let newClassId: string | undefined;
-    if (wantParams) {
-      if (wantParams['newClassId']) {
-        newClassId = wantParams['newClassId'] as string;
-        hilog.info(0x0000, TAG, `接收到主应用传递的新班级ID: ${newClassId}`);
-      }
-      
-      if (wantParams['trigger']) {
-        const trigger = wantParams['trigger'] as string;
-        hilog.info(0x0000, TAG, `接收到触发信号: ${trigger}`);
-      }
-    }
-    
-    this.loadTodayCourses(formId, newClassId);
   }
 
 
   onFormEvent(formId: string, message: string) {
     hilog.info(0x0000, TAG, `FormAbility onFormEvent, formId = ${formId}, message: ${JSON.stringify(message)}`);
-    this.loadTodayCourses(formId);
   }
 
   onRemoveForm(formId: string) {
