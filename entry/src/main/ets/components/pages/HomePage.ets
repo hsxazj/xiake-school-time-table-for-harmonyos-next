@@ -5,7 +5,7 @@ import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 
-interface TodayParm{
+interface TodayParm {
   year: number;
   week: number;
   termCode: string;
@@ -29,7 +29,6 @@ export struct HomePage {
     TransitionEffect.OPACITY
       .combine(TransitionEffect.scale({ x: 0, y: 0 }))
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
-
   // 课程颜色相关状态 - 与SchedulePage保持一致
   @State private courseColorsList: string[] = [];
 
@@ -150,7 +149,7 @@ export struct HomePage {
       .borderRadius(24)
       .shadow({
         radius: 10,
-        color: '#80000000',   // 半透明黑
+        color: '#80000000', // 半透明黑
         offsetX: 0,
         offsetY: 4
       })
@@ -239,7 +238,7 @@ export struct HomePage {
     try {
       // 等待配置管理器初始化
       await this.appConfigManager.initialize();
-      
+
       // 获取用户信息
       const userInfo = this.userInfoManager.getUserInfo(getContext(this));
       if (!userInfo || !userInfo.classId) {
@@ -259,13 +258,13 @@ export struct HomePage {
 
       console.info(`🔍 [Today Course] 使用缓存参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
 
-      // 调用今日课程接口
+      // TODO 测试调用今日课程接口
       const response = await this.courseApiService.getTodayCourseList(
         userInfo.classId,
-        this.todayParams.year,
-        this.todayParams.termCode,
-        this.todayParams.week,
-        this.todayParams.weekDay
+        2025,
+        '3',
+        3,
+        '星期一'
       );
 
 

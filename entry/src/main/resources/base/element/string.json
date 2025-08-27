@@ -26,11 +26,11 @@
     },
     {
       "name": "todayCourse_desc",
-      "value": "This is a service widget."
+      "value": "用它来查看今日的课程吧."
     },
     {
       "name": "todayCourse_display_name",
-      "value": "todayCourse"
+      "value": "今日课表小卡片"
     }
   ]
 }

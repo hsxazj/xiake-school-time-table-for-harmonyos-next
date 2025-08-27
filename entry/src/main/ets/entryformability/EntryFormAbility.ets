@@ -1,6 +1,7 @@
 import { formBindingData, FormExtensionAbility, formInfo, formProvider } from '@kit.FormKit';
 import { Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { preferences } from '@kit.ArkData';
 import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { CourseApiService } from '../services/api/CourseApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
@@ -37,10 +38,13 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
     hilog.info(0x0000, TAG, `FormAbility onAddForm, formId = ${formId}, formName = ${formName}`);
 
-    if (formName === 'todayCourse') {
+    if (formName === '今日课表小卡片') {
       hilog.info(0x0000, TAG, `🎯 [FormAbility] 创建todayCourse`);
 
-      let formData: TodayCourseFormData = {
+      // 异步添加 formId 到首选项列表
+      this.addFormIdToPreferences(formId);
+
+      let initFormData: TodayCourseFormData = {
         formId: formId,
         todayCourses: [],
         isLoading: true
@@ -49,7 +53,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
       // 异步加载今日课程数据
       this.loadTodayCourses(formId);
 
-      return formBindingData.createFormBindingData(formData);
+      return formBindingData.createFormBindingData(initFormData);
     }
 
     return formBindingData.createFormBindingData('');
@@ -59,10 +63,11 @@ export default class EntryFormAbility extends FormExtensionAbility {
     hilog.info(0x0000, TAG, `FormAbility onCastToNormalForm, formId = ${formId}`);
   }
 
-  onUpdateForm(formId: string) {
+  async onUpdateForm(formId: string, wantParams?: Record<string, Object> | undefined) {
     hilog.info(0x0000, TAG, `FormAbility onUpdateForm, formId = ${formId}`);
-    this.loadTodayCourses(formId);
+    await this.loadTodayCourses(formId);
   }
+
 
   onFormEvent(formId: string, message: string) {
     hilog.info(0x0000, TAG, `FormAbility onFormEvent, formId = ${formId}, message: ${JSON.stringify(message)}`);
@@ -71,6 +76,8 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
   onRemoveForm(formId: string) {
     hilog.info(0x0000, TAG, `FormAbility onRemoveForm, formId = ${formId}`);
+    // 从首选项列表中移除 formId
+    this.removeFormIdFromPreferences(formId);
   }
 
   onAcquireFormState(want: Want) {
@@ -94,7 +101,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
       const classId = this.userInfoManager.getClassId(this.context);
 
       hilog.info(0x0000, TAG, `👤 [FormAbility] 用户班级: ${classId}`);
-      
+
       if (!classId) {
         hilog.warn(0x0000, TAG, '未找到用户班级信息');
         return;
@@ -112,10 +119,10 @@ export default class EntryFormAbility extends FormExtensionAbility {
       // TODO 模拟
       const response = await this.courseApiService.getTodayCourseList(
         classId,
-        todayParams.year,
-        todayParams.termCode,
-        todayParams.week,
-        todayParams.weekDay
+        2025,
+        '3',
+        3,
+        '星期一'
       );
 
       if (response.code === 200 && response.data) {
@@ -160,5 +167,47 @@ export default class EntryFormAbility extends FormExtensionAbility {
       termCode: currentStatus.currentSemester.semester === 1 ? '3' : '12',
       weekDay: weekDayStr
     };
+  }
+
+  private async addFormIdToPreferences(formId: string): Promise<void> {
+    try {
+      const pref = await preferences.getPreferences(this.context, 'form_store');
+      const existingFormIds = await pref.get('todayCourseForms', []) as string[];
+      
+      if (!existingFormIds.includes(formId)) {
+        existingFormIds.push(formId);
+        await pref.put('todayCourseForms', existingFormIds);
+        await pref.flush();
+        hilog.info(0x0000, TAG, `FormId ${formId} added to preferences. Total forms: ${existingFormIds.length}`);
+      }
+    } catch (error) {
+      hilog.error(0x0000, TAG, `Failed to add formId to preferences: ${JSON.stringify(error)}`);
+    }
+  }
+
+  private async removeFormIdFromPreferences(formId: string): Promise<void> {
+    try {
+      const pref = await preferences.getPreferences(this.context, 'form_store');
+      const existingFormIds = await pref.get('todayCourseForms', []) as string[];
+      
+      const updatedFormIds = existingFormIds.filter(id => id !== formId);
+      if (updatedFormIds.length !== existingFormIds.length) {
+        await pref.put('todayCourseForms', updatedFormIds);
+        await pref.flush();
+        hilog.info(0x0000, TAG, `FormId ${formId} removed from preferences. Remaining forms: ${updatedFormIds.length}`);
+      }
+    } catch (error) {
+      hilog.error(0x0000, TAG, `Failed to remove formId from preferences: ${JSON.stringify(error)}`);
+    }
+  }
+
+  public static async getActiveFormIds(context: Context): Promise<string[]> {
+    try {
+      const pref = await preferences.getPreferences(context, 'form_store');
+      return await pref.get('todayCourseForms', []) as string[];
+    } catch (error) {
+      hilog.error(0x0000, TAG, `Failed to get active form ids: ${JSON.stringify(error)}`);
+      return [];
+    }
   }
 }
