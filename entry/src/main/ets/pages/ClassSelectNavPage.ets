@@ -1,9 +1,9 @@
+import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 import { FormService } from '../services/FormService';
-import { ToastUtil } from '../common/utils/ToastUtil';
 
 @Builder
 export function ClassSelectNavPageBuilder() {
@@ -36,8 +36,7 @@ struct ClassSelectNavPage {
   @State private tempCollegeIndex: number = 0; // 临时学院选择索引
   @State private tempMajorIndex: number = 0; // 临时专业选择索引  
   @State private tempClassIndex: number = 0; // 临时班级选择索引
-  private uiContext = this.getUIContext();
-  private promptAction = this.uiContext.getPromptAction();
+  private promptAction = this.getUIContext().getPromptAction();
 
   aboutToAppear(): void {
     console.info('ClassSelectPage aboutToAppear 开始');
@@ -551,10 +550,11 @@ struct ClassSelectNavPage {
 
     if (this.collegeId === '') {
       console.warn('未选择学院，无法选择专业');
-      ToastUtil.showToast(
-        '请选择学院',
-        2000
-      );
+      // TODO
+      this.promptAction.showToast({
+        message: '请选择学院',
+        duration: 2000
+      });
       return;
     }
 
