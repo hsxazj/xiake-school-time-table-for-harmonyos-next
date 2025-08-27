@@ -4,6 +4,7 @@ import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
+import { FormService } from '../../services/FormService';
 
 interface TodayParm {
   year: number;
@@ -22,6 +23,7 @@ export struct HomePage {
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private courseApiService: CourseApiService = CourseApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private formService: FormService = FormService.getInstance();
   // 今日课程参数缓存
   private todayParams: TodayParm | null = null;
   // 动画支持 - 与周课程页保持一致
@@ -272,6 +274,10 @@ export struct HomePage {
         this.todayCourses = response.data;
         // 更新课程颜色列表
         this.courseColorsList = CourseColorUtil.extractCourseNamesList(response.data);
+
+        // 同时更新所有活跃卡片的数据
+        console.info(`📱 [HomePage] 同步更新卡片数据，课程数量: ${response.data.length}`);
+        this.formService.updateAllActiveWidgetsWithData(getContext(this), response.data);
       } else {
         console.warn('获取今日课程失败');
       }

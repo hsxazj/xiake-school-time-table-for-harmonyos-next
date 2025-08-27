@@ -3,6 +3,7 @@ import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
+import { FormService } from '../services/FormService';
 
 @Builder
 export function ClassSelectNavPageBuilder() {
@@ -28,6 +29,7 @@ struct ClassSelectNavPage {
   @State private selectedClassIndex: number = 0;
   private collegeApiService: CollegeApiService = CollegeApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+  private formService: FormService = FormService.getInstance();
   @State private showCollegePicker: boolean = false;
   @State private showMajorPicker: boolean = false;
   @State private showClassPicker: boolean = false;
@@ -726,6 +728,10 @@ struct ClassSelectNavPage {
 
     // 检查用户之前是否已有完整信息（用于判断是首次设置还是修改设置）
     const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo(getContext(this));
+    
+    // 获取之前的班级ID用于比较
+    const previousUserInfo = this.userInfoManager.getUserInfo(getContext(this));
+    const previousClassId = previousUserInfo.classId;
 
     // 保存用户选择到PreferencesUtil
     console.info(`🔍 [ClassSelect] 开始保存用户信息...`);
@@ -744,7 +750,7 @@ struct ClassSelectNavPage {
         className: userSelection.className
       };
       
-      // 使用批量保存方法确保原子性
+      // 使用同步保存方法确保数据完全写入
       this.userInfoManager.saveCompleteUserInfo(getContext(this), userInfo);
       
       // 立即验证保存结果
@@ -759,7 +765,11 @@ struct ClassSelectNavPage {
                          savedUserInfo.majorId === userSelection.majorId && 
                          savedUserInfo.classId === userSelection.classId;
       
-      console.info(`${saveSuccess ? '✅' : '❌'} [ClassSelect] 批量保存${saveSuccess ? '成功' : '失败'}`);
+      console.info(`${saveSuccess ? '✅' : '❌'} [ClassSelect] 同步保存${saveSuccess ? '成功' : '失败'}`);
+
+      // 检查班级ID是否发生了变化
+      const classIdChanged = previousClassId !== userSelection.classId;
+      console.info(`🔄 [ClassSelect] 班级ID变化检查: ${previousClassId} -> ${userSelection.classId} (变化: ${classIdChanged})`);
 
       promptAction.showToast({
         message: saveSuccess ? '保存成功' : '保存失败，请重试',
@@ -767,6 +777,20 @@ struct ClassSelectNavPage {
       });
 
       if (saveSuccess) {
+        // 先确保数据已经同步保存完成后再触发卡片更新
+        if (classIdChanged) {
+          console.info(`🔄 [ClassSelect] 班级ID已变化，数据已同步保存完成，现在触发所有卡片更新...`);
+          try {
+            // 直接传递新的班级ID给卡片，但不传递课程数据（让卡片自己更新）
+            this.formService.updateAllActiveWidgets(getContext(this), userSelection.classId);
+            console.info(`✅ [ClassSelect] 所有卡片更新触发完成`);
+          } catch (error) {
+            console.error(`❌ [ClassSelect] 触发卡片更新失败: ${JSON.stringify(error)}`);
+          }
+        } else {
+          console.info(`🔄 [ClassSelect] 班级ID未变化，跳过卡片更新`);
+        }
+
         setTimeout(() => {
           if (hadCompleteInfo) {
             // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
