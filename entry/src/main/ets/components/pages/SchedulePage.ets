@@ -786,7 +786,7 @@ export struct SchedulePage {
 
     try {
       // 从首选项获取用户班级信息
-      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
+      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
       console.info(`📚 [Course] 当前用户信息: 学院=${userInfo.collegeName}, 专业=${userInfo.majorName}, 班级=${userInfo.className}`);
 
       const classId = userInfo.classId;

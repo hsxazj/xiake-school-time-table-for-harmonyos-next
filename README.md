@@ -7,7 +7,7 @@
 
 ## 🌟 项目特色
 
-- **HarmonyOS 原生**：基于 HarmonyOS 5.0.5 SDK 和 ArkTS 语言开发
+- **HarmonyOS 原生**：基于 HarmonyOS 5.1.1 SDK 和 ArkTS 语言开发
 - **ArkTS 声明式UI**：使用现代化的 ArkTS 声明式UI开发
 - **智能配置管理**：自动初始化应用配置和学期状态管理
 - **模块化架构**：清晰的服务层、模型层、组件层分离

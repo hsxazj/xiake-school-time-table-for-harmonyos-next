@@ -28,7 +28,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private formService: FormService = FormService.getInstance();
 
-   onAddForm(want: Want) {
+  onAddForm(want: Want) {
     if (!want || !want.parameters) {
       hilog.error(0x0000, TAG, `FormAbility onAddForm want or want.parameters is undefined`);
       return formBindingData.createFormBindingData('');
@@ -47,7 +47,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
       // 异步添加 formId 到首选项列表（但不阻塞返回）
       this.formService.addFormIdToPreferences(this.context, formId).then(() => {
         hilog.info(0x0000, TAG, `FormId ${formId} 添加到首选项成功`);
-      }).catch((error:Error) => {
+      }).catch((error: Error) => {
         hilog.error(0x0000, TAG, `FormId ${formId} 添加到首选项失败: ${JSON.stringify(error)}`);
       });
 
@@ -72,6 +72,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
   onUpdateForm(formId: string, wantParams?: Record<string, Object> | undefined) {
     hilog.info(0x0000, TAG, `FormAbility onUpdateForm, formId = ${formId}`);
+    this.loadTodayCourses(formId);
   }
 
 
@@ -84,7 +85,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
     // 从首选项列表中移除 formId（异步执行）
     this.formService.removeFormIdFromPreferences(this.context, formId).then(() => {
       hilog.info(0x0000, TAG, `FormId ${formId} 从首选项移除成功`);
-    }).catch((error:Error) => {
+    }).catch((error: Error) => {
       hilog.error(0x0000, TAG, `FormId ${formId} 从首选项移除失败: ${JSON.stringify(error)}`);
     });
   }
@@ -105,11 +106,12 @@ export default class EntryFormAbility extends FormExtensionAbility {
       formProvider.updateForm(formId, loadingFormMsg);
 
       await this.appConfigManager.initialize();
-      
+
       // 优先使用传递的班级ID，否则从首选项中获取
       const classId = overrideClassId || this.userInfoManager.getClassId(this.context);
 
-      hilog.info(0x0000, TAG, `👤 [FormAbility] 使用班级ID: ${classId} (来源: ${overrideClassId ? '主应用传递' : '首选项获取'})`);
+      hilog.info(0x0000, TAG,
+        `👤 [FormAbility] 使用班级ID: ${classId} (来源: ${overrideClassId ? '主应用传递' : '首选项获取'})`);
 
       if (!classId) {
         hilog.warn(0x0000, TAG, '未找到用户班级信息');

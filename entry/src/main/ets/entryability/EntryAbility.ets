@@ -2,6 +2,7 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { AppConfigManager } from '../services/AppConfigManager';
+import { ToastUtil } from '../common/utils/ToastUtil';
 
 const DOMAIN = 0x0000;
 
@@ -24,6 +25,7 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
+    ToastUtil.init(windowStage); // 仅需一次
     // 不支持暗色模式
     // this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT)
 

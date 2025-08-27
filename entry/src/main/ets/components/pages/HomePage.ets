@@ -242,7 +242,7 @@ export struct HomePage {
       await this.appConfigManager.initialize();
 
       // 获取用户信息
-      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
+      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
       if (!userInfo || !userInfo.classId) {
         console.warn('未找到用户班级信息');
         return;
@@ -268,6 +268,14 @@ export struct HomePage {
         this.todayParams.weekDay
       );
 
+      // const response = await this.courseApiService.getTodayCourseList(
+      //   userInfo.classId,
+      //   2025,
+      //   '3',
+      //   3,
+      //   '星期一'
+      // );
+
 
       if (response.code === 200 && response.data) {
         this.todayCourses = response.data;
@@ -276,7 +284,7 @@ export struct HomePage {
 
         // 同时更新所有活跃卡片的数据
         console.info(`📱 [HomePage] 同步更新卡片数据，课程数量: ${response.data.length}`);
-        this.formService.updateAllActiveWidgetsWithData(getContext(this), response.data);
+        this.formService.updateAllActiveWidgetsWithData(this.getUIContext().getHostContext(), response.data);
       } else {
         console.warn('获取今日课程失败');
       }
@@ -316,6 +324,6 @@ export struct HomePage {
   }
 
   private loadUserInfo(): void {
-    this.userInfo = this.userInfoManager.getUserInfo(getContext(this));
+    this.userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
   }
 }

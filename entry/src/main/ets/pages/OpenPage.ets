@@ -67,7 +67,7 @@ struct OpenPage {
       this.initMessage = '加载完成！';
 
       // 检查是否已设置完整的学籍信息
-      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo(getContext(this));
+      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo(this.getUIContext().getHostContext());
 
       // 短暂延迟后跳转
       setTimeout(() => {

@@ -1,9 +1,9 @@
-import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
 import { FormService } from '../services/FormService';
+import { ToastUtil } from '../common/utils/ToastUtil';
 
 @Builder
 export function ClassSelectNavPageBuilder() {
@@ -36,6 +36,8 @@ struct ClassSelectNavPage {
   @State private tempCollegeIndex: number = 0; // 临时学院选择索引
   @State private tempMajorIndex: number = 0; // 临时专业选择索引  
   @State private tempClassIndex: number = 0; // 临时班级选择索引
+  private uiContext = this.getUIContext();
+  private promptAction = this.uiContext.getPromptAction();
 
   aboutToAppear(): void {
     console.info('ClassSelectPage aboutToAppear 开始');
@@ -68,7 +70,7 @@ struct ClassSelectNavPage {
         range: this.collegeList.map(college => college.collegeName),
         selected: this.tempCollegeIndex
       })
-        .selectedTextStyle({ color: '#45CAD9'})
+        .selectedTextStyle({ color: '#45CAD9' })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -126,7 +128,7 @@ struct ClassSelectNavPage {
         range: this.majorList.map(major => major.majorName),
         selected: this.tempMajorIndex
       })
-        .selectedTextStyle({ color: '#45CAD9'})
+        .selectedTextStyle({ color: '#45CAD9' })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -183,7 +185,7 @@ struct ClassSelectNavPage {
         range: this.classList.map(classInfo => classInfo.className),
         selected: this.tempClassIndex
       })
-        .selectedTextStyle({ color: '#45CAD9'})
+        .selectedTextStyle({ color: '#45CAD9' })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -377,7 +379,7 @@ struct ClassSelectNavPage {
       await this.loadUserPreviousSelections();
     } catch (error) {
       console.error('Load colleges failed:', error);
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '加载学院信息失败',
         duration: 2000
       });
@@ -392,7 +394,7 @@ struct ClassSelectNavPage {
    */
   private async loadUserPreviousSelections(): Promise<void> {
     try {
-      const userInfo = this.userInfoManager.getUserInfo(getContext(this));
+      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
       console.info('用户信息:', JSON.stringify(userInfo));
 
       // 先重置为默认状态
@@ -549,10 +551,10 @@ struct ClassSelectNavPage {
 
     if (this.collegeId === '') {
       console.warn('未选择学院，无法选择专业');
-      promptAction.showToast({
-        message: '请选择学院',
-        duration: 2000
-      });
+      ToastUtil.showToast(
+        '请选择学院',
+        2000
+      );
       return;
     }
 
@@ -568,7 +570,7 @@ struct ClassSelectNavPage {
       this.showMajorPicker = true;
     } else {
       console.error('专业列表仍然为空，无法显示选择器');
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '该学院暂无专业数据',
         duration: 2000
       });
@@ -592,7 +594,7 @@ struct ClassSelectNavPage {
 
     if (this.collegeId === '') {
       console.warn('未选择学院，无法选择班级');
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '请选择学院',
         duration: 2000
       });
@@ -601,7 +603,7 @@ struct ClassSelectNavPage {
 
     if (this.majorId === '') {
       console.warn('未选择专业，无法选择班级');
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '请选择专业',
         duration: 2000
       });
@@ -620,7 +622,7 @@ struct ClassSelectNavPage {
       this.showClassPicker = true;
     } else {
       console.error('班级列表仍然为空，无法显示选择器');
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '该专业暂无班级数据',
         duration: 2000
       });
@@ -647,7 +649,7 @@ struct ClassSelectNavPage {
       this.majorList = response.data;
     } catch (error) {
       console.error('Load majors failed:', error);
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '加载专业信息失败',
         duration: 2000
       });
@@ -667,7 +669,7 @@ struct ClassSelectNavPage {
       this.classList = response.data;
     } catch (error) {
       console.error('Load classes failed:', error);
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '加载班级信息失败',
         duration: 2000
       });
@@ -694,7 +696,7 @@ struct ClassSelectNavPage {
 
   private async handleNextStep(): Promise<void> {
     if (this.collegeId === '') {
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '请选择学院',
         duration: 2000
       });
@@ -702,7 +704,7 @@ struct ClassSelectNavPage {
     }
 
     if (this.majorId === '') {
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '请选择专业',
         duration: 2000
       });
@@ -710,7 +712,7 @@ struct ClassSelectNavPage {
     }
 
     if (this.classId === '') {
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '请选择班级',
         duration: 2000
       });
@@ -727,10 +729,10 @@ struct ClassSelectNavPage {
     };
 
     // 检查用户之前是否已有完整信息（用于判断是首次设置还是修改设置）
-    const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo(getContext(this));
-    
+    const hadCompleteInfo = this.userInfoManager.hasCompleteUserInfo(this.getUIContext().getHostContext());
+
     // 获取之前的班级ID用于比较
-    const previousUserInfo = this.userInfoManager.getUserInfo(getContext(this));
+    const previousUserInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
     const previousClassId = previousUserInfo.classId;
 
     // 保存用户选择到PreferencesUtil
@@ -738,7 +740,7 @@ struct ClassSelectNavPage {
     console.info(`🔍 [ClassSelect] 学院: ${userSelection.collegeId} - ${userSelection.collegeName}`);
     console.info(`🔍 [ClassSelect] 专业: ${userSelection.majorId} - ${userSelection.majorName}`);
     console.info(`🔍 [ClassSelect] 班级: ${userSelection.classId} - ${userSelection.className}`);
-    
+
     try {
       // 创建符合UserSchoolInfo接口的对象
       const userInfo: UserSchoolInfo = {
@@ -749,29 +751,29 @@ struct ClassSelectNavPage {
         classId: userSelection.classId,
         className: userSelection.className
       };
-      
+
       // 使用同步保存方法确保数据完全写入
-      this.userInfoManager.saveCompleteUserInfo(getContext(this), userInfo);
-      
+      this.userInfoManager.saveCompleteUserInfo(this.getUIContext().getHostContext(), userInfo);
+
       // 立即验证保存结果
-      const savedUserInfo = this.userInfoManager.getUserInfo(getContext(this));
-      
+      const savedUserInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+
       console.info(`✅ [ClassSelect] 保存验证:`);
       console.info(`✅ [ClassSelect] 学院ID: ${savedUserInfo.collegeId} (期望: ${userSelection.collegeId})`);
       console.info(`✅ [ClassSelect] 专业ID: ${savedUserInfo.majorId} (期望: ${userSelection.majorId})`);
       console.info(`✅ [ClassSelect] 班级ID: ${savedUserInfo.classId} (期望: ${userSelection.classId})`);
-      
-      const saveSuccess = savedUserInfo.collegeId === userSelection.collegeId && 
-                         savedUserInfo.majorId === userSelection.majorId && 
-                         savedUserInfo.classId === userSelection.classId;
-      
+
+      const saveSuccess = savedUserInfo.collegeId === userSelection.collegeId &&
+        savedUserInfo.majorId === userSelection.majorId &&
+        savedUserInfo.classId === userSelection.classId;
+
       console.info(`${saveSuccess ? '✅' : '❌'} [ClassSelect] 同步保存${saveSuccess ? '成功' : '失败'}`);
 
       // 检查班级ID是否发生了变化
       const classIdChanged = previousClassId !== userSelection.classId;
       console.info(`🔄 [ClassSelect] 班级ID变化检查: ${previousClassId} -> ${userSelection.classId} (变化: ${classIdChanged})`);
 
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: saveSuccess ? '保存成功' : '保存失败，请重试',
         duration: 2000
       });
@@ -782,7 +784,7 @@ struct ClassSelectNavPage {
           console.info(`🔄 [ClassSelect] 班级ID已变化，数据已同步保存完成，现在触发所有卡片更新...`);
           try {
             // 直接传递新的班级ID给卡片，但不传递课程数据（让卡片自己更新）
-            this.formService.updateAllActiveWidgets(getContext(this), userSelection.classId);
+            this.formService.updateAllActiveWidgets(this.getUIContext().getHostContext(), userSelection.classId);
             console.info(`✅ [ClassSelect] 所有卡片更新触发完成`);
           } catch (error) {
             console.error(`❌ [ClassSelect] 触发卡片更新失败: ${JSON.stringify(error)}`);
@@ -803,7 +805,7 @@ struct ClassSelectNavPage {
       }
     } catch (error) {
       console.error(`❌ [ClassSelect] 保存过程中发生错误: ${error}`);
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '保存失败，请重试',
         duration: 2000
       });

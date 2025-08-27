@@ -1,5 +1,4 @@
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
-import router from '@ohos.router';
 
 // 用户信息接口
 interface UserInfo {
@@ -84,7 +83,7 @@ export struct MinePage {
       .borderColor('#F2F2F2')
       .shadow({
         radius: 10,
-        color: '#80000000',   // 半透明黑
+        color: '#80000000', // 半透明黑
         offsetX: 0,
         offsetY: 4
       })
@@ -166,7 +165,7 @@ export struct MinePage {
       .margin({ bottom: 20 })
       .shadow({
         radius: 10,
-        color: '#80000000',   // 半透明黑
+        color: '#80000000', // 半透明黑
         offsetX: 0,
         offsetY: 4
       })
@@ -174,7 +173,7 @@ export struct MinePage {
   }
 
   private loadUserInfo(): void {
-    const schoolInfo = this.userInfoManager.getUserInfo(getContext(this));
+    const schoolInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
     console.info('获取到的用户信息:', JSON.stringify(schoolInfo));
 
     // 更新学院、专业、班级信息
@@ -208,9 +207,7 @@ export struct MinePage {
    */
   private navigateToClassSelect(): void {
     try {
-      router.pushUrl({
-        url: 'pages/ClassSelectPage'
-      });
+      this.pathStack.pushPathByName('ClassSelectPage', null);
       console.info('跳转到班级选择页面');
     } catch (error) {
       console.error('跳转到班级选择页面失败:', error);

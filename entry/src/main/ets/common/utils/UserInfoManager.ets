@@ -1,4 +1,4 @@
-import { PreferencesUtil } from "./PreferencesUtil";
+import { PreferencesUtil } from './PreferencesUtil';
 
 // 用户学籍信息接口
 export interface UserSchoolInfo {
@@ -68,14 +68,14 @@ export class UserInfoManager {
   /**
    * 批量保存完整的用户学籍信息（原子操作）
    */
-  public saveCompleteUserInfo(context: Context, userInfo: UserSchoolInfo): void {
+  public saveCompleteUserInfo(context: Context | undefined, userInfo: UserSchoolInfo): void {
     const util = PreferencesUtil.getInstance();
     console.info(`📚 [UserInfo] 开始批量保存用户信息...`);
-    
+
     try {
       // 获取同一个preferences实例，确保在同一个事务中操作
       const preferences = util.getPreferences(context);
-      
+
       // 批量设置所有值
       preferences.putSync(UserInfoManager.COLLEGE_ID_KEY, userInfo.collegeId);
       preferences.putSync(UserInfoManager.COLLEGE_NAME_KEY, userInfo.collegeName);
@@ -83,10 +83,10 @@ export class UserInfoManager {
       preferences.putSync(UserInfoManager.MAJOR_NAME_KEY, userInfo.majorName);
       preferences.putSync(UserInfoManager.CLASS_ID_KEY, userInfo.classId);
       preferences.putSync(UserInfoManager.CLASS_NAME_KEY, userInfo.className);
-      
+
       // 一次性同步刷新所有数据
       preferences.flushSync();
-      
+
       console.info(`📚 [UserInfo] 批量保存完成`);
       console.info(`📚 [UserInfo] 学院: ${userInfo.collegeId} - ${userInfo.collegeName}`);
       console.info(`📚 [UserInfo] 专业: ${userInfo.majorId} - ${userInfo.majorName}`);
@@ -101,7 +101,7 @@ export class UserInfoManager {
   /**
    * 获取学院ID
    */
-  public getCollegeId(context: Context): string {
+  public getCollegeId(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.COLLEGE_ID_KEY, '') as string;
   }
@@ -109,7 +109,7 @@ export class UserInfoManager {
   /**
    * 获取学院名称
    */
-  public getCollegeName(context: Context): string {
+  public getCollegeName(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.COLLEGE_NAME_KEY, '') as string;
   }
@@ -117,7 +117,7 @@ export class UserInfoManager {
   /**
    * 获取专业ID
    */
-  public getMajorId(context: Context): string {
+  public getMajorId(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.MAJOR_ID_KEY, '') as string;
   }
@@ -125,7 +125,7 @@ export class UserInfoManager {
   /**
    * 获取专业名称
    */
-  public getMajorName(context: Context): string {
+  public getMajorName(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.MAJOR_NAME_KEY, '') as string;
   }
@@ -133,7 +133,7 @@ export class UserInfoManager {
   /**
    * 获取班级ID
    */
-  public getClassId(context: Context): string {
+  public getClassId(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.CLASS_ID_KEY, '') as string;
   }
@@ -141,7 +141,7 @@ export class UserInfoManager {
   /**
    * 获取班级名称
    */
-  public getClassName(context: Context): string {
+  public getClassName(context: Context | undefined): string {
     const util = PreferencesUtil.getInstance();
     return util.getValue(context, UserInfoManager.CLASS_NAME_KEY, '') as string;
   }
@@ -149,7 +149,7 @@ export class UserInfoManager {
   /**
    * 检查是否已设置完整的学籍信息
    */
-  public hasCompleteUserInfo(context: Context): boolean {
+  public hasCompleteUserInfo(context: Context | undefined): boolean {
     const collegeId = this.getCollegeId(context);
     const majorId = this.getMajorId(context);
     const classId = this.getClassId(context);
@@ -160,7 +160,7 @@ export class UserInfoManager {
   /**
    * 获取完整的用户学籍信息
    */
-  public getUserInfo(context: Context): UserSchoolInfo {
+  public getUserInfo(context: Context | undefined): UserSchoolInfo {
     const result: UserSchoolInfo = {
       collegeId: this.getCollegeId(context),
       collegeName: this.getCollegeName(context),
@@ -175,7 +175,7 @@ export class UserInfoManager {
   /**
    * 清除所有用户信息
    */
-  public clearUserInfo(context: Context): void {
+  public clearUserInfo(context: Context | undefined): void {
     const util = PreferencesUtil.getInstance();
     util.removeValue(context, UserInfoManager.COLLEGE_ID_KEY);
     util.removeValue(context, UserInfoManager.COLLEGE_NAME_KEY);

@@ -1,4 +1,3 @@
-import { promptAction } from '@kit.ArkUI';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { CurrentSemesterStatus } from '../services/api/ConfigApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
@@ -16,6 +15,8 @@ struct WelcomeNavPage {
   @State private currentStatus: CurrentSemesterStatus | null = null;
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private uiContext = this.getUIContext();
+  private promptAction = this.uiContext.getPromptAction();
 
   aboutToAppear(): void {
     this.loadUserData();
@@ -202,10 +203,10 @@ struct WelcomeNavPage {
 
   private async loadUserData(): Promise<void> {
     try {
-      this.userInfo = this.userInfoManager.getUserInfo(getContext(this));
+      this.userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
 
-      if (!this.userInfoManager.hasCompleteUserInfo(getContext(this))) {
-        promptAction.showToast({
+      if (!this.userInfoManager.hasCompleteUserInfo(this.getUIContext().getHostContext())) {
+        this.promptAction.showToast({
           message: '未找到用户信息，请重新选择',
           duration: 2000
         });
@@ -213,7 +214,7 @@ struct WelcomeNavPage {
       }
     } catch (error) {
       console.error('Load user data failed:', error);
-      promptAction.showToast({
+      this.promptAction.showToast({
         message: '加载用户信息失败',
         duration: 2000
       });

@@ -35,7 +35,7 @@ export class FormService {
     try {
       // 使用同步方法避免竞态条件
       const pref = await preferences.getPreferences(context, 'form_store');
-      
+
       // 使用同步获取，避免并发时的数据覆盖问题
       const existingFormIds = pref.getSync('todayCourseForms', []) as string[];
       hilog.info(0x0000, TAG, `当前已有的formIds: ${JSON.stringify(existingFormIds)}`);
@@ -85,8 +85,12 @@ export class FormService {
   /**
    * 获取所有活跃的卡片ID列表
    */
-  public async getActiveFormIds(context: Context): Promise<string[]> {
+  public async getActiveFormIds(context: Context | undefined): Promise<string[]> {
     try {
+      if (!context) {
+        hilog.error(0x0000, TAG, '未提供上下文，无法获取活跃卡片列表');
+        return [];
+      }
       const pref = await preferences.getPreferences(context, 'form_store');
       const formIds = pref.getSync('todayCourseForms', []) as string[];
       hilog.info(0x0000, TAG, `获取到的活跃formIds: ${JSON.stringify(formIds)}`);
@@ -103,10 +107,10 @@ export class FormService {
    * @param todayCourses 今日课程数据
    * @param classId 班级ID（可选）
    */
-  public updateAllActiveWidgetsWithData(context: Context, todayCourses: CourseInfo[]): void {
+  public updateAllActiveWidgetsWithData(context: Context | undefined, todayCourses: CourseInfo[]): void {
     this.getActiveFormIds(context).then((activeFormIds) => {
       hilog.info(0x0000, TAG, `开始更新所有卡片数据，共找到 ${activeFormIds.length} 个卡片`);
-      
+
       if (activeFormIds.length === 0) {
         hilog.info(0x0000, TAG, '没有找到活跃的卡片，跳过更新');
         return;
@@ -116,16 +120,16 @@ export class FormService {
       for (const formId of activeFormIds) {
         try {
           hilog.info(0x0000, TAG, `更新卡片数据: ${formId}, 课程数量: ${todayCourses.length}`);
-          
+
           // 使用最简单的数据结构进行测试
           const updateData = formBindingData.createFormBindingData({
             todayCourses: todayCourses,
             isLoading: false,
             timestamp: Date.now() // 添加时间戳确保数据变化
           });
-          
+
           hilog.info(0x0000, TAG, `准备更新formId: ${formId}`);
-          
+
           formProvider.updateForm(formId, updateData).then(() => {
             hilog.info(0x0000, TAG, `✅ 卡片 ${formId} 数据更新成功`);
           }).catch((error: Error) => {
@@ -139,7 +143,7 @@ export class FormService {
           hilog.error(0x0000, TAG, `更新卡片 ${formId} 数据出现异常: ${JSON.stringify(error)}`);
         }
       }
-      
+
       hilog.info(0x0000, TAG, '所有卡片数据更新完成');
     }).catch((error: Error) => {
       hilog.error(0x0000, TAG, `获取活跃卡片列表失败: ${JSON.stringify(error)}`);
@@ -151,7 +155,7 @@ export class FormService {
    * @param context 上下文
    * @param newClassId 新班级ID（可选）
    */
-  public updateAllActiveWidgets(context: Context, newClassId?: string): void {
+  public updateAllActiveWidgets(context: Context | undefined, newClassId?: string): void {
     this.getActiveFormIds(context).then((activeFormIds) => {
       hilog.info(0x0000, TAG, `开始触发所有卡片更新，共找到 ${activeFormIds.length} 个卡片`);
 
@@ -179,7 +183,7 @@ export class FormService {
             updateData = formBindingData.createFormBindingData({ trigger: 'refresh' });
             hilog.info(0x0000, TAG, '触发卡片刷新');
           }
-            
+
           formProvider.updateForm(formId, updateData).then(() => {
             hilog.info(0x0000, TAG, `卡片 ${formId} 更新触发完成`);
           }).catch((error: Error) => {

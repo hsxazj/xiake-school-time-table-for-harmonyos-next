@@ -17,7 +17,7 @@ export class PreferencesUtil {
     return PreferencesUtil.preferencesUtil;
   }
 
-  getPreferences(context: Context): preferences.Preferences {
+  getPreferences(context: Context | undefined): preferences.Preferences {
     // 构建options配置
     let options: preferences.Options = {
       name: this.preferenceName
@@ -49,7 +49,7 @@ export class PreferencesUtil {
    * @param value 值
    * @param override 是否覆盖现有值
    */
-  putValue(context: Context, key: string, value: preferences.ValueType, override: boolean = true) {
+  putValue(context: Context | undefined, key: string, value: preferences.ValueType, override: boolean = true) {
     try {
       const preferences = this.getPreferences(context);
       
@@ -77,7 +77,7 @@ export class PreferencesUtil {
    * @param defaultValue 默认返回值
    * @returns 值
    */
-  getValue(context: Context, key: string, defaultValue: preferences.ValueType = ''): preferences.ValueType {
+  getValue(context: Context | undefined, key: string, defaultValue: preferences.ValueType = ''): preferences.ValueType {
     try {
       const preferences = this.getPreferences(context);
       return preferences.getSync(key, defaultValue);
@@ -92,7 +92,7 @@ export class PreferencesUtil {
    * @param context 上下文
    * @param key 键
    */
-  removeValue(context: Context, key: string) {
+  removeValue(context: Context  | undefined, key: string) {
     try {
       const preferences = this.getPreferences(context);
       preferences.deleteSync(key);
@@ -109,7 +109,7 @@ export class PreferencesUtil {
    * 清除所有数据
    * @param context 上下文
    */
-  clearAll(context: Context) {
+  clearAll(context: Context | undefined) {
     try {
       const preferences = this.getPreferences(context);
       preferences.clearSync();
