@@ -125,13 +125,12 @@ export default class EntryFormAbility extends FormExtensionAbility {
       hilog.info(0x0000, TAG,
         `🔍 [Today Course Form] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
 
-      // TODO 模拟
       const response = await this.courseApiService.getTodayCourseList(
         classId,
-        2025,
-        '3',
-        3,
-        '星期一'
+        todayParams.year,
+        todayParams.termCode,
+        todayParams.week,
+        todayParams.weekDay
       );
 
       if (response.code === 200 && response.data) {

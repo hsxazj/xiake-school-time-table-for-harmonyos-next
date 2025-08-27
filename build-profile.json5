@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "E:/arkts/xiake-hm-key/kb.p12",
+          "storePassword": "0000001B9488B82607C2870FC64BBCF09752F3E14D8B58EB7B292FDBF331AC4D32245404A5D3F21B465E6D",
+          "keyAlias": "kb",
+          "keyPassword": "0000001B4D9DF741655656B4563AF67C9196F12C3351263F8B0FFB77BB2DDC9AD5F714457310D9E791BACE",
+          "signAlg": "SHA256withECDSA",
+          "profile": "E:/arkts/xiake-hm-key/xiake-kb-prodRelease.p7b",
+          "certpath": "E:/arkts/xiake-hm-key/kb.cer"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",

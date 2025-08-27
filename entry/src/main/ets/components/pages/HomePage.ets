@@ -260,13 +260,12 @@ export struct HomePage {
 
       console.info(`🔍 [Today Course] 使用缓存参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
 
-      // TODO 测试调用今日课程接口
       const response = await this.courseApiService.getTodayCourseList(
         userInfo.classId,
-        2025,
-        '3',
-        3,
-        '星期一'
+        this.todayParams.year,
+        this.todayParams.termCode,
+        this.todayParams.week,
+        this.todayParams.weekDay
       );
 
 

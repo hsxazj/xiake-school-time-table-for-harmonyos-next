@@ -43,10 +43,11 @@ struct MainTabNavPage {
         }
         .tabBar(this.TabBuilder('课表', 1, $r('app.media.classList'), $r('app.media.classListActive')))
 
-        TabContent() {
-          MinePage()
-        }
-        .tabBar(this.TabBuilder('我的', 2, $r('app.media.me'), $r("app.media.meActive")))
+        //TODO 还没写先不放上去了
+        // TabContent() {
+        //   MinePage()
+        // }
+        // .tabBar(this.TabBuilder('我的', 2, $r('app.media.me'), $r("app.media.meActive")))
       }
       .width('100%')
       .height('100%')
