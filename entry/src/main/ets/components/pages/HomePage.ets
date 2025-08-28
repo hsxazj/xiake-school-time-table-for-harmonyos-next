@@ -39,6 +39,14 @@ export struct HomePage {
     this.loadTodayCourses();
   }
 
+  onPageShow(): void {
+    // 页面每次显示时重新初始化今日参数，确保不受其他页面影响
+    console.info('📱 [HomePage] 页面显示，重新初始化今日参数');
+    this.initTodayParams();
+    // 重新加载今日课程以防有变化
+    this.loadTodayCourses();
+  }
+
   build() {
     Column() {
       Row() {
@@ -298,29 +306,34 @@ export struct HomePage {
 
   /**
    * 初始化今日课程参数缓存
+   * 修复：直接基于当前日期计算，不依赖可能被课表页面滑动影响的全局状态
    */
   private initTodayParams(): void {
-    // 获取已经计算好的当前学期状态
-    const currentStatus = this.appConfigManager.getCurrentStatus();
-    if (!currentStatus || !currentStatus.currentSemester) {
+    // 直接基于今天的日期计算学期状态，避免受课表页面滑动影响
+    const today = new Date();
+    const configService = this.appConfigManager.getConfigService();
+    
+    // 使用ConfigService直接计算今天对应的学期状态
+    const todayStatus = configService.calculateCurrentSemesterStatus(today);
+    
+    if (!todayStatus || !todayStatus.currentSemester) {
       console.warn('未找到当前学期信息');
       return;
     }
 
     // 获取今天是星期几
-    const today = new Date();
     const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
     const weekDayStr = weekdays[today.getDay()];
 
-    // 缓存今日课程参数
+    // 缓存今日课程参数 - 基于真实的今天，不受其他页面影响
     this.todayParams = {
-      year: parseInt(currentStatus.currentSemester.academicYear),
-      week: currentStatus.currentWeek,
-      termCode: currentStatus.currentSemester.semester === 1 ? '3' : '12',
+      year: parseInt(todayStatus.currentSemester.academicYear),
+      week: todayStatus.currentWeek,
+      termCode: todayStatus.currentSemester.semester === 1 ? '3' : '12',
       weekDay: weekDayStr
     };
 
-    console.info(`✅ [Today Params Cache] 已缓存参数: ${JSON.stringify(this.todayParams)}`);
+    console.info(`✅ [Today Params Cache] 基于真实今日计算参数: ${JSON.stringify(this.todayParams)}`);
   }
 
   private loadUserInfo(): void {
