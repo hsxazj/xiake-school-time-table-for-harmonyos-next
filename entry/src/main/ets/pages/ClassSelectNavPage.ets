@@ -1,4 +1,3 @@
-import { promptAction } from '@kit.ArkUI';
 import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
@@ -33,9 +32,9 @@ struct ClassSelectNavPage {
   @State private showCollegePicker: boolean = false;
   @State private showMajorPicker: boolean = false;
   @State private showClassPicker: boolean = false;
-  @State private tempCollegeIndex: number = 0; // 临时学院选择索引
-  @State private tempMajorIndex: number = 0; // 临时专业选择索引  
-  @State private tempClassIndex: number = 0; // 临时班级选择索引
+  @State private tempCollegeIndex: number | number[] = 0; // 临时学院选择索引
+  @State private tempMajorIndex: number | number[] = 0; // 临时专业选择索引
+  @State private tempClassIndex: number | number[] = 0; // 临时班级选择索引
   private promptAction = this.getUIContext().getPromptAction();
 
   aboutToAppear(): void {
@@ -90,8 +89,9 @@ struct ClassSelectNavPage {
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
-          this.selectedCollegeIndex = this.tempCollegeIndex;
-          this.handleCollegeSelect(this.tempCollegeIndex);
+          console.info(`学院选择器确定按钮点击，tempCollegeIndex: ${this.tempCollegeIndex}`);
+          this.handleCollegeSelect(Array.isArray(this.tempCollegeIndex) ? this.tempCollegeIndex[0] :
+          this.tempCollegeIndex);
           this.showCollegePicker = false;
         })
     }
@@ -135,10 +135,8 @@ struct ClassSelectNavPage {
         .padding(0)// 去除默认内边距
         .margin(0)// 去除默认外边距
         .onChange((value: string | string[], index: number | number[]) => {
-          const selectedValue = Array.isArray(value) ? value[0] : value;
-          const selectedIndex = Array.isArray(index) ? index[0] : index;
-          console.info(`临时选择专业: ${selectedValue}, index: ${selectedIndex}`);
-          this.tempMajorIndex = selectedIndex; // 只更新临时状态
+          console.info(`临时选择专业: ${value}, index: ${index}`);
+          this.tempMajorIndex = index; // 只更新临时状态
         })
 
       Button('确定')
@@ -148,8 +146,8 @@ struct ClassSelectNavPage {
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
-          this.selectedMajorIndex = this.tempMajorIndex;
-          this.handleMajorSelect(this.tempMajorIndex);
+          console.info(`专业选择器确定按钮点击，tempMajorIndex: ${this.tempMajorIndex}`);
+          this.handleMajorSelect(Array.isArray(this.tempMajorIndex) ? this.tempMajorIndex[0] : this.tempMajorIndex);
           this.showMajorPicker = false;
         })
     }
@@ -205,8 +203,8 @@ struct ClassSelectNavPage {
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
-          this.selectedClassIndex = this.tempClassIndex;
-          this.handleClassSelect(this.tempClassIndex);
+          console.info(`班级选择器确定按钮点击，tempClassIndex: ${this.tempClassIndex}`);
+          this.handleClassSelect(Array.isArray(this.tempClassIndex) ? this.tempClassIndex[0] : this.tempClassIndex);
           this.showClassPicker = false;
         })
     }
@@ -619,6 +617,7 @@ struct ClassSelectNavPage {
       console.info(`准备显示班级选择器，共${this.classList.length}个班级`);
       // 初始化临时选择状态为当前选择
       this.tempClassIndex = this.selectedClassIndex;
+      console.info(`班级选择器初始化: tempClassIndex=${this.tempClassIndex}, selectedClassIndex=${this.selectedClassIndex}`);
       this.showClassPicker = true;
     } else {
       console.error('班级列表仍然为空，无法显示选择器');
@@ -630,11 +629,16 @@ struct ClassSelectNavPage {
   }
 
   private handleClassSelect(index: number): void {
+    console.info(`handleClassSelect called with index: ${index}, classList length: ${this.classList.length}`);
     if (index >= 0 && index < this.classList.length) {
       const selectedClass = this.classList[index];
+      console.info(`选择班级: ${selectedClass.className} (ID: ${selectedClass.classId})`);
       this.classId = selectedClass.classId; // 直接使用，已经是字符串
       this.className = selectedClass.className;
       this.selectedClassIndex = index;
+      console.info(`班级选择状态更新完成: classId=${this.classId}, className=${this.className}, selectedIndex=${this.selectedClassIndex}`);
+    } else {
+      console.error(`handleClassSelect: 无效的index ${index}，classList长度: ${this.classList.length}`);
     }
   }
 
