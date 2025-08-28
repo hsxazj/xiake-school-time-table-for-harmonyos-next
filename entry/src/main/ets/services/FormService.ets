@@ -6,11 +6,6 @@ import { CourseInfo } from '../models/CourseModels';
 
 const TAG: string = 'FormService';
 
-interface TodayCourseFormData {
-  formId: string;
-  todayCourses: CourseInfo[];
-  isLoading: boolean;
-}
 
 /**
  * 卡片管理服务：主要负责卡片ID的存储管理和触发更新

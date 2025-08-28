@@ -73,12 +73,10 @@ struct OpenPage {
       setTimeout(() => {
         if (hasCompleteInfo) {
           // 已有完整信息，直接跳转到主页Tab页面
-          this.pathStack.clear();
-          this.pathStack.pushPathByName('MainTabNavPage', null);
+          this.pathStack.replacePathByName('MainTabNavPage', null);
         } else {
           // 没有完整信息，跳转到学院选择页面
-          this.pathStack.clear();
-          this.pathStack.pushPathByName('ClassSelectNavPage', null);
+          this.pathStack.replacePathByName('ClassSelectNavPage', null);
         }
       }, 500);
 
