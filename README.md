@@ -88,8 +88,8 @@ entry/src/main/ets/
 
 ### 环境要求
 
-- **HarmonyOS SDK**: 5.0.5(17)
-- **DevEco Studio**: 5.0.5.Release
+- **HarmonyOS SDK**: 5.1.1(19)
+- **DevEco Studio**: 5.1.1.Release
 - **Node.js**: v18.20.8+
 - **ohpm**: HarmonyOS 包管理器
 
