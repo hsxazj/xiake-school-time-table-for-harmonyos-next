@@ -100,7 +100,7 @@ export struct SchedulePage {
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
       .combine(TransitionEffect.scale({ x: 0, y: 0 }))
-      .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 }); // 从250减少到150
+      .animation({ curve: curves.springMotion(0.8, 1.0), duration: 80 }); // 从150减少到80，加快动画速度
   // 课程块可见性状态
   @State private courseBlockVisible: boolean[][] = [];
 
@@ -135,6 +135,33 @@ export struct SchedulePage {
           .onClick(() => {
             this.showWeekPicker = true;
           })
+
+          Blank()
+
+          // 回到本周按钮
+          if (!this.isCurrentWeekShowing()) {
+            Button('回到本周')
+              .fontSize(14)
+              .fontColor('#45CAD9')
+              .backgroundColor('#E3F2FD')
+              .height(32)
+              .borderRadius(16)
+              .border({
+                width: 1,
+                color: '#45CAD9',
+                radius: 16
+              })
+              .padding({
+                left: 12,
+                right: 12,
+                top: 0,
+                bottom: 0
+              })
+              .transition(this.effect) // 应用与课程块相同的转场动画
+              .onClick(async () => {
+                await this.navigateToCurrentWeek();
+              })
+          }
         }
         .width('100%')
         .padding({
@@ -1034,11 +1061,23 @@ export struct SchedulePage {
 
   /**
    * 检查是否是今天
+   * 修复：需要同时比较具体日期，而不仅仅是星期几
    */
   private isToday(dayIndex: number): boolean {
+    if (!this.weekDates) {
+      return false;
+    }
+
     const today = new Date();
-    const currentWeekday = (today.getDay() + 6) % 7; // 转换为周一=0的格式
-    return dayIndex === currentWeekday;
+
+    // 计算当前周显示的对应日期
+    const targetDate = new Date(this.weekDates.startDate);
+    targetDate.setDate(this.weekDates.startDate.getDate() + dayIndex);
+
+    // 比较年月日是否完全一致
+    return today.getFullYear() === targetDate.getFullYear() &&
+      today.getMonth() === targetDate.getMonth() &&
+      today.getDate() === targetDate.getDate();
   }
 
   /**
@@ -1088,5 +1127,47 @@ export struct SchedulePage {
         resolve();
       }, 100); // 从200减少到100，进一步加快消失速度
     });
+  }
+
+  /**
+   * 判断当前是否显示真实的本周
+   */
+  private isCurrentWeekShowing(): boolean {
+    const today = new Date();
+
+    // 使用ConfigService计算今天对应的真实学期状态
+    const todayStatus = this.configService.calculateCurrentSemesterStatus(today);
+
+    if (!todayStatus || !todayStatus.currentSemester || !this.currentSemester) {
+      return false;
+    }
+
+    // 比较学期和周数是否一致
+    return todayStatus.currentSemester.academicYear === this.currentSemester.academicYear &&
+      todayStatus.currentSemester.semester === this.currentSemester.semester &&
+      todayStatus.currentWeek === this.currentWeek;
+  }
+
+  /**
+   * 导航回到当前真实周
+   */
+  private async navigateToCurrentWeek(): Promise<void> {
+    console.info('📅 [Navigate] 回到本周');
+
+    // 先播放退场动画
+    await this.triggerCourseBlockExitAnimation();
+
+    // 重置为今天的日期
+    const today = new Date();
+    this.currentDate = new Date(today);
+
+    // 重新计算基于今天的学期状态
+    this.updateCurrentSemesterFromDate(this.currentDate);
+    this.calculateWeekDatesFromCurrentDate();
+
+    // 重新加载课程数据
+    await this.loadCourseData();
+
+    console.info(`📅 [Navigate] 已回到本周: ${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
   }
 }
