@@ -1,13 +1,13 @@
 # 霞客课表 HarmonyOS 应用
 
-[![HarmonyOS](https://img.shields.io/badge/HarmonyOS-5.1.1-blue)](https://developer.harmonyos.com/)
+[![HarmonyOS](https://img.shields.io/badge/HarmonyOS-5.0.5-blue)](https://developer.harmonyos.com/)
 [![ArkTS](https://img.shields.io/badge/ArkTS-TypeScript-blue)](https://developer.harmonyos.com/cn/docs/documentation/doc-guides/arkts-get-started-0000001504769321)
 
 霞客课表是一款基于 HarmonyOS Next 原生开发的课程表管理应用，采用 ArkTS 语言开发，提供流畅的原生体验和完整的课表管理功能。
 
 ## 🌟 项目特色
 
-- **HarmonyOS 原生**：基于 HarmonyOS 5.1.1 SDK 和 ArkTS 语言开发
+- **HarmonyOS 原生**：基于 HarmonyOS 5.0.5 SDK 和 ArkTS 语言开发
 - **ArkTS 声明式UI**：使用现代化的 ArkTS 声明式UI开发
 - **智能配置管理**：自动初始化应用配置和学期状态管理
 - **模块化架构**：清晰的服务层、模型层、组件层分离
@@ -88,7 +88,7 @@ entry/src/main/ets/
 
 ### 环境要求
 
-- **HarmonyOS SDK**: 5.1.1(19)
+- **HarmonyOS SDK**: 5.0.5(17)
 - **DevEco Studio**: 5.1.1.Release
 - **Node.js**: v18.20.8+
 - **ohpm**: HarmonyOS 包管理器
@@ -153,8 +153,8 @@ entry/src/main/ets/
 
 ## 📊 项目状态
 
-- **当前版本**: 1.0.0
-- **HarmonyOS SDK**: 5.1.1(19)
+- **当前版本**: 1.0.1
+- **HarmonyOS SDK**: 5.0.5(17)
 - **开发状态**: 积极开发中
 - **测试状态**: 没有测试捏
 
