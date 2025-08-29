@@ -116,11 +116,10 @@ export class FormService {
         try {
           hilog.info(0x0000, TAG, `更新卡片数据: ${formId}, 课程数量: ${todayCourses.length}`);
 
-          // 使用最简单的数据结构进行测试
           const updateData = formBindingData.createFormBindingData({
             todayCourses: todayCourses,
             isLoading: false,
-            timestamp: Date.now() // 添加时间戳确保数据变化
+            errorMessage: ''
           });
 
           hilog.info(0x0000, TAG, `准备更新formId: ${formId}`);
@@ -140,56 +139,6 @@ export class FormService {
       }
 
       hilog.info(0x0000, TAG, '所有卡片数据更新完成');
-    }).catch((error: Error) => {
-      hilog.error(0x0000, TAG, `获取活跃卡片列表失败: ${JSON.stringify(error)}`);
-    });
-  }
-
-  /**
-   * 触发所有活跃卡片重新加载数据（用于班级变化等场景）
-   * @param context 上下文
-   * @param newClassId 新班级ID（可选）
-   */
-  public updateAllActiveWidgets(context: Context | undefined, newClassId?: string): void {
-    this.getActiveFormIds(context).then((activeFormIds) => {
-      hilog.info(0x0000, TAG, `开始触发所有卡片更新，共找到 ${activeFormIds.length} 个卡片`);
-
-      if (activeFormIds.length === 0) {
-        hilog.info(0x0000, TAG, '没有找到活跃的卡片，跳过更新');
-        return;
-      }
-
-      // 逐个触发每个卡片的更新
-      for (const formId of activeFormIds) {
-        try {
-          hilog.info(0x0000, TAG, `触发卡片更新: ${formId}`);
-
-          // 如果提供了新的班级ID，只传递相关信息，不传递完整的卡片数据
-          let updateData: formBindingData.FormBindingData;
-          if (newClassId) {
-            // 传递简单的触发信息，让卡片自己处理数据更新
-            updateData = formBindingData.createFormBindingData({
-              trigger: 'classChanged',
-              newClassId: newClassId
-            });
-            hilog.info(0x0000, TAG, `传递给卡片的新班级ID: ${newClassId}`);
-          } else {
-            // 只传递触发信息
-            updateData = formBindingData.createFormBindingData({ trigger: 'refresh' });
-            hilog.info(0x0000, TAG, '触发卡片刷新');
-          }
-
-          formProvider.updateForm(formId, updateData).then(() => {
-            hilog.info(0x0000, TAG, `卡片 ${formId} 更新触发完成`);
-          }).catch((error: Error) => {
-            hilog.error(0x0000, TAG, `触发卡片 ${formId} 更新失败: ${JSON.stringify(error)}`);
-          });
-        } catch (error) {
-          hilog.error(0x0000, TAG, `触发卡片 ${formId} 更新出现异常: ${JSON.stringify(error)}`);
-        }
-      }
-
-      hilog.info(0x0000, TAG, '所有卡片更新触发完成');
     }).catch((error: Error) => {
       hilog.error(0x0000, TAG, `获取活跃卡片列表失败: ${JSON.stringify(error)}`);
     });

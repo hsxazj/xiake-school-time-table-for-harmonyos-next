@@ -18,6 +18,7 @@ interface TodayCourseFormData {
   formId: string;
   todayCourses: CourseInfo[];
   isLoading: boolean;
+  errorMessage?: string;
 }
 
 const TAG: string = 'EntryFormAbility';
@@ -41,6 +42,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
     hilog.info(0x0000, TAG, `🎯 [FormAbility] 创建${formName}`)
 
+    // 如果是今日课表卡片
     if (formName === 'todayCourse') {
       hilog.info(0x0000, TAG, `🎯 [FormAbility] 创建todayCourse`);
 
@@ -51,16 +53,8 @@ export default class EntryFormAbility extends FormExtensionAbility {
         hilog.error(0x0000, TAG, `FormId ${formId} 添加到首选项失败: ${JSON.stringify(error)}`);
       });
 
-      let initFormData: TodayCourseFormData = {
-        formId: formId,
-        todayCourses: [],
-        isLoading: true
-      };
-
       // 异步加载今日课程数据
       this.loadTodayCourses(formId);
-
-      return formBindingData.createFormBindingData(initFormData);
     }
 
     return formBindingData.createFormBindingData('');
@@ -100,7 +94,8 @@ export default class EntryFormAbility extends FormExtensionAbility {
       let loadingFormData: TodayCourseFormData = {
         formId: formId,
         todayCourses: [],
-        isLoading: true
+        isLoading: true,
+        errorMessage: ''
       };
       let loadingFormMsg: formBindingData.FormBindingData = formBindingData.createFormBindingData(loadingFormData);
       formProvider.updateForm(formId, loadingFormMsg);
@@ -115,12 +110,15 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
       if (!classId) {
         hilog.warn(0x0000, TAG, '未找到用户班级信息');
+        // 显示请先选择班级提示
+        this.updateFormData(formId, [], false, '请先选择班级');
         return;
       }
 
       const todayParams = this.initTodayParams();
       if (!todayParams) {
         hilog.warn(0x0000, TAG, '无法获取今日课程参数');
+        this.updateFormData(formId, [], false, '获取课程参数失败');
         return;
       }
 
@@ -136,21 +134,24 @@ export default class EntryFormAbility extends FormExtensionAbility {
       );
 
       if (response.code === 200 && response.data) {
-        this.updateFormData(formId, response.data, false);
+        this.updateFormData(formId, response.data, false, '');
       } else {
         hilog.warn(0x0000, TAG, '获取今日课程失败');
+        this.updateFormData(formId, [], false, '获取课程数据失败');
       }
 
     } catch (error) {
       hilog.error(0x0000, TAG, '加载今日课程失败:', JSON.stringify(error));
+      this.updateFormData(formId, [], false, '加载课程数据失败');
     }
   }
 
-  private updateFormData(formId: string, courses: CourseInfo[], isLoading: boolean): void {
+  private updateFormData(formId: string, courses: CourseInfo[], isLoading: boolean, errorMessage?: string): void {
     let formData: TodayCourseFormData = {
       formId: formId,
       todayCourses: courses,
-      isLoading: isLoading
+      isLoading: isLoading,
+      errorMessage: errorMessage
     };
     let formMsg: formBindingData.FormBindingData = formBindingData.createFormBindingData(formData);
     formProvider.updateForm(formId, formMsg).then(() => {

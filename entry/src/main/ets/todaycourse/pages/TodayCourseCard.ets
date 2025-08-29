@@ -8,7 +8,7 @@ struct TodayCourseCard {
   @LocalStorageProp('formId') formId: string = '';
   @LocalStorageProp('todayCourses') @Watch('onCoursesChange') todayCourses: CourseInfo[] = [];
   @LocalStorageProp('isLoading') isLoading: boolean = false;
-  
+  @LocalStorageProp('errorMessage') errorMessage: string = '';
   readonly ACTION_TYPE: string = 'router';
   readonly ABILITY_NAME: string = 'EntryAbility';
   readonly MESSAGE: string = 'open today course';
@@ -42,6 +42,19 @@ struct TodayCourseCard {
           Text('加载中...')
             .fontColor(this.FONT_COLOR)
             .fontSize(14)
+        }
+        .justifyContent(FlexAlign.Center)
+        .layoutWeight(1)
+      } else if (this.errorMessage !== '') {
+        Column() {
+          Text(this.errorMessage+'🥳')
+            .fontColor(this.FONT_COLOR)
+            .fontSize(14)
+            .margin({ bottom: 8 })
+          Text('点击打开应用设置')
+            .fontSize(12)
+            .fontColor(this.FONT_COLOR)
+            .opacity(0.8)
         }
         .justifyContent(FlexAlign.Center)
         .layoutWeight(1)

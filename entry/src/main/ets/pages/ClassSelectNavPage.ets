@@ -783,20 +783,6 @@ struct ClassSelectNavPage {
       });
 
       if (saveSuccess) {
-        // 先确保数据已经同步保存完成后再触发卡片更新
-        if (classIdChanged) {
-          console.info(`🔄 [ClassSelect] 班级ID已变化，数据已同步保存完成，现在触发所有卡片更新...`);
-          try {
-            // 直接传递新的班级ID给卡片，但不传递课程数据（让卡片自己更新）
-            this.formService.updateAllActiveWidgets(this.getUIContext().getHostContext(), userSelection.classId);
-            console.info(`✅ [ClassSelect] 所有卡片更新触发完成`);
-          } catch (error) {
-            console.error(`❌ [ClassSelect] 触发卡片更新失败: ${JSON.stringify(error)}`);
-          }
-        } else {
-          console.info(`🔄 [ClassSelect] 班级ID未变化，跳过卡片更新`);
-        }
-
         setTimeout(() => {
           if (hadCompleteInfo) {
             // 用户之前已有完整信息，说明是从首页切换过来的，直接返回主页面
