@@ -400,15 +400,25 @@ export struct SchedulePage {
       // 学期信息和切换按钮
       Row() {
         // 上一个学期按钮
-        Button('< 上学期')
-          .fontSize(14)
-          .fontColor('#45CAD9')
-          .backgroundColor(Color.Transparent)
-          .height(30)
-          .onClick(async () => {
-            await this.triggerCourseBlockExitAnimation();
-            this.switchSemester('prev');
-          })
+        if (this.canGoToPreviousSemester()) {
+          Button('< 上学期')
+            .fontSize(14)
+            .fontColor('#45CAD9')
+            .backgroundColor(Color.Transparent)
+            .height(30)
+            .onClick(async () => {
+              await this.triggerCourseBlockExitAnimation();
+              this.switchSemester('prev');
+            })
+        } else {
+          // 不可切换时显示灰色按钮
+          Button('< 上学期')
+            .fontSize(14)
+            .fontColor('#CCCCCC')
+            .backgroundColor(Color.Transparent)
+            .height(30)
+            .enabled(false)
+        }
 
         Blank()
 
@@ -421,15 +431,25 @@ export struct SchedulePage {
         Blank()
 
         // 下一个学期按钮
-        Button('下学期 >')
-          .fontSize(14)
-          .fontColor('#45CAD9')
-          .backgroundColor(Color.Transparent)
-          .height(30)
-          .onClick(async () => {
-            await this.triggerCourseBlockExitAnimation();
-            this.switchSemester('next');
-          })
+        if (this.canGoToNextSemester()) {
+          Button('下学期 >')
+            .fontSize(14)
+            .fontColor('#45CAD9')
+            .backgroundColor(Color.Transparent)
+            .height(30)
+            .onClick(async () => {
+              await this.triggerCourseBlockExitAnimation();
+              this.switchSemester('next');
+            })
+        } else {
+          // 不可切换时显示灰色按钮
+          Button('下学期 >')
+            .fontSize(14)
+            .fontColor('#CCCCCC')
+            .backgroundColor(Color.Transparent)
+            .height(30)
+            .enabled(false)
+        }
       }
       .width('100%')
       .padding({ bottom: 10 })
@@ -451,12 +471,14 @@ export struct SchedulePage {
             Row() {
               Text(`第${weekNum}周`)
                 .fontSize(16)
-                .fontColor(this.currentWeek === weekNum ? '#45CAD9' : '#333333')
+                .fontColor(this.isWeekSelectableForCurrentGrade(weekNum) 
+                  ? (this.currentWeek === weekNum ? '#45CAD9' : '#333333') 
+                  : '#CCCCCC') // 不可选的周数显示灰色
                 .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
 
               Blank()
 
-              if (this.currentWeek === weekNum) {
+              if (this.currentWeek === weekNum && this.isWeekSelectableForCurrentGrade(weekNum)) {
                 Text('✓')
                   .fontSize(16)
                   .fontColor('#45CAD9')
@@ -466,23 +488,7 @@ export struct SchedulePage {
             .height(50)
             .padding({ left: 20, right: 20 })
             .onClick(async () => {
-              // 跳转到指定周：计算目标日期并更新
-              if (this.currentSemester) {
-                // 先播放退场动画
-                await this.triggerCourseBlockExitAnimation();
-
-                const semesterStartDate = new Date(this.currentSemester.startDate);
-                const targetDate = new Date(semesterStartDate);
-                targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
-
-                this.currentDate = targetDate;
-                this.updateCurrentSemesterFromDate(this.currentDate);
-                this.calculateWeekDatesFromCurrentDate();
-
-                // 重新请求接口获取课程数据
-                await this.loadCourseData();
-              }
-              this.showWeekPicker = false;
+              await this.onWeekItemClick(weekNum);
             })
 
             if (weekNum < this.totalWeeks) {
@@ -1038,6 +1044,83 @@ export struct SchedulePage {
         }
       }
     }
+  }
+
+  /**
+   * 判断指定周数是否对当前年级可选
+   */
+  private isWeekSelectableForCurrentGrade(weekNum: number): boolean {
+    if (!this.currentSemester) {
+      return true;
+    }
+    
+    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+    return this.configService.isWeekValidForGrade(this.currentSemester, weekNum, userInfo.className);
+  }
+
+  /**
+   * 处理周数项点击事件
+   */
+  private async onWeekItemClick(weekNum: number): Promise<void> {
+    // 只有年级有效的周数才可以点击
+    if (this.isWeekSelectableForCurrentGrade(weekNum)) {
+      // 跳转到指定周：计算目标日期并更新
+      if (this.currentSemester) {
+        // 先播放退场动画
+        await this.triggerCourseBlockExitAnimation();
+
+        const semesterStartDate = new Date(this.currentSemester.startDate);
+        const targetDate = new Date(semesterStartDate);
+        targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
+
+        this.currentDate = targetDate;
+        this.updateCurrentSemesterFromDate(this.currentDate);
+        this.calculateWeekDatesFromCurrentDate();
+
+        // 重新请求接口获取课程数据
+        await this.loadCourseData();
+      }
+      this.showWeekPicker = false;
+    } else {
+      // 显示年级限制提示
+      this.showGradeRestrictedToast();
+    }
+  }
+
+  /**
+   * 显示年级限制提示
+   */
+  private showGradeRestrictedToast(): void {
+    promptAction.showToast({
+      message: '该学期不在您的修读范围内',
+      duration: 2000,
+      bottom: '100vp'
+    });
+    console.info('📅 [Toast] 显示年级限制提示');
+  }
+
+  /**
+   * 判断是否可以前往上一个学期
+   */
+  private canGoToPreviousSemester(): boolean {
+    if (!this.currentSemester) {
+      return false;
+    }
+    
+    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+    return this.configService.canSwitchSemester(this.currentSemester, 'prev', userInfo.className);
+  }
+
+  /**
+   * 判断是否可以前往下一个学期
+   */
+  private canGoToNextSemester(): boolean {
+    if (!this.currentSemester) {
+      return false;
+    }
+    
+    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+    return this.configService.canSwitchSemester(this.currentSemester, 'next', userInfo.className);
   }
 
   /**

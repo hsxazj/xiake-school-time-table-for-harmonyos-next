@@ -441,6 +441,74 @@ export class ConfigApiService {
   }
 
   /**
+   * 判断指定学期是否对指定年级有效
+   * @param semester 学期信息
+   * @param className 班级名称
+   * @returns true表示该年级可以访问该学期，false表示不可访问
+   */
+  public isSemesterValidForGrade(semester: SemesterInfo, className?: string): boolean {
+    if (!className) {
+      return true; // 如果没有班级信息，默认允许访问
+    }
+
+    const classGrade = this.extractGradeFromClassName(className);
+    if (classGrade === 0) {
+      return true; // 如果无法提取年级，默认允许访问
+    }
+
+    // 25级学生在2025年入学，只能访问2025学年及之后的学期
+    const enrollmentYear = 2000 + classGrade;
+    const semesterYear = parseInt(semester.academicYear);
+
+    const isValid = semesterYear >= enrollmentYear;
+    
+    if (!isValid) {
+      console.info(`📅 [Semester Validation] ${classGrade}级学生不能访问${semester.academicYear}学年第${semester.semester}学期（入学年份：${enrollmentYear}）`);
+    }
+
+    return isValid;
+  }
+
+  /**
+   * 判断是否可以切换到指定方向的学期
+   * @param currentSemester 当前学期
+   * @param direction 切换方向
+   * @param className 班级名称
+   * @returns true表示可以切换，false表示不可切换
+   */
+  public canSwitchSemester(currentSemester: SemesterInfo, direction: 'prev' | 'next', className?: string): boolean {
+    const targetSemester = this.getAdjacentSemester(currentSemester, direction);
+    
+    if (!targetSemester) {
+      return false; // 没有目标学期
+    }
+
+    // 如果是向前切换（上一个学期），需要检查年级限制
+    if (direction === 'prev' && className) {
+      return this.isSemesterValidForGrade(targetSemester, className);
+    }
+
+    return true;
+  }
+
+  /**
+   * 判断指定学期的指定周数是否对年级有效
+   * @param semester 学期信息
+   * @param weekNum 周数
+   * @param className 班级名称
+   * @returns true表示该周数可选，false表示不可选
+   */
+  public isWeekValidForGrade(semester: SemesterInfo, weekNum: number, className?: string): boolean {
+    // 首先检查学期是否对年级有效
+    if (!this.isSemesterValidForGrade(semester, className)) {
+      return false;
+    }
+
+    // 如果学期有效，所有周数都可选
+    return true;
+  }
+
+  /**
    * 获取最远学期信息
    */
   public getFarthestSemesterInfo(): FarthestSemesterInfo {
