@@ -18,7 +18,17 @@
           "abilities": [
             "EntryAbility"
           ],
-          "when": "inuse"
+          "when": "always"
+        }
+      },
+      {
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING",
+        "reason": "$string:reason_keep_background_running",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "always"
         }
       }
     ],

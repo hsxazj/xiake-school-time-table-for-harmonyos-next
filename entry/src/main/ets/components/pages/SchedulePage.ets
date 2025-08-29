@@ -4,6 +4,7 @@ import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { curves } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -1015,15 +1016,40 @@ export struct SchedulePage {
 
       if (elePosition === 'right') {
         // 右滑：显示上一周 (对应class-schedule-c的leftClick)
-        console.info(`📅 [Navigate] 右滑到上一周`)
-        this.navigateToPreviousWeek();
+        // 检查是否可以继续右滑到上一周
+        const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+        if (this.configService.canSwipeLeft(this.currentDate, userInfo.className)) {
+          console.info(`📅 [Navigate] 右滑到上一周`)
+          this.navigateToPreviousWeek();
+        } else {
+          // 显示暂无数据提示
+          this.showNoDataToast();
+        }
 
       } else if (elePosition === 'left') {
-        console.info(`📅 [Navigate] 左滑到下一周`)
-        // 左滑：显示下一周 (对应class-schedule-c的rightClick)
-        this.navigateToNextWeek();
+        // 左滑：显示下一周 (对应class-schedule-c的rightClick)  
+        // 检查是否可以继续左滑到下一周
+        if (this.configService.canSwipeRight(this.currentDate)) {
+          console.info(`📅 [Navigate] 左滑到下一周`)
+          this.navigateToNextWeek();
+        } else {
+          // 显示暂无数据提示
+          this.showNoDataToast();
+        }
       }
     }
+  }
+
+  /**
+   * 显示暂无数据提示
+   */
+  private showNoDataToast(): void {
+    promptAction.showToast({
+      message: '暂无数据',
+      duration: 2000,
+      bottom: '100vp'
+    });
+    console.info('📅 [Toast] 显示暂无数据提示');
   }
 
   /**

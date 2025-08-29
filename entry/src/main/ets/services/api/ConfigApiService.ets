@@ -5,11 +5,25 @@ import { ConfigApiResponseData, CurrentSemesterStatus, SemesterInfo, WeekDateRan
 // 导出类型
 export { CurrentSemesterStatus, SemesterInfo } from '../../models/ConfigModels';
 
+// 最远学期信息接口
+interface FarthestSemesterInfo {
+  semester: SemesterInfo | null;
+  academicYear: string;
+  semesterNumber: number;
+  totalWeeks: number;
+}
+
 
 export class ConfigApiService {
   private static instance: ConfigApiService;
   private semesterList: SemesterInfo[] = [];
   private currentStatus: CurrentSemesterStatus | null = null;
+  
+  // 缓存最远学期信息，用于右滑极限判断
+  private farthestSemester: SemesterInfo | null = null;
+  private farthestAcademicYear: string = '';
+  private farthestSemesterNumber: number = 0;
+  private farthestTotalWeeks: number = 0;
 
   private constructor() {
   }
@@ -285,6 +299,160 @@ export class ConfigApiService {
   }
 
   /**
+   * 判断是否可以前往上一周（右滑操作，向过去翻页）
+   * @param currentDate 当前显示的日期
+   * @param className 当前用户的班级名称
+   * @returns true表示可以前往上一周，false表示已到极限
+   */
+  public canSwipeLeft(currentDate: Date, className?: string): boolean {
+    if (this.semesterList.length === 0) {
+      return false;
+    }
+
+    // 如果有班级信息，根据班级年级进行校验
+    if (className) {
+      const classGrade = this.extractGradeFromClassName(className);
+      if (classGrade > 0) {
+        // 找到该年级入学对应的最早学期
+        const earliestValidDate = this.getEarliestValidDateForGrade(classGrade);
+        
+        // 计算前往上一周后的日期
+        const previousWeekDate = new Date(currentDate);
+        previousWeekDate.setDate(currentDate.getDate() - 7);
+        
+        if (previousWeekDate < earliestValidDate) {
+          console.info(`📅 [Swipe Limit] 不能前往上一周：${classGrade}级学生在${previousWeekDate.toDateString()}之前尚未入学（最早入学日期：${earliestValidDate.toDateString()}）`);
+          return false;
+        }
+      }
+    }
+
+    // 检查是否会早于最早学期的开始日期
+    const earliestSemester = this.semesterList[0];
+    const earliestStartDate = new Date(earliestSemester.startDate);
+    
+    const previousWeekDate = new Date(currentDate);
+    previousWeekDate.setDate(currentDate.getDate() - 7);
+    
+    if (previousWeekDate < earliestStartDate) {
+      console.info(`📅 [Swipe Limit] 不能前往上一周：上周日期(${previousWeekDate.toDateString()})早于最早学期开始日期(${earliestStartDate.toDateString()})`);
+      return false;
+    }
+
+    console.info(`📅 [Swipe Check] 可以前往上一周：当前日期${currentDate.toDateString()}`);
+    return true;
+  }
+
+  /**
+   * 从班级名称中提取年级信息
+   * @param className 班级名称，如"25软件工程1班"
+   * @returns 年级数字，如25，如果无法提取则返回0
+   */
+  private extractGradeFromClassName(className: string): number {
+    // 查找班级名称中的数字，通常年级在前面
+    const gradeMatch = className.match(/(\d{2})/);
+    if (gradeMatch) {
+      const grade = parseInt(gradeMatch[1]);
+      // 确保是合理的年级范围（20-30之间）
+      if (grade >= 20 && grade <= 30) {
+        return grade;
+      }
+    }
+    
+    console.warn(`📅 [Grade Extract] 无法从班级名称"${className}"中提取有效年级`);
+    return 0;
+  }
+
+  /**
+   * 根据年级获取该年级学生的最早有效入学日期
+   * @param grade 年级，如25表示2025级
+   * @returns 该年级的最早入学日期
+   */
+  private getEarliestValidDateForGrade(grade: number): Date {
+    // 25级学生在2025年入学，对应2025学年第1学期
+    const enrollmentYear = 2000 + grade;
+    const academicYear = enrollmentYear.toString();
+    
+    // 查找该学年第1学期的开始日期
+    const firstSemester = this.semesterList.find(sem => 
+      sem.academicYear === academicYear && sem.semester === 1
+    );
+    
+    if (firstSemester) {
+      console.info(`📅 [Grade Validation] ${grade}级学生最早入学日期：${firstSemester.startDate}`);
+      return new Date(firstSemester.startDate);
+    }
+    
+    // 如果找不到对应学期，返回该年9月1日作为默认入学日期
+    const defaultDate = new Date(enrollmentYear, 8, 1); // 9月1日（月份从0开始）
+    console.info(`📅 [Grade Validation] ${grade}级学生使用默认入学日期：${defaultDate.toDateString()}`);
+    return defaultDate;
+  }
+
+  /**
+   * 判断是否可以进入下一周（左滑操作，向未来翻页）
+   * @param currentDate 当前显示的日期
+   * @returns true表示可以进入下一周，false表示已到极限
+   */
+  public canSwipeRight(currentDate: Date): boolean {
+    if (this.semesterList.length === 0 || !this.farthestSemester) {
+      return false;
+    }
+
+    // 使用缓存的最远学期信息
+    const latestEndDate = new Date(this.farthestSemester.endDate);
+    
+    // 情况1：当前日期超出所有配置范围（比如在最后一个学期结束后）
+    // 此时当前位置就是极限，不可以进入下一周
+    if (currentDate > latestEndDate) {
+      console.info(`📅 [Swipe Limit] 不能进入下一周：当前日期(${currentDate.toDateString()})超出最远学期结束日期(${latestEndDate.toDateString()})，当前位置是极限`);
+      return false;
+    }
+    
+    // 情况2：检查是否已经到达最后一学年的最后一学期的最后一周
+    const currentStatus = this.calculateCurrentSemesterStatus(currentDate);
+    if (currentStatus.currentSemester) {
+      // 判断当前学期是否是最远学期
+      const isLastSemester = (
+        currentStatus.currentSemester.academicYear === this.farthestAcademicYear &&
+        currentStatus.currentSemester.semester === this.farthestSemesterNumber
+      );
+      
+      if (isLastSemester) {
+        // 在最远学期中，检查是否是最后一周
+        if (currentStatus.currentWeek >= this.farthestTotalWeeks) {
+          console.info(`📅 [Swipe Limit] 不能进入下一周：当前是最远学期${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期第${currentStatus.currentWeek}周（共${this.farthestTotalWeeks}周）`);
+          return false;
+        }
+      }
+    }
+
+    // 额外检查：进入下一周后的日期是否会超出最远学期结束日期
+    const nextWeekDate = new Date(currentDate);
+    nextWeekDate.setDate(currentDate.getDate() + 7);
+    
+    if (nextWeekDate > latestEndDate) {
+      console.info(`📅 [Swipe Limit] 不能进入下一周：下周日期(${nextWeekDate.toDateString()})会超出最远学期结束日期(${latestEndDate.toDateString()})`);
+      return false;
+    }
+
+    console.info(`📅 [Swipe Check] 可以进入下一周：当前日期${currentDate.toDateString()}`);
+    return true;
+  }
+
+  /**
+   * 获取最远学期信息
+   */
+  public getFarthestSemesterInfo(): FarthestSemesterInfo {
+    return {
+      semester: this.farthestSemester,
+      academicYear: this.farthestAcademicYear,
+      semesterNumber: this.farthestSemesterNumber,
+      totalWeeks: this.farthestTotalWeeks
+    };
+  }
+
+  /**
    * 处理学期数据 (参考class-schedule-c逻辑)
    */
   private processSemesterData(data: ConfigApiResponseData): void {
@@ -348,6 +516,16 @@ export class ConfigApiService {
 
     // 按开始日期排序
     this.semesterList.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+    // 缓存最远学期信息（最后一个学期）
+    if (this.semesterList.length > 0) {
+      this.farthestSemester = this.semesterList[this.semesterList.length - 1];
+      this.farthestAcademicYear = this.farthestSemester.academicYear;
+      this.farthestSemesterNumber = this.farthestSemester.semester;
+      this.farthestTotalWeeks = this.farthestSemester.totalWeeks;
+      
+      console.info(`📚 [Farthest Semester] 最远学期: ${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期，共${this.farthestTotalWeeks}周`);
+    }
 
     console.info(`📚 [Semester Data] 处理了${this.semesterList.length}个学期数据`);
     this.semesterList.forEach(sem => {

@@ -31,6 +31,10 @@
     {
       "name": "todayCourse_display_name",
       "value": "今日课表小卡片"
+    },
+    {
+      "name": "reason_keep_background_running",
+      "value": "允许应用在卡片更新场景中后台运行"
     }
   ]
 }
