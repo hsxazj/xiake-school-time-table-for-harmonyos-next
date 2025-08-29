@@ -18,39 +18,18 @@
 ```
 entry/src/main/ets/
 ├── pages/                          # 路由页面
-│   ├── OpenPage.ets                # 应用启动页
-│   ├── WelcomeNavPage.ets          # 欢迎导航页
-│   ├── ClassSelectNavPage.ets      # 班级选择导航页
-│   └── MainTabNavPage.ets          # 主标签页导航
 ├── components/                     # UI 组件
 │   ├── base/                       # 基础可复用组件
-│   │   ├── CustomPicker.ets        # 自定义选择器
-│   │   └── SelectItem.ets          # 选择项组件
 │   └── pages/                      # 页面级组件
-│       ├── HomePage.ets            # 首页组件
-│       ├── SchedulePage.ets        # 课表页组件
-│       └── MinePage.ets            # 我的页面组件
 ├── services/                       # 业务服务层
 │   ├── AppConfigManager.ets        # 应用配置管理
 │   └── api/                        # API 服务层
-│       ├── HttpService.ets         # HTTP 请求封装
-│       ├── CollegeApiService.ets   # 学院数据 API
-│       ├── ConfigApiService.ets    # 配置数据 API
-│       └── CourseApiService.ets    # 课程数据 API
 ├── models/                         # 数据模型
-│   ├── CollegeModels.ets           # 学院相关模型
-│   ├── ConfigModels.ets            # 配置数据模型
-│   └── CourseModels.ets            # 课程数据模型
 ├── common/                         # 公共模块
 │   ├── constants/AppConstants.ets  # 应用常量配置
 │   ├── types/PickerTypes.ets       # 选择器类型定义
 │   └── utils/                      # 工具类
-│       ├── DateUtil.ets            # 日期工具
-│       ├── PreferencesUtil.ets     # 偏好设置
-│       ├── RsaPkcs1Util.ets        # RSA 加密工具
-│       └── UserInfoManager.ets     # 用户信息管理
-├── todaycourse/                    # 今日课程 Widget
-│   └── pages/TodayCourseCard.ets
+├── todaycourse/                    # 今日课程卡片
 └── entryability/EntryAbility.ets   # 应用入口
 ```
 
