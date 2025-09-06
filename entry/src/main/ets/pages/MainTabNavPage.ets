@@ -1,5 +1,6 @@
 import { HomePage } from '../components/pages/HomePage';
 import { SchedulePage } from '../components/pages/SchedulePage';
+import { TreeHolePage } from '../components/pages/TreeHolePage';
 import { MinePage } from '../components/pages/MinePage';
 
 @Builder
@@ -10,7 +11,6 @@ export function MainTabNavPageBuilder() {
 @Component
 struct MainTabNavPage {
   @State currentTabIndex: number = 0;
-  // @Consume('NavStack') pathStack: NavPathStack;
   @Consume('NavStack') pathStack: NavPathStack;
 
   @Builder
@@ -43,11 +43,15 @@ struct MainTabNavPage {
         }
         .tabBar(this.TabBuilder('课表', 1, $r('app.media.classList'), $r('app.media.classListActive')))
 
-        //TODO 还没写先不放上去了
-        // TabContent() {
-        //   MinePage()
-        // }
-        // .tabBar(this.TabBuilder('我的', 2, $r('app.media.me'), $r("app.media.meActive")))
+        TabContent() {
+          TreeHolePage()
+        }
+        .tabBar(this.TabBuilder('树洞', 2, $r('app.media.startIcon'), $r("app.media.startIcon")))
+
+        TabContent() {
+          MinePage()
+        }
+        .tabBar(this.TabBuilder('我的', 3, $r('app.media.me'), $r("app.media.meActive")))
       }
       .width('100%')
       .height('100%')

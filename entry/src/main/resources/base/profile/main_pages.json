@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/OpenPage",
-    "todaycourse/pages/TodayCourseCard"
+    "todaycourse/pages/TodayCourseCard",
+    "components/pages/TreeHolePage"
   ]
 }

@@ -23,6 +23,22 @@
       "data": {
         "description": "this is WelcomeNavPage"
       }
+    },
+    {
+      "name": "TreeHolePostPage",
+      "pageSourceFile": "src/main/ets/pages/TreeHolePostNavPage.ets",
+      "buildFunction": "TreeHolePostNavPageBuilder",
+      "data": {
+        "description": "this is TreeHolePostPage"
+      }
+    },
+    {
+      "name": "TreeHoleDetailPage",
+      "pageSourceFile": "src/main/ets/pages/TreeHoleDetailNavPage.ets",
+      "buildFunction": "TreeHoleDetailNavPageBuilder",
+      "data": {
+        "description": "this is TreeHoleDetailPage"
+      }
     }
   ]
 }
