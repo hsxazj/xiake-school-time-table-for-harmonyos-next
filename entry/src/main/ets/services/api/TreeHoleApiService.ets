@@ -1,24 +1,105 @@
-/**
- * 树洞功能API服务封装
- * 复用现有HttpService，提供树洞相关的数据接口
- */
-import { HttpService } from './HttpService';
 import { 
   TreeHoleItem, 
   TreeHoleComment, 
   PostTreeHoleRequest, 
   PostCommentRequest,
-  TreeHoleApiResponse,
-  TreeHolePaginationData 
+  TreeHolePaginationData,
+  TreeHoleApiPaginationData
+} from '../../models/TreeHoleModels';
+import { ApiResponse, HttpService } from './HttpService';
+
+// 导出类型
+export { 
+  TreeHoleItem, 
+  TreeHoleComment, 
+  PostTreeHoleRequest, 
+  PostCommentRequest 
 } from '../../models/TreeHoleModels';
 
+/**
+ * 树洞API请求参数接口
+ */
+export interface TreeHoleRequestParams {
+  /** 状态筛选 (1-正常, 0-禁用等) */
+  status?: number;
+  /** 页码 */
+  pageNum?: number;
+  /** 每页数量 */
+  pageSize?: number;
+  /** 树洞类型 (3-普通树洞等) */
+  type?: number;
+}
+
+/**
+ * 评论请求参数接口
+ */
+export interface CommentsRequestParams {
+  /** 树洞ID */
+  treeHoleId: number;
+  /** 页码 */
+  pageNum?: number;
+  /** 每页数量 */
+  pageSize?: number;
+}
+
+/**
+ * 点赞请求参数接口
+ */
+export interface LikeRequestParams {
+  /** 树洞ID */
+  treeHoleId: number;
+  /** 是否点赞 (true-点赞, false-取消点赞) */
+  isLike: boolean;
+}
+
+/**
+ * 评论点赞请求参数接口
+ */
+export interface CommentLikeRequestParams {
+  /** 评论ID */
+  commentId: number;
+  /** 是否点赞 (true-点赞, false-取消点赞) */
+  isLike: boolean;
+}
+
+/**
+ * 评论点踩请求参数接口
+ */
+export interface CommentDislikeRequestParams {
+  /** 评论ID */
+  commentId: number;
+  /** 是否点踩 (true-点踩, false-取消点踩) */
+  isDislike: boolean;
+}
+
+/**
+ * 删除树洞请求参数接口
+ */
+export interface DeleteTreeHoleRequestParams {
+  /** 树洞ID */
+  treeHoleId: number;
+}
+
+/**
+ * 删除评论请求参数接口
+ */
+export interface DeleteCommentRequestParams {
+  /** 评论ID */
+  commentId: number;
+}
+
+/**
+ * 树洞功能API服务封装
+ * 基于HttpService实现真实的API请求
+ */
 export class TreeHoleApiService {
   private static instance: TreeHoleApiService;
-  private httpService: HttpService = HttpService.getInstance();
+  private httpService = HttpService.getInstance();
 
-  /**
-   * 获取单例实例
-   */
+  private constructor() {
+    console.info('🌳 [TreeHoleApiService] 初始化树洞API服务');
+  }
+
   public static getInstance(): TreeHoleApiService {
     if (!TreeHoleApiService.instance) {
       TreeHoleApiService.instance = new TreeHoleApiService();
@@ -26,23 +107,46 @@ export class TreeHoleApiService {
     return TreeHoleApiService.instance;
   }
 
-  private constructor() {
-    console.info('🌳 [TreeHoleApiService] 初始化树洞API服务');
-  }
-
   /**
    * 获取树洞列表
+   * GET /treeHole/get?status=1&pageNum=1&pageSize=10
    */
   public async getTreeHoleList(
     pageNum: number = 1, 
     pageSize: number = 10, 
-    status: number = 1
+    status: number = 1,
+    type?: number
   ): Promise<TreeHolePaginationData<TreeHoleItem>> {
     try {
       console.info(`🌳 [TreeHoleApiService] 获取树洞列表 - 页码:${pageNum}, 大小:${pageSize}, 状态:${status}`);
       
-      // 暂时返回Mock数据
-      return await this.getMockTreeHoleList(pageNum, pageSize, status);
+      const params: TreeHoleRequestParams = {
+        status,
+        pageNum,
+        pageSize
+      };
+      
+      if (type !== undefined) {
+        params.type = type;
+      }
+
+      const response = await this.httpService.get<TreeHoleRequestParams, TreeHoleApiPaginationData<TreeHoleItem>>('/treeHole/get', params);
+
+      // 转换后端数据结构为前端期望的格式
+      const result: TreeHolePaginationData<TreeHoleItem> = {
+        list: response.data.treeHoleVOList || [],
+        pageNum: pageNum,
+        pageSize: pageSize,
+        totalPages: response.data.pageCount || 1,
+        // 估算总记录数：如果是最后一页用当前页数据量，否则用pageSize * totalPages估算
+        total: pageNum >= (response.data.pageCount || 1) 
+          ? (pageNum - 1) * pageSize + (response.data.treeHoleVOList || []).length
+          : (response.data.pageCount || 1) * pageSize,
+        hasNext: pageNum < (response.data.pageCount || 1)
+      };
+
+      console.info(`🌳 [TreeHoleApiService] 获取树洞列表成功，共${result.list.length}条数据`);
+      return result;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 获取树洞列表失败:', error);
       throw new Error('获取树洞列表失败');
@@ -51,6 +155,7 @@ export class TreeHoleApiService {
 
   /**
    * 获取树洞评论列表
+   * GET /treeHole/comments?treeHoleId=xxx&pageNum=1&pageSize=10
    */
   public async getTreeHoleComments(
     treeHoleId: number, 
@@ -60,8 +165,16 @@ export class TreeHoleApiService {
     try {
       console.info(`🌳 [TreeHoleApiService] 获取评论列表 - 树洞ID:${treeHoleId}, 页码:${pageNum}`);
       
-      // 暂时返回Mock数据
-      return await this.getMockCommentsList(treeHoleId, pageNum, pageSize);
+      const params: CommentsRequestParams = {
+        treeHoleId,
+        pageNum,
+        pageSize
+      };
+
+      const response = await this.httpService.get<CommentsRequestParams, TreeHolePaginationData<TreeHoleComment>>('/treeHole/comments', params);
+
+      console.info(`🌳 [TreeHoleApiService] 获取评论列表成功，共${response.data.total}条数据`);
+      return response.data;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 获取评论失败:', error);
       throw new Error('获取评论失败');
@@ -70,13 +183,16 @@ export class TreeHoleApiService {
 
   /**
    * 发布树洞
+   * POST /treeHole/post
    */
-  public async postTreeHole(request: PostTreeHoleRequest): Promise<boolean> {
+  public async postTreeHole(request: PostTreeHoleRequest): Promise<ApiResponse<boolean>> {
     try {
       console.info('🌳 [TreeHoleApiService] 发布树洞:', request.content.substring(0, 20) + '...');
       
-      // 暂时返回成功
-      return await this.mockPostTreeHole(request);
+      const response = await this.httpService.post<PostTreeHoleRequest, boolean>('/treeHole/post', request);
+
+      console.info('🌳 [TreeHoleApiService] 发布树洞成功');
+      return response;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 发布树洞失败:', error);
       throw new Error('发布树洞失败');
@@ -85,13 +201,16 @@ export class TreeHoleApiService {
 
   /**
    * 发布评论
+   * POST /treeHole/comment
    */
-  public async postComment(request: PostCommentRequest): Promise<boolean> {
+  public async postComment(request: PostCommentRequest): Promise<ApiResponse<boolean>> {
     try {
       console.info(`🌳 [TreeHoleApiService] 发布评论 - 树洞ID:${request.treeHoleId}`);
       
-      // 暂时返回成功
-      return await this.mockPostComment(request);
+      const response = await this.httpService.post<PostCommentRequest, boolean>('/treeHole/comment', request);
+
+      console.info('🌳 [TreeHoleApiService] 发布评论成功');
+      return response;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 发布评论失败:', error);
       throw new Error('发布评论失败');
@@ -100,151 +219,136 @@ export class TreeHoleApiService {
 
   /**
    * 点赞/取消点赞树洞
+   * POST /treeHole/like
    */
-  public async toggleLike(treeHoleId: number, isLike: boolean): Promise<boolean> {
+  public async toggleLike(treeHoleId: number, isLike: boolean): Promise<ApiResponse<boolean>> {
     try {
       console.info(`🌳 [TreeHoleApiService] ${isLike ? '点赞' : '取消点赞'} 树洞ID:${treeHoleId}`);
       
-      // 暂时返回成功
-      return true;
+      const params: LikeRequestParams = {
+        treeHoleId,
+        isLike
+      };
+
+      const response = await this.httpService.post<LikeRequestParams, boolean>('/treeHole/like', params);
+
+      console.info(`🌳 [TreeHoleApiService] ${isLike ? '点赞' : '取消点赞'}成功`);
+      return response;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 点赞操作失败:', error);
       throw new Error('点赞操作失败');
     }
   }
 
-  // ====== Mock 数据方法（开发阶段使用） ======
-
   /**
-   * Mock 树洞列表数据
+   * 点赞/取消点赞评论
+   * POST /treeHole/comment/like
    */
-  private async getMockTreeHoleList(pageNum: number, pageSize: number, status: number): Promise<TreeHolePaginationData<TreeHoleItem>> {
-    return new Promise((resolve) => {
-      // 模拟网络延迟
-      setTimeout(() => {
-        const mockData: TreeHoleItem[] = [
-          {
-            id: 1,
-            content: "今天的课程安排好充实，终于理解了ArkTS的生命周期机制！💪",
-            author: "匿名用户001",
-            avatar: "defaultAvatar",
-            createTime: "2024-12-06 14:30:00",
-            likeCount: 15,
-            commentCount: 8,
-            isAnonymous: true,
-            isLiked: false,
-            isTop: status === 3 || status === 4
-          },
-          {
-            id: 2,
-            content: "有没有同学一起组队学习HarmonyOS开发的？欢迎私信交流经验~",
-            author: "开发者小张",
-            avatar: "defaultAvatar", 
-            createTime: "2024-12-06 13:45:00",
-            likeCount: 23,
-            commentCount: 12,
-            isAnonymous: false,
-            isLiked: true,
-            isTop: false
-          },
-          {
-            id: 3,
-            content: "刚刚解决了一个困扰我很久的组件状态管理问题，感觉整个世界都明亮了！✨",
-            author: "匿名用户002",
-            avatar: "defaultAvatar",
-            createTime: "2024-12-06 12:20:00", 
-            likeCount: 31,
-            commentCount: 5,
-            isAnonymous: true,
-            isLiked: false,
-            isTop: false
-          }
-        ];
+  public async toggleCommentLike(commentId: number, isLike: boolean): Promise<ApiResponse<boolean>> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] ${isLike ? '点赞' : '取消点赞'} 评论ID:${commentId}`);
+      
+      const params: CommentLikeRequestParams = {
+        commentId,
+        isLike
+      };
 
-        const result: TreeHolePaginationData<TreeHoleItem> = {
-          list: mockData,
-          pageNum,
-          pageSize,
-          totalPages: 3,
-          total: 25,
-          hasNext: pageNum < 3
-        };
+      const response = await this.httpService.post<CommentLikeRequestParams, boolean>('/treeHole/comment/like', params);
 
-        resolve(result);
-      }, 500); // 模拟500ms网络延迟
-    });
+      console.info(`🌳 [TreeHoleApiService] 评论${isLike ? '点赞' : '取消点赞'}成功`);
+      return response;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 评论点赞操作失败:', error);
+      throw new Error('评论点赞操作失败');
+    }
   }
 
   /**
-   * Mock 评论列表数据
+   * 点踩/取消点踩评论
+   * POST /treeHole/comment/dislike
    */
-  private async getMockCommentsList(treeHoleId: number, pageNum: number, pageSize: number): Promise<TreeHolePaginationData<TreeHoleComment>> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockComments: TreeHoleComment[] = [
-          {
-            id: 1,
-            content: "太赞了！我也在学习这个，一起加油！",
-            author: "学习达人",
-            avatar: "defaultAvatar",
-            createTime: "2024-12-06 15:10:00",
-            likeCount: 5,
-            dislikeCount: 0,
-            isLiked: true,
-            isDisliked: false,
-            isAnonymous: false,
-            treeHoleId: treeHoleId
-          },
-          {
-            id: 2,
-            content: "有什么好的学习资源推荐吗？",
-            author: "匿名用户003",
-            avatar: "defaultAvatar",
-            createTime: "2024-12-06 15:25:00",
-            likeCount: 2,
-            dislikeCount: 0,
-            isLiked: false,
-            isDisliked: false,
-            isAnonymous: true,
-            treeHoleId: treeHoleId
-          }
-        ];
+  public async toggleCommentDislike(commentId: number, isDislike: boolean): Promise<ApiResponse<boolean>> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] ${isDislike ? '点踩' : '取消点踩'} 评论ID:${commentId}`);
+      
+      const params: CommentDislikeRequestParams = {
+        commentId,
+        isDislike
+      };
 
-        const result: TreeHolePaginationData<TreeHoleComment> = {
-          list: mockComments,
-          pageNum,
-          pageSize,
-          totalPages: 1,
-          total: 2,
-          hasNext: false
-        };
+      const response = await this.httpService.post<CommentDislikeRequestParams, boolean>('/treeHole/comment/dislike', params);
 
-        resolve(result);
-      }, 300);
-    });
+      console.info(`🌳 [TreeHoleApiService] 评论${isDislike ? '点踩' : '取消点踩'}成功`);
+      return response;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 评论点踩操作失败:', error);
+      throw new Error('评论点踩操作失败');
+    }
   }
 
   /**
-   * Mock 发布树洞
+   * 删除树洞
+   * DELETE /treeHole/delete?treeHoleId=xxx
    */
-  private async mockPostTreeHole(request: PostTreeHoleRequest): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.info('🌳 [Mock] 发布成功');
-        resolve(true);
-      }, 800);
-    });
+  public async deleteTreeHole(treeHoleId: number): Promise<ApiResponse<boolean>> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] 删除树洞ID:${treeHoleId}`);
+      
+      const params: DeleteTreeHoleRequestParams = { treeHoleId };
+      const response = await this.httpService.delete<DeleteTreeHoleRequestParams, boolean>('/treeHole/delete', params);
+
+      console.info('🌳 [TreeHoleApiService] 删除树洞成功');
+      return response;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 删除树洞失败:', error);
+      throw new Error('删除树洞失败');
+    }
   }
 
   /**
-   * Mock 发布评论
+   * 删除评论
+   * DELETE /treeHole/comment/delete?commentId=xxx
    */
-  private async mockPostComment(request: PostCommentRequest): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.info('🌳 [Mock] 评论发布成功');
-        resolve(true);
-      }, 600);
-    });
+  public async deleteComment(commentId: number): Promise<ApiResponse<boolean>> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] 删除评论ID:${commentId}`);
+      
+      const params: DeleteCommentRequestParams = { commentId };
+      const response = await this.httpService.delete<DeleteCommentRequestParams, boolean>('/treeHole/comment/delete', params);
+
+      console.info('🌳 [TreeHoleApiService] 删除评论成功');
+      return response;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 删除评论失败:', error);
+      throw new Error('删除评论失败');
+    }
+  }
+
+  /**
+   * 构建树洞列表请求参数的便捷方法
+   */
+  public buildTreeHoleParams(pageNum: number = 1, pageSize: number = 10, status: number = 1, type?: number): TreeHoleRequestParams {
+    const params: TreeHoleRequestParams = {
+      status,
+      pageNum,
+      pageSize
+    };
+    
+    if (type !== undefined) {
+      params.type = type;
+    }
+    
+    return params;
+  }
+
+  /**
+   * 构建评论请求参数的便捷方法
+   */
+  public buildCommentsParams(treeHoleId: number, pageNum: number = 1, pageSize: number = 10): CommentsRequestParams {
+    return {
+      treeHoleId,
+      pageNum,
+      pageSize
+    };
   }
 }

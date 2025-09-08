@@ -6,10 +6,9 @@ import { TreeHoleItem } from '../../models/TreeHoleModels';
 import { TreeHoleApiService } from '../../services/api/TreeHoleApiService';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 
-@Entry
 @Component
 export struct TreeHolePage {
-  // @Consume('NavStack') pathStack: NavPathStack;
+  @Consume('NavStack') pathStack: NavPathStack;
   @State private treeHoleList: TreeHoleItem[] = [];
   @State private isLoading: boolean = false;
   @State private isRefreshing: boolean = false;
@@ -37,7 +36,7 @@ export struct TreeHolePage {
   build() {
     Column() {
       // 主内容区域 - 使用滚动列表包含发布区域和内容
-      if (this.treeHoleList.length === 0 && !this.isLoading) {
+      if ((this.treeHoleList?.length || 0) === 0 && !this.isLoading) {
         this.buildEmptyStateWithHeader()
       } else {
         this.buildScrollableContent()
@@ -62,7 +61,7 @@ export struct TreeHolePage {
         .margin({ bottom: 15 })
 
         // 树洞内容列表
-        ForEach(this.treeHoleList, (item: TreeHoleItem, index: number) => {
+        ForEach(this.treeHoleList || [], (item: TreeHoleItem, index: number) => {
           ListItem() {
             this.buildTreeHoleItem(item)
           }
@@ -88,7 +87,7 @@ export struct TreeHolePage {
             .height(50)
           }
           .margin({ top: 10, bottom: 80 })
-        } else if (this.treeHoleList.length > 0) {
+        } else if ((this.treeHoleList?.length || 0) > 0) {
           ListItem() {
             Text('— 已经到底了 —')
               .fontSize(14)
@@ -211,35 +210,37 @@ export struct TreeHolePage {
           .margin({ right: 10 })
 
         Column() {
-          Text(item.author)
+          Text(item.anonymous === 1 ? (item.nickName || `用户${item.userId}`) : item.realName)
             .fontSize(15)
             .fontColor('#666666')
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
 
-          if (item.countdown) {
-            Text(item.countdown)
-              .fontSize(12)
-              .fontColor('#A0ADCA')
-              .margin({ top: 2 })
-          }
+          // 倒计时功能暂时移除，因新数据结构中没有countdown字段
+          // if (item.countdown) {
+          //   Text(item.countdown)
+          //     .fontSize(12)
+          //     .fontColor('#A0ADCA')
+          //     .margin({ top: 2 })
+          // }
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
 
-        if (item.isTop) {
-          Text('置顶')
-            .fontSize(12)
-            .fontColor(Color.White)
-            .backgroundColor('#31BFCC')
-            .padding({
-              left: 8,
-              right: 8,
-              top: 4,
-              bottom: 4
-            })
-            .borderRadius(10)
-        }
+        // 置顶功能暂时移除，因新数据结构中没有isTop字段  
+        // if (item.isTop) {
+        //   Text('置顶')
+        //     .fontSize(12)
+        //     .fontColor(Color.White)
+        //     .backgroundColor('#31BFCC')
+        //     .padding({
+        //       left: 8,
+        //       right: 8,
+        //       top: 4,
+        //       bottom: 4
+        //     })
+        //     .borderRadius(10)
+        // }
       }
       .width('100%')
       .alignItems(VerticalAlign.Top)
@@ -257,7 +258,7 @@ export struct TreeHolePage {
 
       // 底部信息
       Row() {
-        Text(item.createTime.replace('T', ' '))
+        Text(item.createAt.replace('T', ' '))
           .fontSize(12)
           .fontColor('#A0ADCA')
 
@@ -270,7 +271,7 @@ export struct TreeHolePage {
             .height(16)
             .margin({ right: 4 })
 
-          Text(item.commentCount.toString())
+          Text(item.replies.toString())
             .fontSize(12)
             .fontColor('#A0ADCA')
         }
@@ -278,14 +279,14 @@ export struct TreeHolePage {
 
         // 点赞
         Row() {
-          Image(item.isLiked ? $r('app.media.homeActive') : $r('app.media.home'))
+          Image(item.isLike === 1 ? $r('app.media.homeActive') : $r('app.media.home'))
             .width(16)
             .height(16)
             .margin({ right: 4 })
 
-          Text(item.likeCount.toString())
+          Text(item.likes.toString())
             .fontSize(12)
-            .fontColor(item.isLiked ? '#E8311A' : '#A0ADCA')
+            .fontColor(item.isLike === 1 ? '#E8311A' : '#A0ADCA')
         }
         .onClick(() => {
           this.handleLikeClick(item);
@@ -330,23 +331,27 @@ export struct TreeHolePage {
       // 先加载置顶内容（仅第一页）
       if (this.currentPage === 1) {
         const topData = await this.treeHoleApiService.getTreeHoleList(1, 3, 4);
-        this.treeHoleList = topData.list;
+        this.treeHoleList = topData?.list || [];
       }
 
       // 加载普通内容
       const normalData = await this.treeHoleApiService.getTreeHoleList(this.currentPage, this.pageSize, 1);
 
       if (reset) {
-        this.treeHoleList = [...this.treeHoleList, ...normalData.list];
+        this.treeHoleList = [...(this.treeHoleList || []), ...(normalData?.list || [])];
       } else {
-        this.treeHoleList = [...this.treeHoleList, ...normalData.list];
+        this.treeHoleList = [...(this.treeHoleList || []), ...(normalData?.list || [])];
       }
 
-      this.hasMore = normalData.hasNext;
+      this.hasMore = normalData?.hasNext || false;
 
-      console.info(`🌳 [TreeHolePage] 加载完成，当前${this.treeHoleList.length}条数据`);
+      console.info(`🌳 [TreeHolePage] 加载完成，当前${this.treeHoleList?.length || 0}条数据`);
     } catch (error) {
       console.error('🌳 [TreeHolePage] 加载树洞列表失败:', error);
+      // 确保在出错时数组仍然有效
+      if (!this.treeHoleList) {
+        this.treeHoleList = [];
+      }
     } finally {
       this.isLoading = false;
       this.isRefreshing = false;
@@ -407,15 +412,15 @@ export struct TreeHolePage {
     }
 
     try {
-      const newIsLiked = !item.isLiked;
-      const success = await this.treeHoleApiService.toggleLike(item.id, newIsLiked);
+      const newIsLiked = item.isLike !== 1;
+      const result = await this.treeHoleApiService.toggleLike(item.id, newIsLiked);
 
-      if (success) {
+      if (result.code === 200) {
         // 更新本地状态
         const index = this.treeHoleList.findIndex(treeHole => treeHole.id === item.id);
         if (index >= 0) {
-          this.treeHoleList[index].isLiked = newIsLiked;
-          this.treeHoleList[index].likeCount += newIsLiked ? 1 : -1;
+          this.treeHoleList[index].isLike = newIsLiked ? 1 : 0;
+          this.treeHoleList[index].likes += newIsLiked ? 1 : -1;
         }
         console.info(`🌳 [TreeHolePage] ${newIsLiked ? '点赞' : '取消点赞'}成功`);
       }

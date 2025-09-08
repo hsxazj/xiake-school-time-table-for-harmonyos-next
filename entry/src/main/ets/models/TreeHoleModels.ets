@@ -4,31 +4,49 @@
  */
 
 /**
- * 树洞内容项接口
+ * 树洞内容项接口（基于后端真实数据结构）
  */
 export interface TreeHoleItem {
   /** 树洞ID */
   id: number;
-  /** 内容文本 */
-  content: string;
-  /** 作者昵称（匿名时使用昵称，非匿名时使用真实姓名） */
-  author: string;
   /** 头像地址 */
   avatar: string;
-  /** 创建时间 */
-  createTime: string;
+  /** 真实姓名 */
+  realName: string;
+  /** 昵称（可为空） */
+  nickName: string | null;
+  /** 父级ID（用于回复层级结构） */
+  parentId: number;
+  /** 用户ID */
+  userId: number;
+  /** 内容文本 */
+  content: string;
   /** 点赞数量 */
-  likeCount: number;
-  /** 评论数量 */
-  commentCount: number;
-  /** 是否匿名发布 */
-  isAnonymous: boolean;
-  /** 当前用户是否已点赞 */
-  isLiked: boolean;
-  /** 是否置顶 */
-  isTop?: boolean;
-  /** 销毁倒计时（如果有定时销毁） */
-  countdown?: string;
+  likes: number;
+  /** 点踩数量 */
+  unlikes: number;
+  /** 回复数量 */
+  replies: number;
+  /** 删除时间（软删除标记） */
+  deleteTime: string | null;
+  /** 状态（1-正常，0-禁用等） */
+  status: number;
+  /** 创建时间 */
+  createAt: string;
+  /** 更新时间 */
+  updateAt: string | null;
+  /** 是否匿名发布（0-非匿名，1-匿名） */
+  anonymous: number;
+  /** 处理用户ID（管理员操作时使用） */
+  precessUserId: number | null;
+  /** 是否已读（0-未读，1-已读） */
+  isRead: number;
+  /** 当前用户是否已点赞（0-未点赞，1-已点赞） */
+  isLike: number;
+  /** 当前用户是否已点踩（0-未点踩，1-已点踩） */
+  isUnlike: number;
+  /** 树洞类型（3-普通树洞，其他类型待扩展） */
+  type: number;
 }
 
 /**
@@ -98,7 +116,17 @@ export interface TreeHoleApiResponse<T> {
 }
 
 /**
- * 分页数据接口
+ * 后端返回的树洞分页数据接口（真实API结构）
+ */
+export interface TreeHoleApiPaginationData<T> {
+  /** 数据列表 */
+  treeHoleVOList: T[];
+  /** 总页数 */
+  pageCount: number;
+}
+
+/**
+ * 前端使用的树洞分页数据接口
  */
 export interface TreeHolePaginationData<T> {
   /** 数据列表 */

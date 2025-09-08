@@ -49,187 +49,192 @@ export struct TreeHoleDetailPage {
               // 评论列表
               this.buildCommentsList()
             }
+            .width('100%')
+            .padding(16)
           }
           .layoutWeight(1)
           
-          // 底部评论输入框
+          // 评论输入框
           this.buildCommentInput()
-        } else {
-          // 加载状态或错误状态
+        } else if (this.isLoading) {
+          // 加载状态
           this.buildLoadingState()
+        } else {
+          // 空状态
+          Column() {
+            Text('未找到树洞信息')
+              .fontSize(16)
+              .fontColor('#999999')
+          }
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
         }
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#FAFAFA')
     }
     .title('树洞详情')
-    .hideTitleBar(true)
+    .onBackPressed(() => {
+      this.pathStack.pop()
+      return true
+    })
   }
 
-  /**
-   * 构建标题栏
-   */
   @Builder
-  buildTitleBar() {
+  private buildTitleBar() {
     Row() {
-      Image($r('app.media.startIcon'))
-        .width(24)
-        .height(24)
+      Button('返回')
         .onClick(() => {
-          this.pathStack.pop();
+          this.pathStack.pop()
         })
+        .backgroundColor('#F5F5F5')
+        .fontColor('#333333')
+        
+      Blank()
       
       Text('树洞详情')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .layoutWeight(1)
-        .textAlign(TextAlign.Center)
+        .fontColor('#333333')
+        
+      Blank()
       
-      // 占位，保持标题居中
-      Row().width(24).height(24)
+      // 占位
+      Row() {}
+      .width(60)
     }
     .width('100%')
     .height(50)
     .padding({ left: 16, right: 16 })
-    .backgroundColor(Color.White)
-    .justifyContent(FlexAlign.SpaceBetween)
-    .alignItems(VerticalAlign.Center)
+    .backgroundColor('#FFFFFF')
   }
 
-  /**
-   * 构建树洞详情
-   */
   @Builder
-  buildTreeHoleDetail() {
+  private buildTreeHoleDetail() {
     if (this.treeHoleItem) {
       Column() {
-      // 日期信息
-      Row() {
-        Column() {
-          Text(this.treeHoleItem.createTime.substring(8, 10))
-            .fontSize(24)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#333333')
+        // 日期信息
+        Row() {
+          Column() {
+            Text(this.treeHoleItem.createAt.substring(8, 10))
+              .fontSize(24)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#333333')
+            
+            Text(this.treeHoleItem.createAt.substring(0, 7))
+              .fontSize(12)
+              .fontColor('#999999')
+            
+            Text(this.treeHoleItem.createAt.substring(11))
+              .fontSize(12)
+              .fontColor('#999999')
+          }
+          .alignItems(HorizontalAlign.Center)
+          .margin({ right: 15 })
           
-          Text(this.treeHoleItem.createTime.substring(0, 7))
-            .fontSize(12)
-            .fontColor('#999999')
-          
-          Text(this.treeHoleItem.createTime.substring(11))
-            .fontSize(12)
-            .fontColor('#999999')
+          // 倒计时功能暂时移除，因新数据结构中没有countdown字段
+          // if (this.treeHoleItem.countdown) {
+          //   Text(this.treeHoleItem.countdown)
+          //     .fontSize(12)
+          //     .fontColor('#A0ADCA')
+          //     .layoutWeight(1)
+          //     .textAlign(TextAlign.End)
+          // }
         }
-        .alignItems(HorizontalAlign.Center)
-        .margin({ right: 15 })
-        
-        if (this.treeHoleItem.countdown) {
-          Text(this.treeHoleItem.countdown)
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
+        .alignItems(VerticalAlign.Top)
+        .margin({ bottom: 12 })
+
+        // 作者信息
+        Row() {
+          Image(this.treeHoleItem.avatar || $r('app.media.defaultAvatar'))
+            .width(30)
+            .height(30)
+            .borderRadius(15)
+            .margin({ right: 10 })
+          
+          Text(this.treeHoleItem.anonymous === 1 ? (this.treeHoleItem.nickName || `用户${this.treeHoleItem.userId}`) : this.treeHoleItem.realName)
+            .fontSize(14)
+            .fontColor('#666666')
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
+
+        // 内容
+        Text(this.treeHoleItem.content)
+          .fontSize(16)
+          .fontColor('#333333')
+          .lineHeight(24)
+          .width('100%')
+          .margin({ top: 15, bottom: 15 })
+
+        // 底部操作栏
+        Row() {
+          Text(`创建时间: ${this.treeHoleItem.createAt}`)
             .fontSize(12)
             .fontColor('#A0ADCA')
-            .layoutWeight(1)
-            .textAlign(TextAlign.End)
-        }
-      }
-      .width('100%')
-      .margin({ bottom: 20 })
-
-      // 内容文本
-      Text(this.treeHoleItem.content)
-        .fontSize(16)
-        .fontColor('#333333')
-        .lineHeight(24)
-        .width('100%')
-        .margin({ bottom: 20 })
-
-      // 作者信息
-      Row() {
-        Image($r('app.media.defaultAvatar'))
-          .width(30)
-          .height(30)
-          .borderRadius(15)
-          .margin({ right: 10 })
+            .margin({ left: 10, top: 2 })
         
-        Text(this.treeHoleItem.author)
-          .fontSize(14)
-          .fontColor('#666666')
+          Blank()
+        
+          Text(`赞 ${this.treeHoleItem.likes}`)
+            .fontSize(14)
+            .fontColor('#666666')
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+        .padding({ top: 12, bottom: 12 })
+        .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 8, bottomRight: 8 })
       }
       .width('100%')
-      .justifyContent(FlexAlign.Start)
-    }
-    .width('100%')
-    .padding(20)
-    .backgroundColor(Color.White)
-    .borderRadius(12)
-    .margin({ left: 16, right: 16, top: 10 })
+      .padding(16)
+      .backgroundColor('#FFFFFF')
+      .borderRadius(12)
+      .margin({ bottom: 16 })
     }
   }
 
-  /**
-   * 构建评论标题区域
-   */
   @Builder
-  buildCommentsHeader() {
+  private buildCommentsHeader() {
     Row() {
-      Text(`评论 ${this.commentsList.length}`)
+      Text(`评论 (${this.commentsList.length})`)
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
         .fontColor('#333333')
-      
-      // 绿色装饰线
-      Row()
-        .width(30)
-        .height(3)
-        .backgroundColor('#3EA5B3')
-        .borderRadius(2)
-        .margin({ left: 10, top: 2 })
-      
-      Blank()
-      
-      if (this.treeHoleItem) {
-        Text(`赞 ${this.treeHoleItem.likeCount}`)
-          .fontSize(14)
-          .fontColor('#666666')
-      }
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 15, bottom: 10 })
-    .alignItems(VerticalAlign.Center)
+    .margin({ top: 8, bottom: 12 })
   }
 
-  /**
-   * 构建评论列表
-   */
   @Builder
-  buildCommentsList() {
+  private buildCommentsList() {
     if (this.commentsList.length === 0) {
       Column() {
-        Text('暂无评论')
+        Text('暂无评论，快来抢沙发吧~')
           .fontSize(14)
           .fontColor('#999999')
-          .margin(30)
+          .textAlign(TextAlign.Center)
       }
       .width('100%')
+      .height(100)
       .justifyContent(FlexAlign.Center)
     } else {
       Column() {
-        ForEach(this.commentsList, (comment: TreeHoleComment, index: number) => {
+        ForEach(this.commentsList, (comment: TreeHoleComment) => {
           this.buildCommentItem(comment)
         }, (comment: TreeHoleComment) => comment.id.toString())
       }
       .width('100%')
-      .padding({ left: 16, right: 16, bottom: 80 })
     }
   }
 
-  /**
-   * 构建评论项
-   */
   @Builder
-  buildCommentItem(comment: TreeHoleComment) {
+  private buildCommentItem(comment: TreeHoleComment) {
     Column() {
       Row() {
-        Image($r('app.media.defaultAvatar'))
+        Image(comment.avatar || $r('app.media.defaultAvatar'))
           .width(32)
           .height(32)
           .borderRadius(16)
@@ -251,16 +256,15 @@ export struct TreeHoleDetailPage {
         .layoutWeight(1)
       }
       .width('100%')
-      .alignItems(VerticalAlign.Top)
-      .margin({ bottom: 8 })
 
       Text(comment.content)
-        .fontSize(15)
+        .fontSize(14)
         .fontColor('#333333')
-        .lineHeight(22)
+        .lineHeight(20)
         .width('100%')
-        .margin({ bottom: 12 })
+        .margin({ top: 8, bottom: 8 })
 
+      // 底部操作
       Row() {
         Blank()
         
@@ -300,73 +304,67 @@ export struct TreeHoleDetailPage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor(Color.White)
-    .borderRadius(8)
+    .backgroundColor('#FFFFFF')
+    .borderRadius(12)
     .margin({ bottom: 8 })
   }
 
-  /**
-   * 构建评论输入框
-   */
   @Builder
-  buildCommentInput() {
+  private buildCommentInput() {
     Row() {
-      TextInput({ 
-        placeholder: '说点什么...',
-        text: $$this.commentText 
-      })
+      TextInput({ placeholder: '写下你的评论...', text: this.commentText })
         .layoutWeight(1)
-        .fontSize(15)
+        .height(40)
+        .fontSize(14)
         .backgroundColor('#F5F5F5')
         .borderRadius(20)
-        .padding({ left: 15, right: 15, top: 8, bottom: 8 })
-        .maxLength(200)
-        .onFocus(() => {
-          this.isCommenting = true;
+        .padding({ left: 16, right: 16 })
+        .onChange((value: string) => {
+          this.commentText = value;
         })
-        .onBlur(() => {
-          if (this.commentText.trim() === '') {
-            this.isCommenting = false;
-          }
+        .onSubmit(() => {
+          this.handleSendComment();
         })
-      
-      if (this.isCommenting || this.commentText.trim() !== '') {
+        .enabled(!this.isCommenting)
+
+      if (this.commentText.trim().length > 0) {
         Button('发送')
           .fontSize(14)
-          .fontColor(Color.White)
-          .backgroundColor('#31BFCC')
-          .borderRadius(15)
-          .padding({ left: 15, right: 15, top: 8, bottom: 8 })
-          .margin({ left: 8 })
+          .fontColor('#FFFFFF')
+          .backgroundColor('#007AFF')
+          .borderRadius(20)
+          .height(40)
+          .width(60)
+          .margin({ left: 12 })
+          .enabled(!this.isCommenting)
           .onClick(() => {
             this.handleSendComment();
           })
       }
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-    .backgroundColor(Color.White)
-    .border({ width: { top: 1 }, color: '#E5E5E5' })
+    .padding(16)
+    .backgroundColor('#FFFFFF')
+    .borderColor('#E5E5E5')
+    .borderWidth({ top: 1 })
   }
 
-  /**
-   * 构建加载状态
-   */
   @Builder
-  buildLoadingState() {
+  private buildLoadingState() {
     Column() {
       LoadingProgress()
-        .width(40)
-        .height(40)
-        .color('#31BFCC')
-        .margin({ bottom: 15 })
+        .width(50)
+        .height(50)
+        .color('#007AFF')
+        .margin({ bottom: 16 })
       
       Text('加载中...')
         .fontSize(14)
         .fontColor('#999999')
     }
+    .width('100%')
+    .height('100%')
     .justifyContent(FlexAlign.Center)
-    .layoutWeight(1)
   }
 
   // ===== 事件处理方法 =====
@@ -377,12 +375,12 @@ export struct TreeHoleDetailPage {
   private async loadComments(): Promise<void> {
     try {
       this.isLoading = true;
-      console.info(`🌳 [TreeHoleDetailPage] 加载评论 - ID: ${this.treeHoleId}`);
+      console.info(`🌳 [TreeHoleDetailPage] 开始加载树洞 ${this.treeHoleId} 的评论`);
       
-      const commentsData = await this.treeHoleApiService.getTreeHoleComments(this.treeHoleId);
+      const commentsData = await this.treeHoleApiService.getTreeHoleComments(this.treeHoleId, 1, 50);
       this.commentsList = commentsData.list;
       
-      console.info(`🌳 [TreeHoleDetailPage] 加载了 ${this.commentsList.length} 条评论`);
+      console.info(`🌳 [TreeHoleDetailPage] 加载了 ${commentsData.list.length} 条评论`);
     } catch (error) {
       console.error('🌳 [TreeHoleDetailPage] 加载评论失败:', error);
     } finally {
@@ -391,57 +389,87 @@ export struct TreeHoleDetailPage {
   }
 
   /**
-   * 处理发送评论
+   * 发送评论
    */
   private async handleSendComment(): Promise<void> {
-    if (this.commentText.trim() === '') {
+    if (this.commentText.trim().length === 0) {
       return;
     }
 
     try {
-      console.info('🌳 [TreeHoleDetailPage] 发送评论:', this.commentText.substring(0, 20));
+      this.isCommenting = true;
+      console.info('🌳 [TreeHoleDetailPage] 发送评论');
       
-      const success = await this.treeHoleApiService.postComment({
+      const result = await this.treeHoleApiService.postComment({
         treeHoleId: this.treeHoleId,
         content: this.commentText.trim(),
         isAnonymous: false
       });
 
-      if (success) {
+      if (result.code === 200) {
         this.commentText = '';
-        this.isCommenting = false;
         // 重新加载评论
         await this.loadComments();
-        console.info('🌳 [TreeHoleDetailPage] 评论发布成功');
       }
     } catch (error) {
       console.error('🌳 [TreeHoleDetailPage] 发送评论失败:', error);
+    } finally {
+      this.isCommenting = false;
     }
   }
 
   /**
    * 处理评论点赞
    */
-  private handleCommentLike(comment: TreeHoleComment): void {
-    console.info(`🌳 [TreeHoleDetailPage] 评论点赞 ID: ${comment.id}`);
-    // TODO: 实现评论点赞逻辑
+  private async handleCommentLike(comment: TreeHoleComment): Promise<void> {
+    try {
+      console.info(`🌳 [TreeHoleDetailPage] 点赞评论 ${comment.id}`);
+      
+      const newIsLiked = !comment.isLiked;
+      const result = await this.treeHoleApiService.toggleCommentLike(comment.id, newIsLiked);
+      
+      if (result.code === 200) {
+        // 更新本地状态
+        const index = this.commentsList.findIndex(c => c.id === comment.id);
+        if (index >= 0) {
+          this.commentsList[index].isLiked = newIsLiked;
+          this.commentsList[index].likeCount += newIsLiked ? 1 : -1;
+        }
+      }
+    } catch (error) {
+      console.error('🌳 [TreeHoleDetailPage] 评论点赞失败:', error);
+    }
   }
 
   /**
    * 处理评论点踩
    */
-  private handleCommentDislike(comment: TreeHoleComment): void {
-    console.info(`🌳 [TreeHoleDetailPage] 评论点踩 ID: ${comment.id}`);
-    // TODO: 实现评论点踩逻辑
+  private async handleCommentDislike(comment: TreeHoleComment): Promise<void> {
+    try {
+      console.info(`🌳 [TreeHoleDetailPage] 点踩评论 ${comment.id}`);
+      
+      const newIsDisliked = !comment.isDisliked;
+      const result = await this.treeHoleApiService.toggleCommentDislike(comment.id, newIsDisliked);
+      
+      if (result.code === 200) {
+        // 更新本地状态
+        const index = this.commentsList.findIndex(c => c.id === comment.id);
+        if (index >= 0) {
+          this.commentsList[index].isDisliked = newIsDisliked;
+          this.commentsList[index].dislikeCount += newIsDisliked ? 1 : -1;
+        }
+      }
+    } catch (error) {
+      console.error('🌳 [TreeHoleDetailPage] 评论点踩失败:', error);
+    }
   }
 
   /**
    * 设置树洞数据
-   * @param item 树洞项数据
    */
   public setTreeHoleItem(item: TreeHoleItem): void {
     this.treeHoleItem = item;
     this.treeHoleId = item.id;
-    console.info(`🌳 [TreeHoleDetailPage] 设置树洞数据 ID: ${item.id}`);
+    console.info(`🌳 [TreeHoleDetailPage] 设置树洞数据，ID: ${item.id}`);
   }
 }
