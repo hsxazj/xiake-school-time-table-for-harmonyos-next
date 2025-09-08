@@ -46,7 +46,7 @@ struct MainTabNavPage {
         TabContent() {
           TreeHolePage()
         }
-        .tabBar(this.TabBuilder('树洞', 2, $r('app.media.startIcon'), $r("app.media.startIcon")))
+        .tabBar(this.TabBuilder('树洞', 2, $r('app.media.treehole'), $r("app.media.treehole_active")))
 
         TabContent() {
           MinePage()

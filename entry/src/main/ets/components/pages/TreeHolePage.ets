@@ -215,32 +215,10 @@ export struct TreeHolePage {
             .fontColor('#666666')
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-          // 倒计时功能暂时移除，因新数据结构中没有countdown字段
-          // if (item.countdown) {
-          //   Text(item.countdown)
-          //     .fontSize(12)
-          //     .fontColor('#A0ADCA')
-          //     .margin({ top: 2 })
-          // }
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
 
-        // 置顶功能暂时移除，因新数据结构中没有isTop字段  
-        // if (item.isTop) {
-        //   Text('置顶')
-        //     .fontSize(12)
-        //     .fontColor(Color.White)
-        //     .backgroundColor('#31BFCC')
-        //     .padding({
-        //       left: 8,
-        //       right: 8,
-        //       top: 4,
-        //       bottom: 4
-        //     })
-        //     .borderRadius(10)
-        // }
       }
       .width('100%')
       .alignItems(VerticalAlign.Top)
