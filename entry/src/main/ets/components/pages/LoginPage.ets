@@ -20,9 +20,27 @@ export struct LoginPage {
   @State private loginStatus: LoginStatus = LoginStatus.IDLE;
   @State private errorMessage: string = '';
   @State private showPassword: boolean = false;
-  @State private pageOpacity: number = 1; // 页面透明度状态
+  @State private pageOpacity: number = 0; // 页面初始透明度为0
+  @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
 
   private loginService: LoginApiService = LoginApiService.getInstance();
+
+  aboutToAppear(): void {
+    // 启动渐显动画
+    this.startFadeInAnimation();
+  }
+
+  /**
+   * 启动渐显动画
+   */
+  private startFadeInAnimation(): void {
+    // 短暂延时后启动动画，让组件先完成初始化
+    setTimeout(() => {
+      this.pageOpacity = 1;
+      this.pageTranslateY = 0;
+      console.info('[LoginPage] 🎬 启动渐显动画');
+    }, 100);
+  }
 
   build() {
     Column() {
@@ -35,11 +53,6 @@ export struct LoginPage {
       // 登录按钮
       this.buildLoginButton()
 
-      // 错误信息显示
-      if (this.errorMessage) {
-        this.buildErrorMessage()
-      }
-
       Blank()
     }
     .width('100%')
@@ -47,9 +60,10 @@ export struct LoginPage {
     .backgroundColor('#F8F9FA')
     .padding({ left: 24, right: 24, top: 40 })
     .opacity(this.pageOpacity)
+    .translate({ x: 0, y: this.pageTranslateY })
     .animation({
-      duration: 500,
-      curve: Curve.EaseIn, // 渐隐使用EaseIn，让消失更自然
+      duration: 700,
+      curve: Curve.EaseInOut, // 使用EaseInOut创造流畅的渐显效果
       iterations: 1,
       playMode: PlayMode.Normal
     })
@@ -137,22 +151,6 @@ export struct LoginPage {
               this.loginForm.password = value;
               this.clearError();
             })
-
-          // 密码可见性切换按钮
-          Button() {
-            Image(this.showPassword ? $r('app.media.treehole') : $r('app.media.treehole_active'))
-              .width(20)
-              .height(20)
-              .fillColor('#9CA3AF')
-          }
-          .width(32)
-          .height(32)
-          .backgroundColor(Color.Transparent)
-          .position({ x: '85%', y: '50%' })
-          .translate({ x: '-50%', y: '-50%' })
-          .onClick(() => {
-            this.showPassword = !this.showPassword;
-          })
         }
         .width('100%')
       }
@@ -188,27 +186,6 @@ export struct LoginPage {
     .onClick(() => {
       this.handleLogin();
     })
-  }
-
-  @Builder
-  buildErrorMessage() {
-    Row({ space: 8 }) {
-      Image($r('app.media.treehole'))
-        .width(16)
-        .height(16)
-        .fillColor('#EF4444')
-
-      Text(this.errorMessage)
-        .fontSize(14)
-        .fontColor('#EF4444')
-    }
-    .width('100%')
-    .padding(12)
-    .backgroundColor('#FEF2F2')
-    .borderRadius(8)
-    .borderColor('#FECACA')
-    .borderWidth(1)
-    .margin({ top: 16 })
   }
 
   /**

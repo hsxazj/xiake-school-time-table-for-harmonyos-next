@@ -1,4 +1,5 @@
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
+import { LoginApiService } from '../../services/api/LoginApiService';
 
 // 用户信息接口
 interface UserInfo {
@@ -30,8 +31,10 @@ export struct MinePage {
   };
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
+  @State private isLoggingOut: boolean = false; // 是否正在退出登录
   
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+  private loginService: LoginApiService = LoginApiService.getInstance();
 
   aboutToAppear(): void {
     this.loadUserInfo();
@@ -115,6 +118,22 @@ export struct MinePage {
       }
       .width('90%')
       .layoutWeight(1)
+
+      // 退出登录按钮
+      Button(this.isLoggingOut ? '退出中...' : '退出登录')
+        .width('90%')
+        .height(44)
+        .fontSize(16)
+        .fontColor('#FF6B6B')
+        .backgroundColor(Color.White)
+        .borderWidth(1)
+        .borderColor('#FF6B6B')
+        .borderRadius(8)
+        .enabled(!this.isLoggingOut)
+        .margin({ bottom: 20 })
+        .onClick(() => {
+          this.showLogoutConfirmDialog();
+        })
 
       Blank()
     }
@@ -225,6 +244,69 @@ export struct MinePage {
       { icon: $r("app.media.problemFeedback"), title: '问题反馈', desc: '反馈使用问题和建议' },
       { icon: $r("app.media.aboutUs"), title: '关于我们', desc: '应用信息和版本' }
     ];
+  }
+
+  /**
+   * 显示退出登录确认对话框
+   */
+  private showLogoutConfirmDialog(): void {
+    AlertDialog.show({
+      title: '退出登录',
+      message: '确认要退出当前账户吗？',
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消',
+        action: () => {
+          console.info('[MinePage] 用户取消退出登录');
+        }
+      },
+      secondaryButton: {
+        value: '确认退出',
+        fontColor: '#FF6B6B',
+        action: () => {
+          this.handleLogout();
+        }
+      }
+    });
+  }
+
+  /**
+   * 处理退出登录
+   */
+  private async handleLogout(): Promise<void> {
+    try {
+      this.isLoggingOut = true;
+      console.info('[MinePage] 🔄 开始退出登录...');
+
+      // 获取context用于清除首选项
+      const context = this.getUIContext().getHostContext();
+      
+      // 调用登录服务的退出方法
+      this.loginService.logout(context);
+      console.info('[MinePage] ✅ 退出登录成功');
+
+      // 通知登录状态变化
+      AppStorage.setOrCreate('loginStatusChanged', Date.now());
+      console.info('[MinePage] 📢 已发送登录状态变化通知');
+
+      // 显示成功提示
+      this.showToast('已退出登录');
+
+    } catch (error) {
+      console.error('[MinePage] ❌ 退出登录失败:', JSON.stringify(error));
+      this.showToast('退出登录失败，请重试');
+    } finally {
+      this.isLoggingOut = false;
+    }
+  }
+
+  /**
+   * 显示Toast提示
+   */
+  private showToast(message: string): void {
+    // 使用系统Toast显示提示信息
+    // 注意：这里使用console.info作为简单实现，实际项目中可以使用更完整的Toast组件
+    console.info(`[Toast] ${message}`);
   }
 
   /**

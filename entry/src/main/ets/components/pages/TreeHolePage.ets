@@ -244,7 +244,7 @@ export struct TreeHolePage {
 
         // 评论
         Row() {
-          Image($r('app.media.startIcon'))
+          Image($r('app.media.comment'))
             .width(16)
             .height(16)
             .margin({ right: 4 })
@@ -257,7 +257,7 @@ export struct TreeHolePage {
 
         // 点赞
         Row() {
-          Image(item.isLike === 1 ? $r('app.media.homeActive') : $r('app.media.home'))
+          Image(item.isLike === 1 ? $r('app.media.like_active') : $r('app.media.like'))
             .width(16)
             .height(16)
             .margin({ right: 4 })
@@ -371,13 +371,9 @@ export struct TreeHolePage {
    * 处理树洞项点击
    */
   private handleItemClick(item: TreeHoleItem): void {
-    if (!this.isLoggedIn) {
-      this.showLoginRequiredToast();
-      return;
-    }
-
     console.info(`🌳 [TreeHolePage] 查看树洞详情 ID:${item.id}`);
-    // this.pathStack.pushPathByName('TreeHoleDetailPage', item);
+    // 查看帖子不需要登录，直接跳转到详情页
+    this.pathStack.pushPathByName('TreeHoleDetailPage', item);
   }
 
   /**

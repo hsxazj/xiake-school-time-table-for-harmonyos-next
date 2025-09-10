@@ -2,8 +2,9 @@
  * 树洞详情页面导航组件
  * 参考MainTabNavPage的结构，将TreeHoleDetailPage直接集成
  */
-import { TreeHoleItem, TreeHoleComment, TreeHolePaginationData } from '../models/TreeHoleModels';
+import { TreeHoleComment, TreeHoleItem } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
+import { LoginApiService } from '../services/api/LoginApiService';
 
 @Builder
 export function TreeHoleDetailNavPageBuilder() {
@@ -18,16 +19,37 @@ struct TreeHoleDetailNavPage {
   @State private isLoading: boolean = false;
   @State private commentText: string = '';
   @State private isCommenting: boolean = false;
-  
+  @State private isLoggedIn: boolean = false;
+  @State private pageOpacity: number = 0; // 页面初始透明度为0
+  @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   // 接收参数
   private treeHoleId: number = 0;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
+  private loginService: LoginApiService = LoginApiService.getInstance();
 
   aboutToAppear(): void {
     console.info('🌳 [TreeHoleDetailNavPage] 页面初始化');
-    if (this.treeHoleId > 0) {
-      this.loadComments();
-    }
+    this.checkLoginStatus();
+    this.startFadeInAnimation();
+  }
+
+  /**
+   * 检查登录状态
+   */
+  private checkLoginStatus(): void {
+    this.isLoggedIn = this.loginService.isLoggedIn();
+    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态: ${this.isLoggedIn}`);
+  }
+
+  /**
+   * 启动渐显动画
+   */
+  private startFadeInAnimation(): void {
+    setTimeout(() => {
+      this.pageOpacity = 1;
+      this.pageTranslateY = 0;
+      console.info('[TreeHoleDetailNavPage] 🎬 启动渐显动画');
+    }, 100);
   }
 
   @Builder
@@ -40,15 +62,16 @@ struct TreeHoleDetailNavPage {
         .onClick(() => {
           this.pathStack.pop();
         })
-      
+
       Text('树洞详情')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
         .layoutWeight(1)
         .textAlign(TextAlign.Center)
-      
+
       // 占位
-      Row() {}
+      Row() {
+      }
       .width(60)
     }
     .width('100%')
@@ -63,89 +86,166 @@ struct TreeHoleDetailNavPage {
   buildTreeHoleDetail() {
     if (this.treeHoleItem) {
       Column() {
-        // 日期信息
+        // 顶部日期和时间信息
         Row() {
+          // 大号日期显示
           Column() {
             Text(this.treeHoleItem.createAt.substring(8, 10))
-              .fontSize(24)
+              .fontSize(32)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
-            
+              .fontColor('#45CAD9')
+              .lineHeight(36)
+
             Text(this.treeHoleItem.createAt.substring(0, 7))
               .fontSize(12)
               .fontColor('#999999')
-            
-            Text(this.treeHoleItem.createAt.substring(11))
+              .margin({ top: 2 })
+
+            Text(this.treeHoleItem.createAt.substring(11, 19))
               .fontSize(12)
               .fontColor('#999999')
+              .margin({ top: 2 })
           }
           .alignItems(HorizontalAlign.Center)
-          .margin({ right: 15 })
+          .margin({ right: 20 })
+
+          // 销毁倒计时（如果有的话）
+          if (this.treeHoleItem.deleteTime) {
+            Column() {
+              Text('⏰ 销毁倒计时')
+                .fontSize(10)
+                .fontColor('#FF6B6B')
+              Text(this.formatDeleteTime())
+                .fontSize(12)
+                .fontColor('#FF6B6B')
+                .fontWeight(FontWeight.Medium)
+            }
+            .alignItems(HorizontalAlign.Center)
+          }
         }
         .width('100%')
         .justifyContent(FlexAlign.Start)
         .alignItems(VerticalAlign.Top)
-        .margin({ bottom: 12 })
+        .margin({ bottom: 16 })
 
-        // 作者信息
-        Row() {
-          Image(this.treeHoleItem.avatar || $r('app.media.defaultAvatar'))
-            .width(30)
-            .height(30)
-            .borderRadius(15)
-            .margin({ right: 10 })
-          
-          Text(this.treeHoleItem.anonymous === 1 ? (this.treeHoleItem.nickName || `用户${this.treeHoleItem.userId}`) : this.treeHoleItem.realName)
-            .fontSize(14)
-            .fontColor('#666666')
-        }
-        .width('100%')
-        .justifyContent(FlexAlign.Start)
-
-        // 内容
+        // 帖子内容
         Text(this.treeHoleItem.content)
           .fontSize(16)
           .fontColor('#333333')
           .lineHeight(24)
           .width('100%')
-          .margin({ top: 15, bottom: 15 })
+          .margin({ bottom: 16 })
+          .textAlign(TextAlign.Start)
 
-        // 底部操作栏
+        // 作者信息
         Row() {
-          Text(`创建时间: ${this.treeHoleItem.createAt}`)
-            .fontSize(12)
-            .fontColor('#A0ADCA')
-            .margin({ left: 10, top: 2 })
-        
+          Image(this.treeHoleItem.avatar || $r('app.media.defaultAvatar'))
+            .width(32)
+            .height(32)
+            .borderRadius(16)
+            .margin({ right: 12 })
+
+          Column() {
+            Text(this.treeHoleItem.anonymous === 1 ?
+              (this.treeHoleItem.nickName || `匿名用户${this.treeHoleItem.userId}`) :
+            this.treeHoleItem.realName)
+              .fontSize(14)
+              .fontColor('#666666')
+              .fontWeight(FontWeight.Medium)
+
+            Text(this.treeHoleItem.anonymous === 1 ? '匿名发布' : '实名发布')
+              .fontSize(12)
+              .fontColor('#999999')
+              .margin({ top: 2 })
+          }
+          .alignItems(HorizontalAlign.Start)
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
+        .margin({ bottom: 16 })
+
+        // 底部统计和操作栏
+        Row() {
+          // 统计信息
+          Row() {
+            Image($r('app.media.comment'))
+              .width(16)
+              .height(16)
+              .margin({ right: 8 })
+            Text(`${this.treeHoleItem.replies}`)
+              .fontSize(12)
+              .fontColor('#999999')
+          }
+
           Blank()
-        
-          Text(`赞 ${this.treeHoleItem.likes}`)
-            .fontSize(14)
-            .fontColor('#666666')
+
+          // 点赞操作
+          Row() {
+            Image($r('app.media.like'))
+              .width(16)
+              .height(16)
+              .margin({ right: 4 })
+              .fillColor(this.treeHoleItem.isLike === 1 ? '#FF6B6B' : '#999999')
+
+            Text(this.treeHoleItem.likes.toString())
+              .fontSize(14)
+              .fontColor(this.treeHoleItem.isLike === 1 ? '#FF6B6B' : '#666666')
+          }
+          .padding({
+            left: 8,
+            right: 8,
+            top: 6,
+            bottom: 6
+          })
+          .borderRadius(12)
+          .backgroundColor(this.treeHoleItem.isLike === 1 ? '#FFF0F0' : '#F5F5F5')
+          .onClick(() => {
+            this.handleLikeClick();
+          })
         }
         .width('100%')
         .alignItems(VerticalAlign.Center)
-        .padding({ top: 12, bottom: 12 })
-        .borderRadius({ topLeft: 0, topRight: 0, bottomLeft: 8, bottomRight: 8 })
       }
       .width('100%')
-      .padding(16)
+      .padding(20)
       .backgroundColor('#FFFFFF')
-      .borderRadius(12)
+      .borderRadius(16)
       .margin({ bottom: 16 })
+      .shadow({
+        radius: 8,
+        color: '#1A000000',
+        offsetX: 0,
+        offsetY: 2
+      })
     }
   }
 
   @Builder
   buildCommentsHeader() {
     Row() {
-      Text(`评论 (${this.commentsList.length})`)
-        .fontSize(16)
+      Image($r('app.media.comment'))
+        .width(16)
+        .height(16)
+        .margin({ right: 8 })
+      Text(`评论`)
+        .fontSize(18)
         .fontWeight(FontWeight.Medium)
         .fontColor('#333333')
+
+      Text(`(${this.commentsList.length})`)
+        .fontSize(16)
+        .fontColor('#999999')
+        .margin({ left: 6 })
+
+      Blank()
+
+      // 排序按钮
+      Text('按时间排序')
+        .fontSize(12)
+        .fontColor('#999999')
     }
     .width('100%')
-    .margin({ top: 8, bottom: 12 })
+    .padding({ top: 8, bottom: 16 })
   }
 
   @Builder
@@ -175,78 +275,129 @@ struct TreeHoleDetailNavPage {
     Column() {
       Row() {
         Image(comment.avatar || $r('app.media.defaultAvatar'))
-          .width(32)
-          .height(32)
-          .borderRadius(16)
+          .width(36)
+          .height(36)
+          .borderRadius(18)
           .margin({ right: 12 })
-        
+
         Column() {
           Text(comment.author)
-            .fontSize(14)
-            .fontColor('#666666')
+            .fontSize(15)
+            .fontColor('#333333')
+            .fontWeight(FontWeight.Medium)
             .alignSelf(ItemAlign.Start)
-          
-          Text(comment.createTime)
-            .fontSize(12)
-            .fontColor('#A0ADCA')
-            .margin({ top: 2 })
+
+          Text(this.formatCommentTime(comment.createTime))
+            .fontSize(11)
+            .fontColor('#999999')
+            .margin({ top: 3 })
             .alignSelf(ItemAlign.Start)
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
+
+        // 匿名标识
+        if (comment.isAnonymous) {
+          Text('匿名')
+            .fontSize(10)
+            .fontColor('#999999')
+            .padding({
+              left: 6,
+              right: 6,
+              top: 2,
+              bottom: 2
+            })
+            .backgroundColor('#F5F5F5')
+            .borderRadius(8)
+        }
       }
       .width('100%')
+      .margin({ bottom: 12 })
 
+      // 评论内容
       Text(comment.content)
-        .fontSize(14)
+        .fontSize(15)
         .fontColor('#333333')
-        .lineHeight(20)
+        .lineHeight(22)
         .width('100%')
-        .margin({ top: 8, bottom: 8 })
+        .margin({ left: 48, bottom: 12 })
+        .textAlign(TextAlign.Start)
 
       // 底部操作
       Row() {
         Blank()
-        
+
         // 点踩
         Row() {
           Image($r('app.media.startIcon'))
             .width(14)
             .height(14)
             .margin({ right: 4 })
-          
+            .fillColor(comment.isDisliked ? '#999999' : '#CCCCCC')
+
           Text(comment.dislikeCount.toString())
             .fontSize(12)
-            .fontColor(comment.isDisliked ? '#1296DB' : '#A0ADCA')
+            .fontColor(comment.isDisliked ? '#999999' : '#CCCCCC')
         }
-        .margin({ right: 15 })
-        .onClick(() => {
-          this.handleCommentDislike(comment);
+        .padding({
+          left: 8,
+          right: 8,
+          top: 4,
+          bottom: 4
         })
-        
+        .borderRadius(12)
+        .backgroundColor(comment.isDisliked ? '#F0F0F0' : Color.Transparent)
+        .margin({ right: 12 })
+        .onClick(() => {
+          if (this.isLoggedIn) {
+            this.handleCommentDislike(comment);
+          } else {
+            this.showLoginRequiredDialog();
+          }
+        })
+
         // 点赞
         Row() {
-          Image($r('app.media.startIcon'))
+          Image($r('app.media.like'))
             .width(14)
             .height(14)
             .margin({ right: 4 })
-          
+            .fillColor(comment.isLiked ? '#FF6B6B' : '#CCCCCC')
+
           Text(comment.likeCount.toString())
             .fontSize(12)
-            .fontColor(comment.isLiked ? '#E8311A' : '#A0ADCA')
+            .fontColor(comment.isLiked ? '#FF6B6B' : '#CCCCCC')
         }
+        .padding({
+          left: 8,
+          right: 8,
+          top: 4,
+          bottom: 4
+        })
+        .borderRadius(12)
+        .backgroundColor(comment.isLiked ? '#FFF0F0' : Color.Transparent)
         .onClick(() => {
-          this.handleCommentLike(comment);
+          if (this.isLoggedIn) {
+            this.handleCommentLike(comment);
+          } else {
+            this.showLoginRequiredDialog();
+          }
         })
       }
       .width('100%')
-      .alignItems(VerticalAlign.Center)
+      .margin({ left: 48 })
     }
     .width('100%')
     .padding(16)
     .backgroundColor('#FFFFFF')
     .borderRadius(12)
     .margin({ bottom: 8 })
+    .shadow({
+      radius: 4,
+      color: '#0A000000',
+      offsetX: 0,
+      offsetY: 1
+    })
   }
 
   @Builder
@@ -297,7 +448,7 @@ struct TreeHoleDetailNavPage {
         .height(50)
         .color('#007AFF')
         .margin({ bottom: 16 })
-      
+
       Text('加载中...')
         .fontSize(14)
         .fontColor('#999999')
@@ -307,22 +458,59 @@ struct TreeHoleDetailNavPage {
     .justifyContent(FlexAlign.Center)
   }
 
+  @Builder
+  buildLoginPrompt() {
+    Row() {
+      Text('登录后可参与评论和点赞互动')
+        .fontSize(14)
+        .fontColor('#999999')
+
+      Blank()
+
+      Button('去登录')
+        .fontSize(14)
+        .fontColor('#45CAD9')
+        .backgroundColor(Color.Transparent)
+        .borderWidth(1)
+        .borderColor('#45CAD9')
+        .borderRadius(16)
+        .padding({
+          left: 16,
+          right: 16,
+          top: 6,
+          bottom: 6
+        })
+        .onClick(() => {
+          // 可以在这里添加跳转到登录页面的逻辑
+          console.info('🌳 [TreeHoleDetailNavPage] 用户点击去登录');
+        })
+    }
+    .width('100%')
+    .padding({
+      left: 16,
+      right: 16,
+      top: 12,
+      bottom: 12
+    })
+    .backgroundColor('#F8F9FA')
+  }
+
   build() {
     NavDestination() {
       Column() {
         // 自定义标题栏
         this.buildTitleBar()
-        
+
         if (this.treeHoleItem) {
           // 主内容区域
           Scroll() {
             Column() {
               // 树洞详情
               this.buildTreeHoleDetail()
-              
+
               // 评论标题
               this.buildCommentsHeader()
-              
+
               // 评论列表
               this.buildCommentsList()
             }
@@ -330,9 +518,13 @@ struct TreeHoleDetailNavPage {
             .padding(16)
           }
           .layoutWeight(1)
-          
-          // 评论输入框
-          this.buildCommentInput()
+
+          // 评论输入框（仅登录用户显示）
+          if (this.isLoggedIn) {
+            this.buildCommentInput()
+          } else {
+            this.buildLoginPrompt()
+          }
         } else if (this.isLoading) {
           // 加载状态
           this.buildLoadingState()
@@ -351,11 +543,31 @@ struct TreeHoleDetailNavPage {
       .width('100%')
       .height('100%')
       .backgroundColor('#FAFAFA')
+      .opacity(this.pageOpacity)
+      .translate({ x: 0, y: this.pageTranslateY })
+      .animation({
+        duration: 700,
+        curve: Curve.EaseInOut,
+        iterations: 1,
+        playMode: PlayMode.Normal
+      })
     }
     .title('树洞详情')
     .hideTitleBar(true)
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
+
+      // 接收页面参数
+      const params = ctx.pathInfo.param as TreeHoleItem;
+      if (params) {
+        console.info('🌳 [TreeHoleDetailNavPage] 接收到参数:', JSON.stringify(params));
+        this.treeHoleItem = params;
+        this.treeHoleId = params.id;
+        this.loadComments();
+      } else {
+        console.error('🌳 [TreeHoleDetailNavPage] 未接收到树洞数据');
+      }
+
       console.info('🌳 [TreeHoleDetailNavPage] 页面就绪');
     })
     .onBackPressed(() => {
@@ -373,10 +585,10 @@ struct TreeHoleDetailNavPage {
     try {
       this.isLoading = true;
       console.info(`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的评论`);
-      
+
       const commentsData = await this.treeHoleApiService.getTreeHoleComments(this.treeHoleId, 1, 50);
       this.commentsList = commentsData.list;
-      
+
       console.info(`🌳 [TreeHoleDetailNavPage] 加载了 ${commentsData.list.length} 条评论`);
     } catch (error) {
       console.error('🌳 [TreeHoleDetailNavPage] 加载评论失败:', error);
@@ -396,7 +608,7 @@ struct TreeHoleDetailNavPage {
     try {
       this.isCommenting = true;
       console.info('🌳 [TreeHoleDetailNavPage] 发送评论');
-      
+
       const result = await this.treeHoleApiService.postComment({
         treeHoleId: this.treeHoleId,
         content: this.commentText.trim(),
@@ -421,10 +633,10 @@ struct TreeHoleDetailNavPage {
   private async handleCommentLike(comment: TreeHoleComment): Promise<void> {
     try {
       console.info(`🌳 [TreeHoleDetailNavPage] 点赞评论 ${comment.id}`);
-      
+
       const newIsLiked = !comment.isLiked;
       const result = await this.treeHoleApiService.toggleCommentLike(comment.id, newIsLiked);
-      
+
       if (result.code === 200) {
         // 更新本地状态
         const index = this.commentsList.findIndex(c => c.id === comment.id);
@@ -444,10 +656,10 @@ struct TreeHoleDetailNavPage {
   private async handleCommentDislike(comment: TreeHoleComment): Promise<void> {
     try {
       console.info(`🌳 [TreeHoleDetailNavPage] 点踩评论 ${comment.id}`);
-      
+
       const newIsDisliked = !comment.isDisliked;
       const result = await this.treeHoleApiService.toggleCommentDislike(comment.id, newIsDisliked);
-      
+
       if (result.code === 200) {
         // 更新本地状态
         const index = this.commentsList.findIndex(c => c.id === comment.id);
@@ -459,6 +671,105 @@ struct TreeHoleDetailNavPage {
     } catch (error) {
       console.error('🌳 [TreeHoleDetailNavPage] 评论点踩失败:', error);
     }
+  }
+
+  /**
+   * 格式化评论时间
+   */
+  private formatCommentTime(timeStr: string): string {
+    try {
+      const commentTime = new Date(timeStr).getTime();
+      const currentTime = new Date().getTime();
+      const timeDiff = currentTime - commentTime;
+
+      const minutes = Math.floor(timeDiff / (1000 * 60));
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+      if (minutes < 1) {
+        return '刚刚';
+      } else if (minutes < 60) {
+        return `${minutes}分钟前`;
+      } else if (hours < 24) {
+        return `${hours}小时前`;
+      } else if (days < 7) {
+        return `${days}天前`;
+      } else {
+        return timeStr.substring(5, 16); // 显示月-日 时:分
+      }
+    } catch (error) {
+      return timeStr;
+    }
+  }
+
+  /**
+   * 格式化销毁时间
+   */
+  private formatDeleteTime(): string {
+    if (!this.treeHoleItem?.deleteTime) {
+      return '';
+    }
+
+    try {
+      const deleteTime = new Date(this.treeHoleItem.deleteTime).getTime();
+      const currentTime = new Date().getTime();
+      const timeDiff = deleteTime - currentTime;
+
+      if (timeDiff <= 0) {
+        return '已销毁';
+      }
+
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (hours > 0) {
+        return `${hours}小时${minutes}分钟后销毁`;
+      } else {
+        return `${minutes}分钟后销毁`;
+      }
+    } catch (error) {
+      console.error('🌳 [TreeHoleDetailNavPage] 格式化销毁时间失败:', error);
+      return '时间错误';
+    }
+  }
+
+  /**
+   * 处理帖子点赞点击
+   */
+  private handleLikeClick(): void {
+    if (!this.isLoggedIn) {
+      this.showLoginRequiredDialog();
+      return;
+    }
+
+    // 实现点赞逻辑
+    console.info('🌳 [TreeHoleDetailNavPage] 处理帖子点赞');
+    // TODO: 调用API接口
+  }
+
+  /**
+   * 显示需要登录的对话框
+   */
+  private showLoginRequiredDialog(): void {
+    AlertDialog.show({
+      title: '需要登录',
+      message: '点赞和评论功能需要登录后才能使用',
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '取消',
+        action: () => {
+          console.info('🌳 [TreeHoleDetailNavPage] 用户取消登录');
+        }
+      },
+      secondaryButton: {
+        value: '去登录',
+        fontColor: '#45CAD9',
+        action: () => {
+          console.info('🌳 [TreeHoleDetailNavPage] 用户选择去登录');
+          // TODO: 跳转到登录页面或切换到登录Tab
+        }
+      }
+    });
   }
 
   /**

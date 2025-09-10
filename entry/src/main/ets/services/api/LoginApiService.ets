@@ -113,7 +113,7 @@ export class LoginApiService {
    * 用户退出登录
    * @param context 应用上下文（用于首选项存储）
    */
-  public logout(context?: common.UIAbilityContext): void {
+  public logout(context?: Context): void {
     hilog.info(DOMAIN, 'LoginApi', '🚪 [Logout] 用户退出登录');
     
     // 清除AppStorage中的token
