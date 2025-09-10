@@ -28,10 +28,27 @@ export struct MinePage {
     major: '加载中...',
     className: '加载中...'
   };
+  @State private pageOpacity: number = 0; // 页面初始透明度为0
+  @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
+  
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     this.loadUserInfo();
+    // 启动渐显动画
+    this.startFadeInAnimation();
+  }
+
+  /**
+   * 启动渐显动画
+   */
+  private startFadeInAnimation(): void {
+    // 短暂延时后启动动画，让组件先完成初始化
+    setTimeout(() => {
+      this.pageOpacity = 1;
+      this.pageTranslateY = 0;
+      console.info('[MinePage] 🎬 启动渐显动画');
+    }, 100);
   }
 
   build() {
@@ -104,6 +121,14 @@ export struct MinePage {
     .width('100%')
     .height('100%')
     .backgroundColor(Color.White)
+    .opacity(this.pageOpacity)
+    .translate({ x: 0, y: this.pageTranslateY })
+    .animation({
+      duration: 700,
+      curve: Curve.EaseInOut, // 使用EaseOutBack创造轻微回弹效果
+      iterations: 1,
+      playMode: PlayMode.Normal
+    })
   }
 
   @Builder

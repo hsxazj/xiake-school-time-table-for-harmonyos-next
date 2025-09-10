@@ -19,6 +19,7 @@ export struct LoginPage {
   @State private loginStatus: LoginStatus = LoginStatus.IDLE;
   @State private errorMessage: string = '';
   @State private showPassword: boolean = false;
+  @State private pageOpacity: number = 1; // 页面透明度状态
 
   private loginService: LoginApiService = LoginApiService.getInstance();
 
@@ -44,6 +45,13 @@ export struct LoginPage {
     .height('100%')
     .backgroundColor('#F8F9FA')
     .padding({ left: 24, right: 24, top: 40 })
+    .opacity(this.pageOpacity)
+    .animation({
+      duration: 500,
+      curve: Curve.EaseIn, // 渐隐使用EaseIn，让消失更自然
+      iterations: 1,
+      playMode: PlayMode.Normal
+    })
   }
 
   @Builder
@@ -271,12 +279,28 @@ export struct LoginPage {
       bottom: 100
     });
     
-    // 延时触发状态更新，让父组件有机会重新检查登录状态
-    setTimeout(() => {
-      // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
-      AppStorage.setOrCreate('loginStatusChanged', Date.now());
-    }, 500);
+    // 启动渐隐动画
+    this.startFadeOutAnimation();
     
     hilog.info(DOMAIN, 'LoginPage', '🎉 [Success] 登录成功提示已显示');
+  }
+
+  /**
+   * 启动渐隐动画
+   */
+  private startFadeOutAnimation(): void {
+    // 延时开始动画，让用户看到Toast提示
+    setTimeout(() => {
+      // 开始渐隐动画
+      this.pageOpacity = 0;
+      hilog.info(DOMAIN, 'LoginPage', '🎬 [Animation] 开始渐隐动画');
+      
+      // 动画完成后触发状态更新
+      setTimeout(() => {
+        // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
+        AppStorage.setOrCreate('loginStatusChanged', Date.now());
+        hilog.info(DOMAIN, 'LoginPage', '📢 [Notification] 发送登录状态变化通知');
+      }, 500); // 减少延时，让MinePage能更早开始渐显
+    }, 600); // 稍微减少等待时间，提升响应速度
   }
 }
