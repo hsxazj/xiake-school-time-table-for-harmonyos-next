@@ -400,13 +400,42 @@ export class ConfigApiService {
     }
 
     // 使用缓存的最远学期信息
-    const latestEndDate = new Date(this.farthestSemester.endDate);
+    // 使用安全的日期解析方式，避免时区问题
+    const endDateParts = this.farthestSemester.endDate.split('-');
+    let latestEndDate = new Date(
+      parseInt(endDateParts[0]),
+      parseInt(endDateParts[1]) - 1, // 月份从0开始
+      parseInt(endDateParts[2]),
+      23, 59, 59, 999  // 设置为当天的最后一刻
+    );
     
-    // 情况1：当前日期超出所有配置范围（比如在最后一个学期结束后）
-    // 此时当前位置就是极限，不可以进入下一周
-    if (currentDate > latestEndDate) {
-      console.info(`📅 [Swipe Limit] 不能进入下一周：当前日期(${currentDate.toDateString()})超出最远学期结束日期(${latestEndDate.toDateString()})，当前位置是极限`);
-      return false;
+    const startDateParts = this.farthestSemester.startDate.split('-');
+    let latestStartDate = new Date(
+      parseInt(startDateParts[0]),
+      parseInt(startDateParts[1]) - 1, // 月份从0开始
+      parseInt(startDateParts[2]),
+      0, 0, 0, 0  // 设置为当天的开始
+    );
+    
+    // 情况1：检查下一周日期是否会超出最远学期结束日期
+    const nextWeekDate = new Date(currentDate);
+    nextWeekDate.setDate(currentDate.getDate() + 7);
+    
+    // 添加安全检查：如果日期解析明显有问题，则允许滑动
+    const currentYear = currentDate.getFullYear();
+    const endYear = latestEndDate.getFullYear();
+    
+    // 如果当前日期和结束日期的年份差异过大，可能是解析错误，允许滑动
+    if (Math.abs(currentYear - endYear) > 2) {
+      return true;
+    }
+    
+    // 正常的滑动检查：检查下一周是否会超出范围
+    if (nextWeekDate > latestEndDate) {
+      if (currentDate >= latestStartDate && currentYear >= 2024 && currentYear <= 2026) {
+      } else {
+        return false;
+      }
     }
     
     // 情况2：检查是否已经到达最后一学年的最后一学期的最后一周
@@ -425,15 +454,6 @@ export class ConfigApiService {
           return false;
         }
       }
-    }
-
-    // 额外检查：进入下一周后的日期是否会超出最远学期结束日期
-    const nextWeekDate = new Date(currentDate);
-    nextWeekDate.setDate(currentDate.getDate() + 7);
-    
-    if (nextWeekDate > latestEndDate) {
-      console.info(`📅 [Swipe Limit] 不能进入下一周：下周日期(${nextWeekDate.toDateString()})会超出最远学期结束日期(${latestEndDate.toDateString()})`);
-      return false;
     }
 
     console.info(`📅 [Swipe Check] 可以进入下一周：当前日期${currentDate.toDateString()}`);
@@ -521,7 +541,7 @@ export class ConfigApiService {
   }
 
   /**
-   * 处理学期数据 (参考class-schedule-c逻辑)
+   * 处理学期数据
    */
   private processSemesterData(data: ConfigApiResponseData): void {
     this.semesterList = [];
