@@ -7,6 +7,7 @@ export interface ApiConfig {
 
 export const API_CONFIG: ApiConfig = {
   BASE_URL: 'https://school-time.fjutxiake.com',
+  // BASE_URL: 'http://192.168.1.4:12001',
   TIMEOUT: 10000
 };
 

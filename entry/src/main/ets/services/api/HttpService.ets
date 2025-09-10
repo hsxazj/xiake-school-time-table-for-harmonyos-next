@@ -73,10 +73,10 @@ export class HttpService {
    */
   public async post<REQ, RES>(
     url: string,
-    params?: REQ
+    data?: REQ
   ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.post<ApiResponse<RES>>(url, { params });
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.post<ApiResponse<RES>>(url, data);
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -88,10 +88,10 @@ export class HttpService {
    */
   public async put<REQ, RES>(
     url: string,
-    params?: REQ
+    data?: REQ
   ): Promise<ApiResponse<RES>> {
     try {
-      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.put<ApiResponse<RES>>(url, { params });
+      const response: AxiosResponse<ApiResponse<RES>> = await this.axiosInstance.put<ApiResponse<RES>>(url, data);
       return response.data;
     } catch (error) {
       throw this.handleError(error as AxiosError);
@@ -165,6 +165,19 @@ export class HttpService {
    */
   public getAxiosInstance(): AxiosInstance {
     return this.axiosInstance;
+  }
+
+  /**
+   * 登录专用POST请求 - 直接返回响应数据，不包装在ApiResponse中
+   * 用于处理登录接口返回格式与标准ApiResponse不同的情况
+   */
+  public async postLogin<REQ, RES>(url: string, data?: REQ): Promise<RES> {
+    try {
+      const response: AxiosResponse<RES> = await this.axiosInstance.post<RES>(url, data);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
   }
 
   /**
