@@ -2,7 +2,9 @@ import { HttpService, ApiResponse } from './HttpService';
 import { LoginRequest, LoginResponse, LoginForm } from '../../models/LoginModels';
 import { RsaPkcs1Util } from '../../common/utils/RsaPkcs1Util';
 import { RSA_PUBLIC_KEY } from '../../common/constants/AppConstants';
+import { PreferencesUtil } from '../../common/utils/PreferencesUtil';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x2000; // Login API domain
 
@@ -28,9 +30,10 @@ export class LoginApiService {
   /**
    * 用户登录
    * @param loginForm 登录表单数据（包含明文密码）
+   * @param context 应用上下文（用于首选项存储）
    * @returns Promise<LoginResponse> 登录结果，包含token
    */
-  public async login(loginForm: LoginForm): Promise<LoginResponse> {
+  public async login(loginForm: LoginForm, context?: common.UIAbilityContext): Promise<LoginResponse> {
     try {
       hilog.info(DOMAIN, 'LoginApi', `🔐 [Login] 开始登录: ${loginForm.username}`);
       
@@ -60,7 +63,21 @@ export class LoginApiService {
         
         // 5. 保存token到AppStorage
         AppStorage.setOrCreate('token', response.token);
-        hilog.info(DOMAIN, 'LoginApi', '💾 [Login] Token已保存到本地存储');
+        hilog.info(DOMAIN, 'LoginApi', '💾 [Login] Token已保存到AppStorage');
+        
+        // 6. 将token持久化到首选项
+        if (context) {
+          try {
+            const preferencesUtil = PreferencesUtil.getInstance();
+            preferencesUtil.putValue(context, 'token', response.token);
+            hilog.info(DOMAIN, 'LoginApi', '💾 [Login] Token已持久化到首选项');
+          } catch (error) {
+            hilog.error(DOMAIN, 'LoginApi', `⚠️ [Login] Token持久化失败: ${JSON.stringify(error)}`);
+            // 不影响登录流程，继续执行
+          }
+        } else {
+          hilog.warn(DOMAIN, 'LoginApi', '⚠️ [Login] 未提供context，Token未持久化');
+        }
         
         return response;
       } else {
@@ -94,14 +111,27 @@ export class LoginApiService {
 
   /**
    * 用户退出登录
+   * @param context 应用上下文（用于首选项存储）
    */
-  public logout(): void {
+  public logout(context?: common.UIAbilityContext): void {
     hilog.info(DOMAIN, 'LoginApi', '🚪 [Logout] 用户退出登录');
     
-    // 清除本地token
+    // 清除AppStorage中的token
     AppStorage.setOrCreate('token', '');
+    hilog.info(DOMAIN, 'LoginApi', '🗑️ [Logout] AppStorage中的Token已清除');
     
-    hilog.info(DOMAIN, 'LoginApi', '🗑️ [Logout] Token已清除');
+    // 清除首选项中的token
+    if (context) {
+      try {
+        const preferencesUtil = PreferencesUtil.getInstance();
+        preferencesUtil.removeValue(context, 'token');
+        hilog.info(DOMAIN, 'LoginApi', '🗑️ [Logout] 首选项中的Token已清除');
+      } catch (error) {
+        hilog.error(DOMAIN, 'LoginApi', `⚠️ [Logout] 清除首选项Token失败: ${JSON.stringify(error)}`);
+      }
+    } else {
+      hilog.warn(DOMAIN, 'LoginApi', '⚠️ [Logout] 未提供context，首选项Token未清除');
+    }
   }
 
   /**

@@ -2,6 +2,7 @@ import { LoginApiService } from '../../services/api/LoginApiService';
 import { LoginForm, LoginStatus } from '../../models/LoginModels';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x3000; // Login Page domain
 
@@ -224,8 +225,11 @@ export struct LoginPage {
 
       hilog.info(DOMAIN, 'LoginPage', `🔐 [Login] 开始登录: ${this.loginForm.username}`);
 
-      // 调用登录API
-      await this.loginService.login(this.loginForm);
+      // 获取UIAbilityContext
+      const context = getContext(this) as common.UIAbilityContext;
+
+      // 调用登录API，传递context用于token持久化
+      await this.loginService.login(this.loginForm, context);
 
       this.loginStatus = LoginStatus.SUCCESS;
       hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 登录成功');
