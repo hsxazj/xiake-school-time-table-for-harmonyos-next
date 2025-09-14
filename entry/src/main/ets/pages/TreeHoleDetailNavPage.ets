@@ -270,8 +270,10 @@ struct TreeHoleDetailNavPage {
           .textAlign(TextAlign.Center)
       }
       .width('100%')
-      .height(100)
-      .justifyContent(FlexAlign.Center)
+      .height(80)
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Center)
+      .padding({ top: 20 })
     } else {
       Column() {
         ForEach(this.commentsList, (comment: TreeHoleComment) => {
@@ -279,6 +281,7 @@ struct TreeHoleDetailNavPage {
         }, (comment: TreeHoleComment) => comment.id.toString())
       }
       .width('100%')
+      .alignItems(HorizontalAlign.Start)
     }
   }
 
@@ -332,19 +335,20 @@ struct TreeHoleDetailNavPage {
         .fontColor('#333333')
         .lineHeight(22)
         .width('100%')
-        .margin({ left: 48, bottom: 12 })
         .textAlign(TextAlign.Start)
     }
     .width('100%')
     .padding(16)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor($r('sys.color.comp_background_list_card'))
     .borderRadius(12)
-    .margin({ bottom: 8 })
+    .borderWidth(1)
+    .borderColor('#E8E8E8')
+    .margin({ bottom: 12 })
     .shadow({
-      radius: 4,
-      color: '#0A000000',
+      radius: 6,
+      color: '#0D000000',
       offsetX: 0,
-      offsetY: 1
+      offsetY: 2
     })
   }
 
@@ -465,9 +469,12 @@ struct TreeHoleDetailNavPage {
             .layoutWeight(1)
             .width('100%')
             .padding(16)
+            .justifyContent(FlexAlign.Start)
+            .alignItems(HorizontalAlign.Start)
           }
           .scrollBar(BarState.Off)
           .layoutWeight(1)
+          .align(Alignment.TopStart)
 
           // 评论输入框（仅登录用户显示）
           if (this.isLoggedIn) {
@@ -493,6 +500,8 @@ struct TreeHoleDetailNavPage {
       .width('100%')
       .height('100%')
       .backgroundColor('#FAFAFA')
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
       .opacity(this.pageOpacity)
       .translate({ x: 0, y: this.pageTranslateY })
       .animation({
