@@ -27,6 +27,7 @@ interface ScheduleCourse {
 // 扩展的课程接口，包含周次信息
 interface ScheduleCourseWithWeeks extends ScheduleCourse {
   weeks?: string;
+  showPop?: boolean; // 添加弹窗状态控制
 }
 
 // 周课表网格布局数据
@@ -104,6 +105,8 @@ export struct SchedulePage {
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 80 }); // 从150减少到80，加快动画速度
   // 课程块可见性状态
   @State private courseBlockVisible: boolean[][] = [];
+  // 课程弹窗状态管理
+  @State private coursePopupStates: Map<string, boolean> = new Map();
 
   aboutToAppear(): void {
     // 基于日期的初始化逻辑
@@ -343,6 +346,7 @@ export struct SchedulePage {
       !this.courseBlockVisible[dayIndex] ||
       this.courseBlockVisible[dayIndex].length === 0 ||
       this.courseBlockVisible[dayIndex][courseIndex] !== false) {
+      
       Column() {
         // 课程名称
         Text(course.courseName)
@@ -389,7 +393,20 @@ export struct SchedulePage {
       .alignItems(HorizontalAlign.Center)
       .margin({ top: 1, bottom: 1 })
       .onClick(() => {
-        this.onCourseBlockClick(course, dayIndex, courseIndex);
+        this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), true);
+      })
+      // 绑定弹窗
+      .bindPopup(this.getCoursePopupState(dayIndex, courseIndex, course.courseName), {
+        builder: this.CourseDetailPopup(course),
+        placement: Placement.Top,
+        enableArrow: true,
+        mask: true,
+        width: '80%',
+        onStateChange: (e) => {
+          if (!e.isVisible) {
+            this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), false);
+          }
+        }
       })
     }
   }
@@ -520,6 +537,118 @@ export struct SchedulePage {
     .padding(20)
     .backgroundColor(Color.White)
     .borderRadius({ topLeft: 20, topRight: 20 })
+  }
+
+  /**
+   * 课程详细信息弹窗
+   */
+  @Builder
+  CourseDetailPopup(course: ScheduleCourse) {
+    Column() {
+      // 课程名称
+      Text(course.courseName)
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#333333')
+        .margin({ bottom: 8 })
+        .maxLines(2)
+        .textAlign(TextAlign.Center)
+      
+      Divider()
+        .color('#E0E0E0')
+        .strokeWidth(1)
+        .margin({ bottom: 8 })
+      
+      // 教师信息
+      if (course.teacher && course.teacher.length > 0) {
+        Row() {
+          Text('👨‍🏫 教师：')
+            .fontSize(14)
+            .fontColor('#666666')
+          Text(course.teacher[0])
+            .fontSize(14)
+            .fontColor('#333333')
+            .fontWeight(FontWeight.Medium)
+        }
+        .width('100%')
+        .margin({ bottom: 6 })
+        .alignItems(VerticalAlign.Center)
+      }
+      
+      // 教室信息
+      if (course.classroom && course.classroom.length > 0) {
+        Row() {
+          Text('🏢 教室：')
+            .fontSize(14)
+            .fontColor('#666666')
+          Text(course.classroom[0])
+            .fontSize(14)
+            .fontColor('#333333')
+            .fontWeight(FontWeight.Medium)
+        }
+        .width('100%')
+        .margin({ bottom: 6 })
+        .alignItems(VerticalAlign.Center)
+      }
+      
+      // 节次信息
+      Row() {
+        Text('⏰ 节次：')
+          .fontSize(14)
+          .fontColor('#666666')
+        Text(`第${course.section.join(',')}节`)
+          .fontSize(14)
+          .fontColor('#333333')
+          .fontWeight(FontWeight.Medium)
+      }
+      .width('100%')
+      .margin({ bottom: 6 })
+      .alignItems(VerticalAlign.Center)
+      
+      // 校区信息
+      if (course.campus) {
+        Row() {
+          Text('🏦 校区：')
+            .fontSize(14)
+            .fontColor('#666666')
+          Text(course.campus)
+            .fontSize(14)
+            .fontColor('#333333')
+            .fontWeight(FontWeight.Medium)
+        }
+        .width('100%')
+        .margin({ bottom: 8 })
+        .alignItems(VerticalAlign.Center)
+      }
+      
+      // 关闭按钮
+      Button('关闭')
+        .fontSize(12)
+        .fontColor('#45CAD9')
+        .backgroundColor('#E3F2FD')
+        .height(28)
+        .borderRadius(14)
+        .border({
+          width: 1,
+          color: '#45CAD9',
+          radius: 14
+        })
+        .padding({ left: 16, right: 16 })
+        .onClick(() => {
+          // 关闭所有弹窗
+          this.closeAllPopups();
+        })
+    }
+    .padding(12)
+    .backgroundColor('#FFFFFF')
+    .borderRadius(8)
+    .shadow({
+      radius: 10,
+      color: 'rgba(0, 0, 0, 0.1)',
+      offsetX: 0,
+      offsetY: 2
+    })
+    .width('100%')
   }
 
   /**
@@ -1193,10 +1322,50 @@ export struct SchedulePage {
    * 课程块点击事件（参考show-list.vue的showItem方法）
    */
   private onCourseBlockClick(course: ScheduleCourse, dayIndex: number, courseIndex: number): void {
-    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
+    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`); 
+    // 此方法现在由buildCourseBlock中的onClick直接处理弹窗逻辑
+  }
 
-    // TODO: 显示课程详情弹窗（参考class-schedule-c的课程详情显示）
-    // 可以显示课程名、教师、教室、时间等信息
+  /**
+   * 获取课程唯一标识
+   */
+  private getCourseKey(dayIndex: number, courseIndex: number, courseName: string): string {
+    return `${dayIndex}-${courseIndex}-${courseName}`;
+  }
+
+  /**
+   * 获取课程弹窗状态
+   */
+  private getCoursePopupState(dayIndex: number, courseIndex: number, courseName: string): boolean {
+    const courseKey = this.getCourseKey(dayIndex, courseIndex, courseName);
+    return this.coursePopupStates.get(courseKey) || false;
+  }
+
+  /**
+   * 切换课程弹窗状态
+   */
+  private toggleCoursePopup(courseKey: string, show: boolean): void {
+    // 关闭所有其他弹窗，保证同时只显示一个
+    this.coursePopupStates.forEach((value, key) => {
+      if (key !== courseKey) {
+        this.coursePopupStates.set(key, false);
+      }
+    });
+    
+    // 设置当前课程弹窗状态
+    this.coursePopupStates.set(courseKey, show);
+    
+    console.info(`📚 [Popup] ${show ? '显示' : '隐藏'}课程弹窗: ${courseKey}`);
+  }
+
+  /**
+   * 关闭所有弹窗
+   */
+  private closeAllPopups(): void {
+    this.coursePopupStates.forEach((value, key) => {
+      this.coursePopupStates.set(key, false);
+    });
+    console.info('📚 [Popup] 关闭所有课程弹窗');
   }
 
   /**
