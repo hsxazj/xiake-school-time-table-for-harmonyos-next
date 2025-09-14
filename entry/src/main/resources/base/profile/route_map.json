@@ -25,6 +25,14 @@
       }
     },
     {
+      "name": "LoginNavPage",
+      "pageSourceFile": "src/main/ets/components/pages/LoginPage.ets",
+      "buildFunction": "LoginNavPageBuilder",
+      "data": {
+        "description": "this is LoginNavPage"
+      }
+    },
+    {
       "name": "TreeHolePostPage",
       "pageSourceFile": "src/main/ets/pages/TreeHolePostNavPage.ets",
       "buildFunction": "TreeHolePostNavPageBuilder",

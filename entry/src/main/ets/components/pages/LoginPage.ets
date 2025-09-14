@@ -6,13 +6,33 @@ import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x3000; // Login Page domain
 
+@Builder
+export function LoginNavPageBuilder() {
+  LoginNavPage();
+}
+
+@Component
+struct LoginNavPage {
+  @Consume('NavStack') pathStack: NavPathStack;
+
+  build() {
+    NavDestination() {
+      LoginPageContent()
+    }
+    .hideTitleBar(true)
+    .onReady((ctx: NavDestinationContext) => {
+      this.pathStack = ctx.pathStack;
+    })
+  }
+}
+
 /**
  * 登录页面组件
  * 提供账号密码登录功能
  */
 @Component
 @Preview
-export struct LoginPage {
+export struct LoginPageContent {
   @State private loginForm: LoginForm = {
     username: '',
     password: ''
@@ -22,6 +42,7 @@ export struct LoginPage {
   @State private showPassword: boolean = false;
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
+  @Consume('NavStack') pathStack: NavPathStack;
 
   private loginService: LoginApiService = LoginApiService.getInstance();
 
@@ -276,11 +297,15 @@ export struct LoginPage {
       this.pageOpacity = 0;
       hilog.info(DOMAIN, 'LoginPage', '🎬 [Animation] 开始渐隐动画');
       
-      // 动画完成后触发状态更新
+      // 动画完成后关闭模态页面
       setTimeout(() => {
         // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
         AppStorage.setOrCreate('loginStatusChanged', Date.now());
         hilog.info(DOMAIN, 'LoginPage', '📢 [Notification] 发送登录状态变化通知');
+        
+        // 关闭模态页面
+        this.pathStack.pop();
+        hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 关闭登录模态页面');
       }, 500); // 减少延时，让MinePage能更早开始渐显
     }, 600); // 稍微减少等待时间，提升响应速度
   }

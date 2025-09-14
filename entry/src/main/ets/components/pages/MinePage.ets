@@ -20,7 +20,7 @@ interface MenuItemType {
 
 @Component
 export struct MinePage {
-  private pathStack: NavPathStack = new NavPathStack();
+  @Consume('NavStack') pathStack: NavPathStack;
   @State private userInfo: UserInfo = {
     avatar: $r('app.media.defaultAvatar'),
     username: 'FJUTER',
@@ -32,14 +32,33 @@ export struct MinePage {
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   @State private isLoggingOut: boolean = false; // 是否正在退出登录
+  @State private isLoggedIn: boolean = false; // 登录状态
+  @StorageLink('loginStatusChanged') @Watch('onLoginStatusChanged') loginStatusChanged: number = 0;
   
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private loginService: LoginApiService = LoginApiService.getInstance();
 
   aboutToAppear(): void {
     this.loadUserInfo();
+    this.checkLoginStatus();
     // 启动渐显动画
     this.startFadeInAnimation();
+  }
+
+  /**
+   * 监听登录状态变化
+   */
+  private onLoginStatusChanged(): void {
+    console.info(`[MinePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    this.checkLoginStatus();
+  }
+
+  /**
+   * 检查登录状态
+   */
+  private checkLoginStatus(): void {
+    this.isLoggedIn = this.loginService.isLoggedIn();
+    console.info(`[MinePage] 登录状态检查: ${this.isLoggedIn ? '已登录' : '未登录'}`);
   }
 
   /**
@@ -119,21 +138,37 @@ export struct MinePage {
       .width('90%')
       .layoutWeight(1)
 
-      // 退出登录按钮
-      Button(this.isLoggingOut ? '退出中...' : '退出登录')
-        .width('90%')
-        .height(44)
-        .fontSize(16)
-        .fontColor('#FF6B6B')
-        .backgroundColor(Color.White)
-        .borderWidth(1)
-        .borderColor('#FF6B6B')
-        .borderRadius(8)
-        .enabled(!this.isLoggingOut)
-        .margin({ bottom: 20 })
-        .onClick(() => {
-          this.showLogoutConfirmDialog();
-        })
+      // 登录/退出登录按钮
+      if (this.isLoggedIn) {
+        Button(this.isLoggingOut ? '退出中...' : '退出登录')
+          .width('90%')
+          .height(44)
+          .fontSize(16)
+          .fontColor('#FF6B6B')
+          .backgroundColor(Color.White)
+          .borderWidth(1)
+          .borderColor('#FF6B6B')
+          .borderRadius(8)
+          .enabled(!this.isLoggingOut)
+          .margin({ bottom: 20 })
+          .onClick(() => {
+            this.showLogoutConfirmDialog();
+          })
+      } else {
+        Button('去登录')
+          .width('90%')
+          .height(44)
+          .fontSize(16)
+          .fontColor('#45CAD9')
+          .backgroundColor(Color.White)
+          .borderWidth(1)
+          .borderColor('#45CAD9')
+          .borderRadius(8)
+          .margin({ bottom: 20 })
+          .onClick(() => {
+            this.navigateToLogin();
+          })
+      }
 
       Blank()
     }
@@ -271,6 +306,18 @@ export struct MinePage {
   }
 
   /**
+   * 跳转到登录页面
+   */
+  private navigateToLogin(): void {
+    try {
+      this.pathStack.pushPathByName('LoginNavPage', null, true); // 使用模态转场
+      console.info('[MinePage] 跳转到登录页面');
+    } catch (error) {
+      console.error('[MinePage] 跳转到登录页面失败:', error);
+    }
+  }
+
+  /**
    * 处理退出登录
    */
   private async handleLogout(): Promise<void> {
@@ -284,6 +331,9 @@ export struct MinePage {
       // 调用登录服务的退出方法
       this.loginService.logout(context);
       console.info('[MinePage] ✅ 退出登录成功');
+
+      // 更新本地登录状态
+      this.isLoggedIn = false;
 
       // 通知登录状态变化
       AppStorage.setOrCreate('loginStatusChanged', Date.now());
