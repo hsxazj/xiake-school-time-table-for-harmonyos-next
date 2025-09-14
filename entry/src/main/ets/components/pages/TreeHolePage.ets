@@ -69,7 +69,7 @@ export struct TreeHolePage {
           ListItem() {
             this.buildTreeHoleItem(item)
           }
-          .margin({ left: 20, right: 20, top: 8 })
+          .margin({ left: 20, right: 20, top: 8, bottom: 12 })
         }, (item: TreeHoleItem) => item.id.toString())
 
         // 加载更多指示器
@@ -285,7 +285,15 @@ export struct TreeHolePage {
     .width('100%')
     .padding(16)
     .backgroundColor(Color.White)
-    .borderRadius(12)
+    .borderRadius(25)
+    .borderWidth(1)
+    .borderColor('#E8E8E8')
+    .shadow({
+      radius: 6,
+      color: '#0D000000',
+      offsetX: 0,
+      offsetY: 2
+    })
     .onClick(() => {
       this.handleItemClick(item);
     })

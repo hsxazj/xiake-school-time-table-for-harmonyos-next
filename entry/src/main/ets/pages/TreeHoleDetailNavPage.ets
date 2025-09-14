@@ -334,69 +334,6 @@ struct TreeHoleDetailNavPage {
         .width('100%')
         .margin({ left: 48, bottom: 12 })
         .textAlign(TextAlign.Start)
-
-      // 底部操作
-      Row() {
-        Blank()
-
-        // 点踩
-        Row() {
-          Image($r('app.media.startIcon'))
-            .width(14)
-            .height(14)
-            .margin({ right: 4 })
-            .fillColor((comment.isDisliked ?? false) ? '#999999' : '#CCCCCC')
-
-          Text(comment.dislikeCount.toString())
-            .fontSize(12)
-            .fontColor((comment.isDisliked ?? false) ? '#999999' : '#CCCCCC')
-        }
-        .padding({
-          left: 8,
-          right: 8,
-          top: 4,
-          bottom: 4
-        })
-        .borderRadius(12)
-        .backgroundColor((comment.isDisliked ?? false) ? '#F0F0F0' : Color.Transparent)
-        .margin({ right: 12 })
-        .onClick(() => {
-          if (this.isLoggedIn) {
-            this.handleCommentDislike(comment);
-          } else {
-            this.showLoginRequiredDialog();
-          }
-        })
-
-        // 点赞
-        Row() {
-          Image((comment.isLiked ?? false) ? $r('app.media.like_active') : $r('app.media.like'))
-            .width(14)
-            .height(14)
-            .margin({ right: 4 })
-
-          Text(comment.likeCount.toString())
-            .fontSize(12)
-            .fontColor((comment.isLiked ?? false) ? '#FF6B6B' : '#CCCCCC')
-        }
-        .padding({
-          left: 8,
-          right: 8,
-          top: 4,
-          bottom: 4
-        })
-        .borderRadius(12)
-        .backgroundColor(comment.isLiked ? '#FFF0F0' : Color.Transparent)
-        .onClick(() => {
-          if (this.isLoggedIn) {
-            this.handleCommentLike(comment);
-          } else {
-            this.showLoginRequiredDialog();
-          }
-        })
-      }
-      .width('100%')
-      .margin({ left: 48 })
     }
     .width('100%')
     .padding(16)
@@ -525,9 +462,11 @@ struct TreeHoleDetailNavPage {
               // 评论列表
               this.buildCommentsList()
             }
+            .layoutWeight(1)
             .width('100%')
             .padding(16)
           }
+          .scrollBar(BarState.Off)
           .layoutWeight(1)
 
           // 评论输入框（仅登录用户显示）

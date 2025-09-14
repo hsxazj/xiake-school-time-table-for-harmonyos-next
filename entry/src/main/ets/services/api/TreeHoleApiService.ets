@@ -28,6 +28,8 @@ export interface TreeHoleRequestParams {
   pageSize?: number;
   /** 树洞类型 (3-普通树洞等) */
   type?: number;
+  /** 父级ID (用于获取评论，评论的parentId为树洞ID) */
+  parentId?: number;
 }
 
 /**
@@ -40,6 +42,20 @@ export interface CommentsRequestParams {
   pageNum?: number;
   /** 每页数量 */
   pageSize?: number;
+}
+
+/**
+ * 获取评论的请求参数接口（基于parentId的方式）
+ */
+export interface GetCommentsRequestParams {
+  /** 父级ID (对应树洞ID) */
+  parentId: number;
+  /** 页码 */
+  pageNum: number;
+  /** 每页数量 */
+  pageSize: number;
+  /** 状态筛选 */
+  status: number;
 }
 
 /**
@@ -155,7 +171,7 @@ export class TreeHoleApiService {
 
   /**
    * 获取树洞评论列表
-   * GET /treeHole/comments?treeHoleId=xxx&pageNum=1&pageSize=10
+   * GET /treeHole/get?parentId=xxx&pageNum=1&pageSize=10&status=1
    */
   public async getTreeHoleComments(
     treeHoleId: number, 
@@ -165,16 +181,45 @@ export class TreeHoleApiService {
     try {
       console.info(`🌳 [TreeHoleApiService] 获取评论列表 - 树洞ID:${treeHoleId}, 页码:${pageNum}`);
       
-      const params: CommentsRequestParams = {
-        treeHoleId,
-        pageNum,
-        pageSize
+      // 使用/treeHole/get接口，通过parentId参数获取评论
+      const params: GetCommentsRequestParams = {
+        parentId: treeHoleId,
+        pageNum: pageNum,
+        pageSize: pageSize,
+        status: 1  // 获取正常状态的评论
       };
 
-      const response = await this.httpService.get<CommentsRequestParams, TreeHolePaginationData<TreeHoleComment>>('/treeHole/comments', params);
+      const response = await this.httpService.get<GetCommentsRequestParams, TreeHoleApiPaginationData<TreeHoleItem>>('/treeHole/get', params);
 
-      console.info(`🌳 [TreeHoleApiService] 获取评论列表成功，共${response.data.total}条数据`);
-      return response.data;
+      // 将TreeHoleItem转换为TreeHoleComment格式
+      const comments: TreeHoleComment[] = (response.data.treeHoleVOList || []).map((item: TreeHoleItem): TreeHoleComment => ({
+        id: item.id,
+        content: item.content,
+        author: item.anonymous === 1 ? (item.nickName || `匿名用户${item.userId}`) : item.realName,
+        avatar: item.avatar,
+        createTime: item.createAt,
+        likeCount: item.likes,
+        dislikeCount: item.unlikes,
+        isLiked: item.isLike === 1,
+        isDisliked: item.isUnlike === 1,
+        isAnonymous: item.anonymous === 1,
+        treeHoleId: treeHoleId
+      }));
+
+      // 构造前端期望的分页数据格式
+      const result: TreeHolePaginationData<TreeHoleComment> = {
+        list: comments,
+        pageNum: pageNum,
+        pageSize: pageSize,
+        totalPages: response.data.pageCount || 1,
+        total: pageNum >= (response.data.pageCount || 1) 
+          ? (pageNum - 1) * pageSize + comments.length
+          : (response.data.pageCount || 1) * pageSize,
+        hasNext: pageNum < (response.data.pageCount || 1)
+      };
+
+      console.info(`🌳 [TreeHoleApiService] 获取评论列表成功，共${comments.length}条数据`);
+      return result;
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 获取评论失败:', error);
       throw new Error('获取评论失败');
