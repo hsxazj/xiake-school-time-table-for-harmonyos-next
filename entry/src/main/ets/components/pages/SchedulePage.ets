@@ -22,6 +22,7 @@ interface ScheduleCourse {
   weekday: number; // 1-7 对应周一到周日
   section: number[]; // 节次数组
   courseId: string[];
+  isPlaceholder?: boolean; // 标识是否为空白占位块
 }
 
 // 扩展的课程接口，包含周次信息
@@ -347,67 +348,81 @@ export struct SchedulePage {
       this.courseBlockVisible[dayIndex].length === 0 ||
       this.courseBlockVisible[dayIndex][courseIndex] !== false) {
       
-      Column() {
-        // 课程名称
-        Text(course.courseName)
-          .fontSize(11)
-          .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
-          .fontWeight(FontWeight.Medium)
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .textAlign(TextAlign.Center)
-          .margin({ bottom: 2 })
-
-        // 教室信息
-        if (course.classroom && course.classroom.length > 0) {
-          Text(course.classroom[0])
-            .fontSize(9)
+      // 处理空白占位块
+      if (course.isPlaceholder) {
+        // 渲染透明的占位块
+        Column() {
+          // 空内容
+        }
+        .width('95%')
+        .height(`${length * 8.33}%`)
+        .backgroundColor(Color.Transparent) // 完全透明
+        .margin({ top: 1, bottom: 1 })
+        // 注意：没有onClick事件，不可点击
+      } else {
+        // 渲染正常课程块
+        Column() {
+          // 课程名称
+          Text(course.courseName)
+            .fontSize(11)
             .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
-            .maxLines(1)
+            .fontWeight(FontWeight.Medium)
+            .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .textAlign(TextAlign.Center)
-            .margin({ bottom: 1 })
-        }
+            .margin({ bottom: 2 })
 
-        // 教师信息
-        if (course.teacher && course.teacher.length > 0) {
-          Text(course.teacher[0])
-            .fontSize(8)
-            .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .textAlign(TextAlign.Center)
-        }
-      }
-      .transition(this.effect) // 应用转场动画
-      .width('95%')
-      .height(`${length * 8.33}%`)
-      .backgroundColor(CourseColorUtil.getCourseBackgroundColor(course.courseName, this.scheduleGrid.classList))
-      .border({
-        width: 1,
-        color: CourseColorUtil.getCourseBorderColor(course.courseName, this.scheduleGrid.classList),
-        radius: 4
-      })
-      .padding(3)
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Center)
-      .margin({ top: 1, bottom: 1 })
-      .onClick(() => {
-        this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), true);
-      })
-      // 绑定弹窗
-      .bindPopup(this.getCoursePopupState(dayIndex, courseIndex, course.courseName), {
-        builder: this.CourseDetailPopup(course),
-        placement: Placement.Top,
-        enableArrow: true,
-        mask: true,
-        width: '80%',
-        onStateChange: (e) => {
-          if (!e.isVisible) {
-            this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), false);
+          // 教室信息
+          if (course.classroom && course.classroom.length > 0) {
+            Text(course.classroom[0])
+              .fontSize(9)
+              .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .textAlign(TextAlign.Center)
+              .margin({ bottom: 1 })
+          }
+
+          // 教师信息
+          if (course.teacher && course.teacher.length > 0) {
+            Text(course.teacher[0])
+              .fontSize(8)
+              .fontColor(CourseColorUtil.getCourseTextColor(course.courseName, this.scheduleGrid.classList))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .textAlign(TextAlign.Center)
           }
         }
-      })
+        .transition(this.effect) // 应用转场动画
+        .width('95%')
+        .height(`${length * 8.33}%`)
+        .backgroundColor(CourseColorUtil.getCourseBackgroundColor(course.courseName, this.scheduleGrid.classList))
+        .border({
+          width: 1,
+          color: CourseColorUtil.getCourseBorderColor(course.courseName, this.scheduleGrid.classList),
+          radius: 4
+        })
+        .padding(3)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .margin({ top: 1, bottom: 1 })
+        .onClick(() => {
+          this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), true);
+        })
+        // 绑定弹窗
+        .bindPopup(this.getCoursePopupState(dayIndex, courseIndex, course.courseName), {
+          builder: this.CourseDetailPopup(course),
+          placement: Placement.Top,
+          enableArrow: true,
+          mask: true,
+          width: '80%',
+          onStateChange: (e) => {
+            if (!e.isVisible) {
+              this.toggleCoursePopup(this.getCourseKey(dayIndex, courseIndex, course.courseName), false);
+            }
+          }
+        })
+      }
     }
   }
 
@@ -824,15 +839,21 @@ export struct SchedulePage {
    */
   private calculateCourseLayout(): void {
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const dayCourses = this.scheduleGrid.nowClassList[dayIndex];
+      const originalCourses = this.scheduleGrid.nowClassList[dayIndex];
+      
+      // 在课程间插入空白占位块
+      const coursesWithPlaceholders = this.insertPlaceholdersForGaps(originalCourses);
+      
+      // 更新课程列表
+      this.scheduleGrid.nowClassList[dayIndex] = coursesWithPlaceholders;
 
       // 初始化当天的布局数据
       this.scheduleGrid.classNum[dayIndex] = [];
       this.scheduleGrid.classLength[dayIndex] = [];
       this.scheduleGrid.isContinue[dayIndex] = [];
 
-      // 按节次排序
-      const sortedCourses = dayCourses.sort((a, b) => a.section[0] - b.section[0]);
+      // 按节次排序（已经在insertPlaceholdersForGaps中排序过）
+      const sortedCourses = coursesWithPlaceholders;
 
       for (let courseIndex = 0; courseIndex < sortedCourses.length; courseIndex++) {
         const course = sortedCourses[courseIndex];
@@ -1337,6 +1358,11 @@ export struct SchedulePage {
    * 获取课程弹窗状态
    */
   private getCoursePopupState(dayIndex: number, courseIndex: number, courseName: string): boolean {
+    // 空课程名表示占位块，不显示弹窗
+    if (!courseName) {
+      return false;
+    }
+    
     const courseKey = this.getCourseKey(dayIndex, courseIndex, courseName);
     return this.coursePopupStates.get(courseKey) || false;
   }
@@ -1366,6 +1392,83 @@ export struct SchedulePage {
       this.coursePopupStates.set(key, false);
     });
     console.info('📚 [Popup] 关闭所有课程弹窗');
+  }
+
+  /**
+   * 创建空白占位课程块
+   */
+  private createPlaceholderCourse(startSection: number, endSection: number): ScheduleCourse {
+    const sections: number[] = [];
+    for (let i = startSection; i <= endSection; i++) {
+      sections.push(i);
+    }
+    
+    return {
+      courseName: '', // 空字符串
+      classroom: [],
+      teacher: [],
+      campus: '',
+      courseTime: [[startSection, endSection]],
+      weekday: 1, // 默认值，实际不使用
+      section: sections,
+      courseId: [],
+      isPlaceholder: true // 关键标识
+    };
+  }
+
+  /**
+   * 检测课程间的节次间隙并插入空白占位块
+   */
+  private insertPlaceholdersForGaps(courses: ScheduleCourse[]): ScheduleCourse[] {
+    if (courses.length === 0) {
+      return courses;
+    }
+
+    // 按节次排序
+    const sortedCourses = courses.sort((a, b) => a.section[0] - b.section[0]);
+    const result: ScheduleCourse[] = [];
+    
+    // 处理第一门课程前的空白间隙
+    const firstCourse = sortedCourses[0];
+    const firstStart = firstCourse.section[0];
+    
+    // 如果第一门课不是从第1节开始，则填充前面的空白
+    if (firstStart > 1) {
+      for (let section = 1; section < firstStart; section++) {
+        const placeholder = this.createPlaceholderCourse(section, section);
+        result.push(placeholder);
+      }
+    }
+    
+    // 处理课程间的间隙
+    for (let i = 0; i < sortedCourses.length; i++) {
+      const currentCourse = sortedCourses[i];
+      
+      // 添加当前课程
+      result.push(currentCourse);
+      
+      // 检查是否需要在下一门课之前插入空白块
+      if (i < sortedCourses.length - 1) {
+        const nextCourse = sortedCourses[i + 1];
+        const currentEnd = currentCourse.section[currentCourse.section.length - 1];
+        const nextStart = nextCourse.section[0];
+        
+        // 如果存在间隙（下一门课不是紧接着当前课的）
+        if (nextStart - currentEnd > 1) {
+          const gapStart = currentEnd + 1;
+          const gapEnd = nextStart - 1;
+          
+          // 为间隙中的每个节次创建占位块
+          for (let section = gapStart; section <= gapEnd; section++) {
+            const placeholder = this.createPlaceholderCourse(section, section);
+            result.push(placeholder);
+          }
+        }
+      }
+    }
+    
+    console.info(`📚 [Course Layout] 原始课程${courses.length}门，添加占位块后${result.length}个元素`);
+    return result;
   }
 
   /**
