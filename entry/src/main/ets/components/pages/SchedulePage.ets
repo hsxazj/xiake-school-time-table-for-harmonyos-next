@@ -577,7 +577,7 @@ export struct SchedulePage {
       // 教师信息
       if (course.teacher && course.teacher.length > 0) {
         Row() {
-          Text('👨‍🏫 教师：')
+          Text('教师：')
             .fontSize(14)
             .fontColor('#666666')
           Text(course.teacher[0])
@@ -593,7 +593,7 @@ export struct SchedulePage {
       // 教室信息
       if (course.classroom && course.classroom.length > 0) {
         Row() {
-          Text('🏢 教室：')
+          Text('教室：')
             .fontSize(14)
             .fontColor('#666666')
           Text(course.classroom[0])
@@ -608,7 +608,7 @@ export struct SchedulePage {
       
       // 节次信息
       Row() {
-        Text('⏰ 节次：')
+        Text('节次：')
           .fontSize(14)
           .fontColor('#666666')
         Text(`第${course.section.join(',')}节`)
@@ -623,7 +623,7 @@ export struct SchedulePage {
       // 校区信息
       if (course.campus) {
         Row() {
-          Text('🏦 校区：')
+          Text('校区：')
             .fontSize(14)
             .fontColor('#666666')
           Text(course.campus)
@@ -635,27 +635,9 @@ export struct SchedulePage {
         .margin({ bottom: 8 })
         .alignItems(VerticalAlign.Center)
       }
-      
-      // 关闭按钮
-      Button('关闭')
-        .fontSize(12)
-        .fontColor('#45CAD9')
-        .backgroundColor('#E3F2FD')
-        .height(28)
-        .borderRadius(14)
-        .border({
-          width: 1,
-          color: '#45CAD9',
-          radius: 14
-        })
-        .padding({ left: 16, right: 16 })
-        .onClick(() => {
-          // 关闭所有弹窗
-          this.closeAllPopups();
-        })
     }
     .padding(12)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor($r('sys.color.comp_background_list_card'))
     .borderRadius(8)
     .shadow({
       radius: 10,
