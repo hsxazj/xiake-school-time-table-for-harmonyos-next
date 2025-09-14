@@ -5,6 +5,8 @@
 import { TreeHoleItem } from '../../models/TreeHoleModels';
 import { TreeHoleApiService } from '../../services/api/TreeHoleApiService';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
+import { curves } from '@kit.ArkUI';
+import { API_CONFIG } from '../../common/constants/AppConstants';
 
 @Component
 export struct TreeHolePage {
@@ -15,6 +17,7 @@ export struct TreeHolePage {
   @State private isLoggedIn: boolean = false;
   @State private currentPage: number = 1;
   @State private hasMore: boolean = true;
+  @State private transitionEffect: TransitionEffect = TransitionEffect.IDENTITY;
   // 服务实例
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
@@ -45,6 +48,7 @@ export struct TreeHolePage {
     .width('100%')
     .height('100%')
     .backgroundColor('#FAFAFA')
+    .transition(this.transitionEffect)
   }
 
   /**
@@ -203,11 +207,12 @@ export struct TreeHolePage {
     Column() {
       // 头部信息
       Row() {
-        Image($r('app.media.defaultAvatar'))
+        Image(item.avatar ? `${API_CONFIG.BASE_URL}${item.avatar}` : $r('app.media.defaultAvatar'))
           .width(35)
           .height(35)
           .borderRadius(20)
           .margin({ right: 10 })
+          .geometryTransition(`avatar_${item.id}`, { follow: true })
 
         Column() {
           Text(item.anonymous === 1 ? (item.nickName || `用户${item.userId}`) : item.realName)
@@ -215,6 +220,7 @@ export struct TreeHolePage {
             .fontColor('#666666')
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .geometryTransition(`author_${item.id}`, { follow: true })
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
@@ -233,6 +239,7 @@ export struct TreeHolePage {
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .width('100%')
         .margin({ bottom: 15, left: 10, right: 10 })
+        .geometryTransition(`content_${item.id}`, { follow: true })
 
       // 底部信息
       Row() {
@@ -254,6 +261,7 @@ export struct TreeHolePage {
             .fontColor('#A0ADCA')
         }
         .margin({ right: 15 })
+        .geometryTransition(`comment_${item.id}`, { follow: true })
 
         // 点赞
         Row() {
@@ -266,6 +274,7 @@ export struct TreeHolePage {
             .fontSize(12)
             .fontColor(item.isLike === 1 ? '#E8311A' : '#A0ADCA')
         }
+        .geometryTransition(`like_${item.id}`, { follow: true })
         .onClick(() => {
           this.handleLikeClick(item);
         })
@@ -372,8 +381,16 @@ export struct TreeHolePage {
    */
   private handleItemClick(item: TreeHoleItem): void {
     console.info(`🌳 [TreeHolePage] 查看树洞详情 ID:${item.id}`);
-    // 查看帖子不需要登录，直接跳转到详情页
-    this.pathStack.pushPathByName('TreeHoleDetailPage', item);
+    
+    // 设置转场效果
+    this.transitionEffect = TransitionEffect.OPACITY
+      .combine(TransitionEffect.scale({ x: 0.9, y: 0.9 }))
+      .animation({ curve: curves.interpolatingSpring(0, 1, 195, 23) });
+
+    // 使用动画跳转到详情页
+    this.getUIContext().animateTo({ curve: curves.interpolatingSpring(0, 1, 328, 36) }, () => {
+      this.pathStack.pushPathByName('TreeHoleDetailPage', item);
+    });
   }
 
   /**

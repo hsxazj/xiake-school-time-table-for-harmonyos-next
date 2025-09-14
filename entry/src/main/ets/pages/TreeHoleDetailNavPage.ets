@@ -5,6 +5,8 @@
 import { TreeHoleComment, TreeHoleItem } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
 import { LoginApiService } from '../services/api/LoginApiService';
+import { curves } from '@kit.ArkUI';
+import { API_CONFIG } from '../common/constants/AppConstants';
 
 @Builder
 export function TreeHoleDetailNavPageBuilder() {
@@ -22,6 +24,7 @@ struct TreeHoleDetailNavPage {
   @State private isLoggedIn: boolean = false;
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
+  @State private transitionEffect: TransitionEffect = TransitionEffect.IDENTITY;
   // 接收参数
   private treeHoleId: number = 0;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
@@ -60,7 +63,11 @@ struct TreeHoleDetailNavPage {
         .fontColor('#666666')
         .backgroundColor(Color.Transparent)
         .onClick(() => {
-          this.pathStack.pop();
+          // 设置返回转场效果
+          this.transitionEffect = TransitionEffect.IDENTITY;
+          this.getUIContext().animateTo({ curve: curves.interpolatingSpring(0, 1, 342, 38) }, () => {
+            this.pathStack.pop(false);
+          });
         })
 
       Text('树洞详情')
@@ -136,14 +143,16 @@ struct TreeHoleDetailNavPage {
           .width('100%')
           .margin({ bottom: 16 })
           .textAlign(TextAlign.Start)
+          .geometryTransition(`content_${this.treeHoleItem.id}`, { follow: true })
 
         // 作者信息
         Row() {
-          Image(this.treeHoleItem.avatar || $r('app.media.defaultAvatar'))
+          Image(this.treeHoleItem.avatar ? `${API_CONFIG.BASE_URL}${this.treeHoleItem.avatar}` : $r('app.media.defaultAvatar'))
             .width(32)
             .height(32)
             .borderRadius(16)
             .margin({ right: 12 })
+            .geometryTransition(`avatar_${this.treeHoleItem.id}`, { follow: true })
 
           Column() {
             Text(this.treeHoleItem.anonymous === 1 ?
@@ -152,6 +161,7 @@ struct TreeHoleDetailNavPage {
               .fontSize(14)
               .fontColor('#666666')
               .fontWeight(FontWeight.Medium)
+              .geometryTransition(`author_${this.treeHoleItem.id}`, { follow: true })
 
             Text(this.treeHoleItem.anonymous === 1 ? '匿名发布' : '实名发布')
               .fontSize(12)
@@ -176,12 +186,13 @@ struct TreeHoleDetailNavPage {
               .fontSize(12)
               .fontColor('#999999')
           }
+          .geometryTransition(`comment_${this.treeHoleItem.id}`, { follow: true })
 
           Blank()
 
           // 点赞操作
           Row() {
-            Image($r('app.media.like'))
+            Image(this.treeHoleItem.isLike === 1 ?$r('app.media.like_active'):$r('app.media.like'))
               .width(16)
               .height(16)
               .margin({ right: 4 })
@@ -199,6 +210,7 @@ struct TreeHoleDetailNavPage {
           })
           .borderRadius(12)
           .backgroundColor(this.treeHoleItem.isLike === 1 ? '#FFF0F0' : '#F5F5F5')
+          .geometryTransition(`like_${this.treeHoleItem.id}`, { follow: true })
           .onClick(() => {
             this.handleLikeClick();
           })
@@ -274,7 +286,7 @@ struct TreeHoleDetailNavPage {
   buildCommentItem(comment: TreeHoleComment) {
     Column() {
       Row() {
-        Image(comment.avatar || $r('app.media.defaultAvatar'))
+        Image(comment.avatar ? `${API_CONFIG.BASE_URL}${comment.avatar}` : $r('app.media.defaultAvatar'))
           .width(36)
           .height(36)
           .borderRadius(18)
@@ -333,11 +345,11 @@ struct TreeHoleDetailNavPage {
             .width(14)
             .height(14)
             .margin({ right: 4 })
-            .fillColor(comment.isDisliked ? '#999999' : '#CCCCCC')
+            .fillColor((comment.isDisliked ?? false) ? '#999999' : '#CCCCCC')
 
           Text(comment.dislikeCount.toString())
             .fontSize(12)
-            .fontColor(comment.isDisliked ? '#999999' : '#CCCCCC')
+            .fontColor((comment.isDisliked ?? false) ? '#999999' : '#CCCCCC')
         }
         .padding({
           left: 8,
@@ -346,7 +358,7 @@ struct TreeHoleDetailNavPage {
           bottom: 4
         })
         .borderRadius(12)
-        .backgroundColor(comment.isDisliked ? '#F0F0F0' : Color.Transparent)
+        .backgroundColor((comment.isDisliked ?? false) ? '#F0F0F0' : Color.Transparent)
         .margin({ right: 12 })
         .onClick(() => {
           if (this.isLoggedIn) {
@@ -358,15 +370,14 @@ struct TreeHoleDetailNavPage {
 
         // 点赞
         Row() {
-          Image($r('app.media.like'))
+          Image((comment.isLiked ?? false) ? $r('app.media.like_active') : $r('app.media.like'))
             .width(14)
             .height(14)
             .margin({ right: 4 })
-            .fillColor(comment.isLiked ? '#FF6B6B' : '#CCCCCC')
 
           Text(comment.likeCount.toString())
             .fontSize(12)
-            .fontColor(comment.isLiked ? '#FF6B6B' : '#CCCCCC')
+            .fontColor((comment.isLiked ?? false) ? '#FF6B6B' : '#CCCCCC')
         }
         .padding({
           left: 8,
@@ -554,6 +565,7 @@ struct TreeHoleDetailNavPage {
     }
     .title('树洞详情')
     .hideTitleBar(true)
+    .transition(this.transitionEffect)
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
 
@@ -571,7 +583,11 @@ struct TreeHoleDetailNavPage {
       console.info('🌳 [TreeHoleDetailNavPage] 页面就绪');
     })
     .onBackPressed(() => {
-      this.pathStack.pop();
+      // 设置返回转场效果
+      this.transitionEffect = TransitionEffect.IDENTITY;
+      this.getUIContext().animateTo({ curve: curves.interpolatingSpring(0, 1, 342, 38) }, () => {
+        this.pathStack.pop(false);
+      });
       return true;
     })
   }
@@ -634,7 +650,7 @@ struct TreeHoleDetailNavPage {
     try {
       console.info(`🌳 [TreeHoleDetailNavPage] 点赞评论 ${comment.id}`);
 
-      const newIsLiked = !comment.isLiked;
+      const newIsLiked = !(comment.isLiked ?? false);
       const result = await this.treeHoleApiService.toggleCommentLike(comment.id, newIsLiked);
 
       if (result.code === 200) {
@@ -657,7 +673,7 @@ struct TreeHoleDetailNavPage {
     try {
       console.info(`🌳 [TreeHoleDetailNavPage] 点踩评论 ${comment.id}`);
 
-      const newIsDisliked = !comment.isDisliked;
+      const newIsDisliked = !(comment.isDisliked ?? false);
       const result = await this.treeHoleApiService.toggleCommentDislike(comment.id, newIsDisliked);
 
       if (result.code === 200) {
