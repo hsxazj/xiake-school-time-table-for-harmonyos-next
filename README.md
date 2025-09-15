@@ -87,7 +87,7 @@ entry/src/main/ets/
 
 #### 1. 应用入口 (`OpenPage.ets`)
 
-- 启动页面展示和初始化处理  
+- 启动页面展示和初始化处理
 - `AppConfigManager` 配置初始化
 - 智能路由跳转逻辑
 

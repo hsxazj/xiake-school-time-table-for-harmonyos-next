@@ -3,8 +3,7 @@ import { CourseApiService, CourseInfo } from '../../services/api/CourseApiServic
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
-import { curves } from '@kit.ArkUI';
-import { promptAction } from '@kit.ArkUI';
+import { curves, promptAction } from '@kit.ArkUI';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -108,6 +107,7 @@ export struct SchedulePage {
   @State private courseBlockVisible: boolean[][] = [];
   // 课程弹窗状态管理
   @State private coursePopupStates: Map<string, boolean> = new Map();
+  private promptAction = this.getUIContext().getPromptAction();
 
   aboutToAppear(): void {
     // 基于日期的初始化逻辑
@@ -347,7 +347,7 @@ export struct SchedulePage {
       !this.courseBlockVisible[dayIndex] ||
       this.courseBlockVisible[dayIndex].length === 0 ||
       this.courseBlockVisible[dayIndex][courseIndex] !== false) {
-      
+
       // 处理空白占位块
       if (course.isPlaceholder) {
         // 渲染透明的占位块
@@ -358,6 +358,7 @@ export struct SchedulePage {
         .height(`${length * 8.33}%`)
         .backgroundColor(Color.Transparent) // 完全透明
         .margin({ top: 1, bottom: 1 })
+
         // 注意：没有onClick事件，不可点击
       } else {
         // 渲染正常课程块
@@ -503,8 +504,8 @@ export struct SchedulePage {
             Row() {
               Text(`第${weekNum}周`)
                 .fontSize(16)
-                .fontColor(this.isWeekSelectableForCurrentGrade(weekNum) 
-                  ? (this.currentWeek === weekNum ? '#45CAD9' : '#333333') 
+                .fontColor(this.isWeekSelectableForCurrentGrade(weekNum)
+                  ? (this.currentWeek === weekNum ? '#45CAD9' : '#333333')
                   : '#CCCCCC') // 不可选的周数显示灰色
                 .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
 
@@ -568,12 +569,12 @@ export struct SchedulePage {
         .margin({ bottom: 8 })
         .maxLines(2)
         .textAlign(TextAlign.Center)
-      
+
       Divider()
         .color('#E0E0E0')
         .strokeWidth(1)
         .margin({ bottom: 8 })
-      
+
       // 教师信息
       if (course.teacher && course.teacher.length > 0) {
         Row() {
@@ -589,7 +590,7 @@ export struct SchedulePage {
         .margin({ bottom: 6 })
         .alignItems(VerticalAlign.Center)
       }
-      
+
       // 教室信息
       if (course.classroom && course.classroom.length > 0) {
         Row() {
@@ -605,7 +606,7 @@ export struct SchedulePage {
         .margin({ bottom: 6 })
         .alignItems(VerticalAlign.Center)
       }
-      
+
       // 节次信息
       Row() {
         Text('节次：')
@@ -619,7 +620,7 @@ export struct SchedulePage {
       .width('100%')
       .margin({ bottom: 6 })
       .alignItems(VerticalAlign.Center)
-      
+
       // 校区信息
       if (course.campus) {
         Row() {
@@ -822,10 +823,10 @@ export struct SchedulePage {
   private calculateCourseLayout(): void {
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const originalCourses = this.scheduleGrid.nowClassList[dayIndex];
-      
+
       // 在课程间插入空白占位块
       const coursesWithPlaceholders = this.insertPlaceholdersForGaps(originalCourses);
-      
+
       // 更新课程列表
       this.scheduleGrid.nowClassList[dayIndex] = coursesWithPlaceholders;
 
@@ -1185,7 +1186,7 @@ export struct SchedulePage {
     if (!this.currentSemester) {
       return true;
     }
-    
+
     const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
     return this.configService.isWeekValidForGrade(this.currentSemester, weekNum, userInfo.className);
   }
@@ -1223,7 +1224,7 @@ export struct SchedulePage {
    * 显示年级限制提示
    */
   private showGradeRestrictedToast(): void {
-    promptAction.showToast({
+    this.promptAction.showToast({
       message: '该学期不在您的修读范围内',
       duration: 2000,
       bottom: '100vp'
@@ -1238,7 +1239,7 @@ export struct SchedulePage {
     if (!this.currentSemester) {
       return false;
     }
-    
+
     const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
     return this.configService.canSwitchSemester(this.currentSemester, 'prev', userInfo.className);
   }
@@ -1250,7 +1251,7 @@ export struct SchedulePage {
     if (!this.currentSemester) {
       return false;
     }
-    
+
     const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
     return this.configService.canSwitchSemester(this.currentSemester, 'next', userInfo.className);
   }
@@ -1259,7 +1260,7 @@ export struct SchedulePage {
    * 显示暂无数据提示
    */
   private showNoDataToast(): void {
-    promptAction.showToast({
+    this.promptAction.showToast({
       message: '暂无数据',
       duration: 2000,
       bottom: '100vp'
@@ -1325,7 +1326,7 @@ export struct SchedulePage {
    * 课程块点击事件（参考show-list.vue的showItem方法）
    */
   private onCourseBlockClick(course: ScheduleCourse, dayIndex: number, courseIndex: number): void {
-    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`); 
+    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
     // 此方法现在由buildCourseBlock中的onClick直接处理弹窗逻辑
   }
 
@@ -1344,7 +1345,7 @@ export struct SchedulePage {
     if (!courseName) {
       return false;
     }
-    
+
     const courseKey = this.getCourseKey(dayIndex, courseIndex, courseName);
     return this.coursePopupStates.get(courseKey) || false;
   }
@@ -1359,10 +1360,10 @@ export struct SchedulePage {
         this.coursePopupStates.set(key, false);
       }
     });
-    
+
     // 设置当前课程弹窗状态
     this.coursePopupStates.set(courseKey, show);
-    
+
     console.info(`📚 [Popup] ${show ? '显示' : '隐藏'}课程弹窗: ${courseKey}`);
   }
 
@@ -1384,7 +1385,7 @@ export struct SchedulePage {
     for (let i = startSection; i <= endSection; i++) {
       sections.push(i);
     }
-    
+
     return {
       courseName: '', // 空字符串
       classroom: [],
@@ -1409,11 +1410,11 @@ export struct SchedulePage {
     // 按节次排序
     const sortedCourses = courses.sort((a, b) => a.section[0] - b.section[0]);
     const result: ScheduleCourse[] = [];
-    
+
     // 处理第一门课程前的空白间隙
     const firstCourse = sortedCourses[0];
     const firstStart = firstCourse.section[0];
-    
+
     // 如果第一门课不是从第1节开始，则填充前面的空白
     if (firstStart > 1) {
       for (let section = 1; section < firstStart; section++) {
@@ -1421,25 +1422,25 @@ export struct SchedulePage {
         result.push(placeholder);
       }
     }
-    
+
     // 处理课程间的间隙
     for (let i = 0; i < sortedCourses.length; i++) {
       const currentCourse = sortedCourses[i];
-      
+
       // 添加当前课程
       result.push(currentCourse);
-      
+
       // 检查是否需要在下一门课之前插入空白块
       if (i < sortedCourses.length - 1) {
         const nextCourse = sortedCourses[i + 1];
         const currentEnd = currentCourse.section[currentCourse.section.length - 1];
         const nextStart = nextCourse.section[0];
-        
+
         // 如果存在间隙（下一门课不是紧接着当前课的）
         if (nextStart - currentEnd > 1) {
           const gapStart = currentEnd + 1;
           const gapEnd = nextStart - 1;
-          
+
           // 为间隙中的每个节次创建占位块
           for (let section = gapStart; section <= gapEnd; section++) {
             const placeholder = this.createPlaceholderCourse(section, section);
@@ -1448,7 +1449,7 @@ export struct SchedulePage {
         }
       }
     }
-    
+
     console.info(`📚 [Course Layout] 原始课程${courses.length}门，添加占位块后${result.length}个元素`);
     return result;
   }

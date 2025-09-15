@@ -36,25 +36,6 @@ struct TreeHoleDetailNavPage {
     this.startFadeInAnimation();
   }
 
-  /**
-   * 检查登录状态
-   */
-  private checkLoginStatus(): void {
-    this.isLoggedIn = this.loginService.isLoggedIn();
-    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态: ${this.isLoggedIn}`);
-  }
-
-  /**
-   * 启动渐显动画
-   */
-  private startFadeInAnimation(): void {
-    setTimeout(() => {
-      this.pageOpacity = 1;
-      this.pageTranslateY = 0;
-      console.info('[TreeHoleDetailNavPage] 🎬 启动渐显动画');
-    }, 100);
-  }
-
   @Builder
   buildTitleBar() {
     Row() {
@@ -147,7 +128,8 @@ struct TreeHoleDetailNavPage {
 
         // 作者信息
         Row() {
-          Image(this.treeHoleItem.avatar ? `${API_CONFIG.BASE_URL}${this.treeHoleItem.avatar}` : $r('app.media.defaultAvatar'))
+          Image(this.treeHoleItem.avatar ? `${API_CONFIG.BASE_URL}${this.treeHoleItem.avatar}` :
+          $r('app.media.defaultAvatar'))
             .width(32)
             .height(32)
             .borderRadius(16)
@@ -192,7 +174,7 @@ struct TreeHoleDetailNavPage {
 
           // 点赞操作
           Row() {
-            Image(this.treeHoleItem.isLike === 1 ?$r('app.media.like_active'):$r('app.media.like'))
+            Image(this.treeHoleItem.isLike === 1 ? $r('app.media.like_active') : $r('app.media.like'))
               .width(16)
               .height(16)
               .margin({ right: 4 })
@@ -540,7 +522,35 @@ struct TreeHoleDetailNavPage {
     })
   }
 
+  /**
+   * 设置树洞数据
+   */
+  public setTreeHoleItem(item: TreeHoleItem): void {
+    this.treeHoleItem = item;
+    this.treeHoleId = item.id;
+    console.info(`🌳 [TreeHoleDetailNavPage] 设置树洞数据，ID: ${item.id}`);
+  }
+
+  /**
+   * 检查登录状态
+   */
+  private checkLoginStatus(): void {
+    this.isLoggedIn = this.loginService.isLoggedIn();
+    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态: ${this.isLoggedIn}`);
+  }
+
   // ===== 事件处理方法 =====
+
+  /**
+   * 启动渐显动画
+   */
+  private startFadeInAnimation(): void {
+    setTimeout(() => {
+      this.pageOpacity = 1;
+      this.pageTranslateY = 0;
+      console.info('[TreeHoleDetailNavPage] 🎬 启动渐显动画');
+    }, 100);
+  }
 
   /**
    * 加载评论数据
@@ -734,14 +744,5 @@ struct TreeHoleDetailNavPage {
         }
       }
     });
-  }
-
-  /**
-   * 设置树洞数据
-   */
-  public setTreeHoleItem(item: TreeHoleItem): void {
-    this.treeHoleItem = item;
-    this.treeHoleId = item.id;
-    console.info(`🌳 [TreeHoleDetailNavPage] 设置树洞数据，ID: ${item.id}`);
   }
 }

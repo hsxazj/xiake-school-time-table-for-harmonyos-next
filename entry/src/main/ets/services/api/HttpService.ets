@@ -112,6 +112,19 @@ export class HttpService {
   }
 
   /**
+   * 直接GET请求 - 用于特殊接口，不包装在ApiResponse中
+   * 适用于像/getInfo这样直接返回完整数据的接口
+   */
+  public async getDirect<RES>(url: string): Promise<RES> {
+    try {
+      const response: AxiosResponse<RES> = await this.axiosInstance.get<RES>(url);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  /**
    * 通用请求方法 (保持向后兼容)
    */
   public async request<T>(

@@ -47,7 +47,7 @@ struct TodayCourseCard {
         .layoutWeight(1)
       } else if (this.errorMessage !== '') {
         Column() {
-          Text(this.errorMessage+'🥳')
+          Text(this.errorMessage + '🥳')
             .fontColor(this.FONT_COLOR)
             .fontSize(14)
             .margin({ bottom: 8 })

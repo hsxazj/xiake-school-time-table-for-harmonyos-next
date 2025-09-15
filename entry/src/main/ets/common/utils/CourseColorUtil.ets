@@ -13,7 +13,6 @@ export class CourseColorUtil {
     '#E8EAF6', '#FFEBEE', '#E0F7FA', '#FFF9C4',
     '#F1F8F0', '#FFEAA7', '#DDD6FE', '#FEF3C7'
   ];
-
   // 文字颜色数组（深色调）
   private static readonly TEXT_COLORS: string[] = [
     '#1565C0', '#7B1FA2', '#2E7D32', '#EF6C00',
@@ -22,7 +21,6 @@ export class CourseColorUtil {
     '#5E35B1', '#C62828', '#00838F', '#AFB42B',
     '#388E3C', '#FF8F00', '#512DA8', '#FBC02D'
   ];
-
   // 边框颜色数组（中等色调）
   private static readonly BORDER_COLORS: string[] = [
     '#42A5F5', '#BA68C8', '#66BB6A', '#FF9800',

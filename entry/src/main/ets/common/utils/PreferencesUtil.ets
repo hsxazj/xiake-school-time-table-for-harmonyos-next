@@ -6,9 +6,9 @@ const PREFERENCES_NAME: string = 'SchoolTimeTablePreferences';
 let preference: dataPreferences.Preferences | null = null;
 
 export class PreferencesUtil {
+  private static preferencesUtil: PreferencesUtil;
   private preferenceName: string = PREFERENCES_NAME;
   private groupId: string = '';
-  private static preferencesUtil: PreferencesUtil;
 
   public static getInstance(): PreferencesUtil {
     if (!PreferencesUtil.preferencesUtil) {
@@ -22,15 +22,15 @@ export class PreferencesUtil {
     let options: preferences.Options = {
       name: this.preferenceName
     };
-    
+
     // 只有在groupId不为空时才添加dataGroupId
     if (this.groupId && this.groupId.trim() !== '') {
       options.dataGroupId = this.groupId;
     }
-    
+
     // 先从缓存里清掉旧的，防止拿错实例
     preferences.removePreferencesFromCacheSync(context, this.preferenceName);
-    
+
     return preferences.getPreferencesSync(context, options);
   }
 
@@ -52,7 +52,7 @@ export class PreferencesUtil {
   putValue(context: Context | undefined, key: string, value: preferences.ValueType, override: boolean = true) {
     try {
       const preferences = this.getPreferences(context);
-      
+
       if (preferences.hasSync(key)) {
         console.info(`The key ${key} is contained.`);
         if (override) {
@@ -92,7 +92,7 @@ export class PreferencesUtil {
    * @param context 上下文
    * @param key 键
    */
-  removeValue(context: Context  | undefined, key: string) {
+  removeValue(context: Context | undefined, key: string) {
     try {
       const preferences = this.getPreferences(context);
       preferences.deleteSync(key);
@@ -113,7 +113,7 @@ export class PreferencesUtil {
     try {
       const preferences = this.getPreferences(context);
       preferences.clearSync();
-      
+
       // 使用同步刷新确保数据立即写入
       preferences.flushSync();
       console.info('Successfully cleared all data');

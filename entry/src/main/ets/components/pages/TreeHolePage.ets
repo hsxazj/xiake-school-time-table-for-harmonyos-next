@@ -5,22 +5,27 @@
 import { TreeHoleItem } from '../../models/TreeHoleModels';
 import { TreeHoleApiService } from '../../services/api/TreeHoleApiService';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
+import { UserApiService } from '../../services/api/UserApiService';
+import { SimpleUserInfo } from '../../models/UserModels';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../../common/constants/AppConstants';
 
 @Component
 export struct TreeHolePage {
   @Consume('NavStack') pathStack: NavPathStack;
+  @StorageLink('loginStatusChanged') @Watch('onLoginStatusChanged') loginStatusChanged: number = 0;
   @State private treeHoleList: TreeHoleItem[] = [];
   @State private isLoading: boolean = false;
   @State private isRefreshing: boolean = false;
   @State private isLoggedIn: boolean = false;
+  @State private currentUser: SimpleUserInfo | null = null;
   @State private currentPage: number = 1;
   @State private hasMore: boolean = true;
   @State private transitionEffect: TransitionEffect = TransitionEffect.IDENTITY;
   // 服务实例
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+  private userApiService: UserApiService = UserApiService.getInstance();
   // 分页参数
   private readonly pageSize: number = 10;
 
@@ -33,7 +38,7 @@ export struct TreeHolePage {
   onPageShow(): void {
     console.info('🌳 [TreeHolePage] 页面显示');
     // 每次页面显示时刷新登录状态
-    this.checkLoginStatus();
+    this.checkLoginStatusAsync();
   }
 
   build() {
@@ -69,7 +74,12 @@ export struct TreeHolePage {
           ListItem() {
             this.buildTreeHoleItem(item)
           }
-          .margin({ left: 20, right: 20, top: 8, bottom: 12 })
+          .margin({
+            left: 20,
+            right: 20,
+            top: 8,
+            bottom: 12
+          })
         }, (item: TreeHoleItem) => item.id.toString())
 
         // 加载更多指示器
@@ -299,15 +309,61 @@ export struct TreeHolePage {
     })
   }
 
+  /**
+   * 监听登录状态变化
+   */
+  private onLoginStatusChanged(): void {
+    console.info(`🌳 [TreeHolePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    // 登录状态变化时重新检查
+    this.checkLoginStatusAsync();
+  }
+
   // ===== 事件处理方法 =====
 
   /**
-   * 检查登录状态
+   * 检查登录状态（同步方法，用于快速检查）
    */
   private checkLoginStatus(): void {
-    // 暂时设为false，待登录功能实现后更新
-    this.isLoggedIn = false;
-    console.info(`🌳 [TreeHolePage] 登录状态: ${this.isLoggedIn}`);
+    try {
+      // 使用同步方法快速检查登录状态
+      const isLoggedIn = this.userInfoManager.isLoggedInSync(this.getUIContext().getHostContext());
+      this.isLoggedIn = isLoggedIn;
+
+      if (isLoggedIn) {
+        this.currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+        console.info(`🌳 [TreeHolePage] 用户已登录 - ${this.currentUser?.realName} (${this.currentUser?.userName})`);
+      } else {
+        this.currentUser = null;
+        console.info(`🌳 [TreeHolePage] 用户未登录`);
+      }
+    } catch (error) {
+      console.error(`🌳 [TreeHolePage] 检查登录状态失败: ${error}`);
+      this.isLoggedIn = false;
+      this.currentUser = null;
+    }
+  }
+
+  /**
+   * 异步检查登录状态（完整验证，包括token验证）
+   */
+  private async checkLoginStatusAsync(): Promise<void> {
+    try {
+      console.info('🌳 [TreeHolePage] 开始异步验证登录状态');
+      const isLoggedIn = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
+
+      this.isLoggedIn = isLoggedIn;
+      this.currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+
+      if (isLoggedIn && this.currentUser) {
+        console.info(`🌳 [TreeHolePage] 登录验证成功 - ${this.currentUser.realName}`);
+      } else {
+        console.info('🌳 [TreeHolePage] 登录验证失败或用户未登录');
+      }
+    } catch (error) {
+      console.error(`🌳 [TreeHolePage] 异步登录状态检查失败: ${error}`);
+      this.isLoggedIn = false;
+      this.currentUser = null;
+    }
   }
 
   /**
@@ -381,7 +437,22 @@ export struct TreeHolePage {
     }
 
     console.info('🌳 [TreeHolePage] 跳转到发布页面');
-    // this.pathStack.pushPathByName('TreeHolePostPage', null);
+    try {
+      this.pathStack.pushPathByName('TreeHolePostPage', null);
+    } catch (error) {
+      console.error('🌳 [TreeHolePage] 跳转发布页面失败:', error);
+      // 显示错误提示
+      this.getUIContext().showAlertDialog({
+        title: '跳转失败',
+        message: '无法打开发布页面，请重试',
+        primaryButton: {
+          value: '确定',
+          action: () => {
+            // 不做任何操作
+          }
+        }
+      });
+    }
   }
 
   /**
@@ -389,7 +460,7 @@ export struct TreeHolePage {
    */
   private handleItemClick(item: TreeHoleItem): void {
     console.info(`🌳 [TreeHolePage] 查看树洞详情 ID:${item.id}`);
-    
+
     // 设置转场效果
     this.transitionEffect = TransitionEffect.OPACITY
       .combine(TransitionEffect.scale({ x: 0.9, y: 0.9 }))
@@ -435,18 +506,22 @@ export struct TreeHolePage {
     // 显示登录提示和登录按钮
     this.getUIContext().showAlertDialog({
       title: '需要登录',
-      message: '请先登录后再使用此功能',
+      message: '请先完成学籍信息设置后再使用此功能',
       primaryButton: {
-        value: '暂不登录',
+        value: '暂不设置',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户取消登录');
+          console.info('🌳 [TreeHolePage] 用户取消设置学籍信息');
         }
       },
       secondaryButton: {
-        value: '去登录',
+        value: '去设置',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户选择去登录');
-          // TODO: 跳转到登录页面
+          console.info('🌳 [TreeHolePage] 用户选择去设置学籍信息');
+          try {
+            this.pathStack.pushPathByName('ClassSelectNavPage', null);
+          } catch (error) {
+            console.error('🌳 [TreeHolePage] 跳转班级选择页面失败:', error);
+          }
         }
       }
     });

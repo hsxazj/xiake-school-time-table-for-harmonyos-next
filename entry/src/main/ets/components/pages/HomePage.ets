@@ -312,10 +312,10 @@ export struct HomePage {
     // 直接基于今天的日期计算学期状态，避免受课表页面滑动影响
     const today = new Date();
     const configService = this.appConfigManager.getConfigService();
-    
+
     // 使用ConfigService直接计算今天对应的学期状态
     const todayStatus = configService.calculateCurrentSemesterStatus(today);
-    
+
     if (!todayStatus || !todayStatus.currentSemester) {
       console.warn('未找到当前学期信息');
       return;

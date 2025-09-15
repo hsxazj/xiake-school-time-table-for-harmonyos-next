@@ -2,7 +2,6 @@ import { SelectItem } from '../components/base/SelectItem';
 import { CollegeApiService } from '../services/api/CollegeApiService';
 import { UserInfoManager, UserSchoolInfo } from '../common/utils/UserInfoManager';
 import { ClassInfo, College, Major, UserSelection } from '../models/CollegeModels';
-import { FormService } from '../services/FormService';
 
 @Builder
 export function ClassSelectNavPageBuilder() {
@@ -28,7 +27,6 @@ struct ClassSelectNavPage {
   @State private selectedClassIndex: number = 0;
   private collegeApiService: CollegeApiService = CollegeApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
-  private formService: FormService = FormService.getInstance();
   @State private showCollegePicker: boolean = false;
   @State private showMajorPicker: boolean = false;
   @State private showClassPicker: boolean = false;

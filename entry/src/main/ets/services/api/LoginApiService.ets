@@ -1,5 +1,5 @@
-import { HttpService, ApiResponse } from './HttpService';
-import { LoginRequest, LoginResponse, LoginForm } from '../../models/LoginModels';
+import { HttpService } from './HttpService';
+import { LoginForm, LoginRequest, LoginResponse } from '../../models/LoginModels';
 import { RsaPkcs1Util } from '../../common/utils/RsaPkcs1Util';
 import { RSA_PUBLIC_KEY } from '../../common/constants/AppConstants';
 import { PreferencesUtil } from '../../common/utils/PreferencesUtil';
@@ -36,10 +36,10 @@ export class LoginApiService {
   public async login(loginForm: LoginForm, context?: common.UIAbilityContext): Promise<LoginResponse> {
     try {
       hilog.info(DOMAIN, 'LoginApi', `🔐 [Login] 开始登录: ${loginForm.username}`);
-      
+
       // 1. RSA加密密码
       const encryptedPassword = await this.encryptPassword(loginForm.password);
-      
+
       // 2. 构建请求参数
       const loginRequest: LoginRequest = {
         username: loginForm.username,
@@ -60,11 +60,11 @@ export class LoginApiService {
       // 4. 检查响应状态
       if (response.code === 200 && response.token) {
         hilog.info(DOMAIN, 'LoginApi', '✅ [Login] 登录成功');
-        
+
         // 5. 保存token到AppStorage
         AppStorage.setOrCreate('token', response.token);
         hilog.info(DOMAIN, 'LoginApi', '💾 [Login] Token已保存到AppStorage');
-        
+
         // 6. 将token持久化到首选项
         if (context) {
           try {
@@ -78,7 +78,7 @@ export class LoginApiService {
         } else {
           hilog.warn(DOMAIN, 'LoginApi', '⚠️ [Login] 未提供context，Token未持久化');
         }
-        
+
         return response;
       } else {
         const errorMsg = response.msg || '登录失败';
@@ -87,7 +87,7 @@ export class LoginApiService {
       }
     } catch (error) {
       hilog.error(DOMAIN, 'LoginApi', `💥 [Login] 登录异常: ${JSON.stringify(error)}`);
-      
+
       // 统一错误处理
       if (error instanceof Error) {
         throw error;
@@ -104,7 +104,7 @@ export class LoginApiService {
   public isLoggedIn(): boolean {
     const token = AppStorage.get<string>('token');
     const hasToken = !!(token && token.trim().length > 0);
-    
+
     hilog.info(DOMAIN, 'LoginApi', `🔍 [Token] 检查登录状态: ${hasToken ? '已登录' : '未登录'}`);
     return hasToken;
   }
@@ -115,11 +115,11 @@ export class LoginApiService {
    */
   public logout(context?: Context): void {
     hilog.info(DOMAIN, 'LoginApi', '🚪 [Logout] 用户退出登录');
-    
+
     // 清除AppStorage中的token
     AppStorage.setOrCreate('token', '');
     hilog.info(DOMAIN, 'LoginApi', '🗑️ [Logout] AppStorage中的Token已清除');
-    
+
     // 清除首选项中的token
     if (context) {
       try {
@@ -151,9 +151,9 @@ export class LoginApiService {
   private async encryptPassword(plainPassword: string): Promise<string> {
     try {
       hilog.info(DOMAIN, 'LoginApi', '🔒 [Encrypt] 开始加密密码');
-      
+
       const encryptedPassword = await RsaPkcs1Util.encrypt(RSA_PUBLIC_KEY, plainPassword);
-      
+
       hilog.info(DOMAIN, 'LoginApi', '🔒 [Encrypt] 密码加密成功');
       return encryptedPassword;
     } catch (error) {

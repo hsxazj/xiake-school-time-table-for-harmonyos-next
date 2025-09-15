@@ -1,7 +1,7 @@
 import { LoginApiService } from '../../services/api/LoginApiService';
 import { LoginForm, LoginStatus } from '../../models/LoginModels';
+import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x3000; // Login Page domain
@@ -33,6 +33,7 @@ struct LoginNavPage {
 @Component
 @Preview
 export struct LoginPageContent {
+  @Consume('NavStack') pathStack: NavPathStack;
   @State private loginForm: LoginForm = {
     username: '',
     password: ''
@@ -42,25 +43,13 @@ export struct LoginPageContent {
   @State private showPassword: boolean = false;
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
-  @Consume('NavStack') pathStack: NavPathStack;
-
+  private promptAction = this.getUIContext().getPromptAction();
   private loginService: LoginApiService = LoginApiService.getInstance();
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     // 启动渐显动画
     this.startFadeInAnimation();
-  }
-
-  /**
-   * 启动渐显动画
-   */
-  private startFadeInAnimation(): void {
-    // 短暂延时后启动动画，让组件先完成初始化
-    setTimeout(() => {
-      this.pageOpacity = 1;
-      this.pageTranslateY = 0;
-      console.info('[LoginPage] 🎬 启动渐显动画');
-    }, 100);
   }
 
   build() {
@@ -210,6 +199,18 @@ export struct LoginPageContent {
   }
 
   /**
+   * 启动渐显动画
+   */
+  private startFadeInAnimation(): void {
+    // 短暂延时后启动动画，让组件先完成初始化
+    setTimeout(() => {
+      this.pageOpacity = 1;
+      this.pageTranslateY = 0;
+      console.info('[LoginPage] 🎬 启动渐显动画');
+    }, 100);
+  }
+
+  /**
    * 处理登录逻辑
    */
   private async handleLogin(): Promise<void> {
@@ -224,7 +225,7 @@ export struct LoginPageContent {
       hilog.info(DOMAIN, 'LoginPage', `🔐 [Login] 开始登录: ${this.loginForm.username}`);
 
       // 获取UIAbilityContext
-      const context = getContext(this) as common.UIAbilityContext;
+      const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
 
       // 调用登录API，传递context用于token持久化
       await this.loginService.login(this.loginForm, context);
@@ -232,12 +233,22 @@ export struct LoginPageContent {
       this.loginStatus = LoginStatus.SUCCESS;
       hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 登录成功');
 
+      // 登录成功后自动获取用户信息
+      try {
+        hilog.info(DOMAIN, 'LoginPage', '🔄 [Login] 开始获取用户信息...');
+        await this.userInfoManager.checkLoginStatus(context);
+        hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 用户信息获取成功');
+      } catch (error) {
+        hilog.error(DOMAIN, 'LoginPage', `⚠️ [Login] 获取用户信息失败: ${JSON.stringify(error)}`);
+        // 用户信息获取失败不影响登录流程
+      }
+
       // 登录成功的提示
       this.showSuccessMessage();
 
     } catch (error) {
       this.loginStatus = LoginStatus.FAILED;
-      
+
       if (error instanceof Error) {
         this.errorMessage = error.message;
         hilog.error(DOMAIN, 'LoginPage', `❌ [Login] 登录失败: ${error.message}`);
@@ -254,7 +265,7 @@ export struct LoginPageContent {
   private isFormValid(): boolean {
     return !!(
       this.loginForm.username.trim().length > 0 &&
-      this.loginForm.password.trim().length > 0
+        this.loginForm.password.trim().length > 0
     );
   }
 
@@ -275,15 +286,15 @@ export struct LoginPageContent {
    */
   private showSuccessMessage(): void {
     // 显示成功提示
-    promptAction.showToast({
+    this.promptAction.showToast({
       message: '登录成功！',
       duration: 2000,
       bottom: 100
     });
-    
+
     // 启动渐隐动画
     this.startFadeOutAnimation();
-    
+
     hilog.info(DOMAIN, 'LoginPage', '🎉 [Success] 登录成功提示已显示');
   }
 
@@ -296,13 +307,13 @@ export struct LoginPageContent {
       // 开始渐隐动画
       this.pageOpacity = 0;
       hilog.info(DOMAIN, 'LoginPage', '🎬 [Animation] 开始渐隐动画');
-      
+
       // 动画完成后关闭模态页面
       setTimeout(() => {
         // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
         AppStorage.setOrCreate('loginStatusChanged', Date.now());
         hilog.info(DOMAIN, 'LoginPage', '📢 [Notification] 发送登录状态变化通知');
-        
+
         // 关闭模态页面
         this.pathStack.pop();
         hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 关闭登录模态页面');

@@ -6,6 +6,7 @@
 export interface LoginRequest {
   /** 用户名/学号 */
   username: string;
+
   /** RSA加密后的密码 */
   password: string;
 }
@@ -16,8 +17,10 @@ export interface LoginRequest {
 export interface LoginResponse {
   /** 响应消息 */
   msg: string;
+
   /** 状态码，200为成功 */
   code: number;
+
   /** 认证token */
   token: string;
 }
@@ -28,6 +31,7 @@ export interface LoginResponse {
 export interface LoginForm {
   /** 用户名/学号 */
   username: string;
+
   /** 明文密码 */
   password: string;
 }

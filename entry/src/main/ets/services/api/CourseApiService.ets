@@ -24,7 +24,7 @@ export class CourseApiService {
   public async getCourseList(params: CourseRequestParams): Promise<ApiResponse<CourseInfo[]>> {
     try {
 
-      const response = await this.httpService.get<CourseRequestParams,CourseInfo[]>('/course', params);
+      const response = await this.httpService.get<CourseRequestParams, CourseInfo[]>('/course', params);
 
       return {
         msg: "操作成功",
@@ -40,7 +40,8 @@ export class CourseApiService {
   /**
    * 获取今日课程列表 (使用getCourseFilter接口)
    */
-  public async getTodayCourseList(classId: string, year: number, term: string, weeks: number, weekday: string): Promise<ApiResponse<CourseInfo[]>> {
+  public async getTodayCourseList(classId: string, year: number, term: string, weeks: number,
+    weekday: string): Promise<ApiResponse<CourseInfo[]>> {
     try {
       // 构建请求参数，使用接口类型
       const params: TodayCourseRequestParams = {
@@ -51,7 +52,8 @@ export class CourseApiService {
         weekday: weekday
       };
 
-      const response = await this.httpService.get<TodayCourseRequestParams,CourseInfo[]>('/course/getCourseFilter', params);
+      const response =
+        await this.httpService.get<TodayCourseRequestParams, CourseInfo[]>('/course/getCourseFilter', params);
 
       return {
         msg: "操作成功",
