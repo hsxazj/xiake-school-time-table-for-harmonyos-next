@@ -338,7 +338,7 @@ export struct MinePage {
    * 显示退出登录确认对话框
    */
   private showLogoutConfirmDialog(): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '退出登录',
       message: '确认要退出当前账户吗？',
       alignment: DialogAlignment.Center,

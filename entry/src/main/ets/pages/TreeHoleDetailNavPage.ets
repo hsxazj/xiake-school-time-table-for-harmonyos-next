@@ -725,7 +725,7 @@ struct TreeHoleDetailNavPage {
    * 显示需要登录的对话框
    */
   private showLoginRequiredDialog(): void {
-    AlertDialog.show({
+    this.getUIContext().showAlertDialog({
       title: '需要登录',
       message: '点赞和评论功能需要登录后才能使用',
       alignment: DialogAlignment.Center,
