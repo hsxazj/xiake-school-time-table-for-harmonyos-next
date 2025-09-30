@@ -410,8 +410,14 @@ struct TreeHoleDetailNavPage {
     }
     .width('100%')
     .backgroundColor('#FFFFFF')
-    .borderColor('#E5E5E5')
-    .borderWidth({ top: 1 })
+    // 完全移除顶部边框，使用阴影替代分隔效果
+    .shadow({
+      radius: 4,
+      color: '#10000000',
+      offsetX: 0,
+      offsetY: -2
+    })
+    .padding({ top: 16 }) // 增加顶部内边距
   }
 
   @Builder
