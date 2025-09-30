@@ -339,17 +339,27 @@ struct TreeHoleDetailNavPage {
   @Builder
   buildCommentInput() {
     Column() {
-      // 字数统计提示
-      if (this.commentText.length > 0) {
-        Row() {
-          Blank()
-          Text(`${this.commentText.length}/500`)
-            .fontSize(12)
-            .fontColor(this.commentText.length > 500 ? '#FF6B6B' : '#999999')
-        }
-        .width('100%')
-        .padding({ left: 16, right: 16, bottom: 8 })
+      // 字数统计提示（添加动画效果）
+      Row() {
+        Blank()
+        Text(`${this.commentText.length}/500`)
+          .fontSize(12)
+          .fontColor(this.commentText.length > 500 ? '#FF6B6B' : '#999999')
       }
+      .width('100%')
+      .height(this.commentText.length > 0 ? 32 : 0) // 动态高度
+      .opacity(this.commentText.length > 0 ? 1 : 0) // 动态透明度
+      .padding({ 
+        left: 16, 
+        right: 16, 
+        bottom: this.commentText.length > 0 ? 8 : 0 // 动态内边距
+      })
+      .animation({
+        duration: 300,
+        curve: Curve.EaseInOut,
+        iterations: 1,
+        playMode: PlayMode.Normal
+      }) // 添加动画效果
 
       // 输入框和发送按钮
       Row() {
@@ -388,6 +398,16 @@ struct TreeHoleDetailNavPage {
             .borderRadius(20)
             .backgroundColor('#F0F8FF')
             .margin({ left: 12 })
+            .transition({
+              type: TransitionType.Insert,
+              opacity: 1,
+              translate: { x: 0, y: 0 }
+            })
+            .transition({
+              type: TransitionType.Delete,
+              opacity: 0,
+              translate: { x: 20, y: 0 }
+            })
           } else {
             // 正常发送按钮
             Button('发送')
@@ -401,6 +421,16 @@ struct TreeHoleDetailNavPage {
               .enabled(!this.isCommenting && this.commentText.length <= 500)
               .onClick(() => {
                 this.handleSendComment();
+              })
+              .transition({
+                type: TransitionType.Insert,
+                opacity: 1,
+                translate: { x: 0, y: 0 }
+              })
+              .transition({
+                type: TransitionType.Delete,
+                opacity: 0,
+                translate: { x: 20, y: 0 }
               })
           }
         }
