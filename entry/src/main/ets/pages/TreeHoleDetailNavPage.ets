@@ -19,6 +19,7 @@ export function TreeHoleDetailNavPageBuilder() {
 @Component
 struct TreeHoleDetailNavPage {
   @Consume('NavStack') pathStack: NavPathStack;
+  @StorageLink('loginStatusChanged') @Watch('onLoginStatusChanged') loginStatusChanged: number = 0;
   @State private treeHoleItem: TreeHoleItem | null = null;
   @State private commentsList: TreeHoleComment[] = [];
   @State private isLoading: boolean = false;
@@ -42,6 +43,12 @@ struct TreeHoleDetailNavPage {
     console.info('🌳 [TreeHoleDetailNavPage] 页面初始化');
     this.checkLoginStatus();
     this.startFadeInAnimation();
+  }
+
+  onPageShow(): void {
+    console.info('🌳 [TreeHoleDetailNavPage] 页面显示');
+    // 每次页面显示时刷新登录状态
+    this.checkLoginStatusAsync();
   }
 
   @Builder
@@ -506,8 +513,13 @@ struct TreeHoleDetailNavPage {
           bottom: 6
         })
         .onClick(() => {
-          // 可以在这里添加跳转到登录页面的逻辑
+          // 跳转到登录页面
           console.info('🌳 [TreeHoleDetailNavPage] 用户点击去登录');
+          try {
+            this.pathStack.pushPathByName('LoginNavPage', null);
+          } catch (error) {
+            console.error('🌳 [TreeHoleDetailNavPage] 跳转登录页面失败:', error);
+          }
         })
     }
     .width('100%')
@@ -655,6 +667,28 @@ struct TreeHoleDetailNavPage {
   }
 
   /**
+   * 异步检查登录状态（完整验证，包括token验证）
+   */
+  private async checkLoginStatusAsync(): Promise<void> {
+    try {
+      console.info('🌳 [TreeHoleDetailNavPage] 开始异步验证登录状态');
+      const isLoggedIn = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
+
+      this.isLoggedIn = isLoggedIn;
+      const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+
+      if (isLoggedIn && currentUser) {
+        console.info(`🌳 [TreeHoleDetailNavPage] 登录验证成功 - ${currentUser.realName}`);
+      } else {
+        console.info('🌳 [TreeHoleDetailNavPage] 登录验证失败或用户未登录');
+      }
+    } catch (error) {
+      console.error(`🌳 [TreeHoleDetailNavPage] 异步登录状态检查失败: ${error}`);
+      this.isLoggedIn = false;
+    }
+  }
+
+  /**
    * 尝试异步加载用户信息
    */
   private async tryLoadUserInfo(): Promise<void> {
@@ -673,6 +707,15 @@ struct TreeHoleDetailNavPage {
   }
 
   // ===== 事件处理方法 =====
+
+  /**
+   * 监听登录状态变化
+   */
+  private onLoginStatusChanged(): void {
+    console.info(`🌳 [TreeHoleDetailNavPage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    // 登录状态变化时重新检查
+    this.checkLoginStatusAsync();
+  }
 
   /**
    * 启动渐显动画
@@ -994,7 +1037,12 @@ struct TreeHoleDetailNavPage {
         fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
           console.info('🌳 [TreeHoleDetailNavPage] 用户选择去登录');
-          // TODO: 跳转到登录页面或切换到登录Tab
+          // 跳转到登录页面
+          try {
+            this.pathStack.pushPathByName('LoginNavPage', null);
+          } catch (error) {
+            console.error('🌳 [TreeHoleDetailNavPage] 跳转登录页面失败:', error);
+          }
         }
       }
     });

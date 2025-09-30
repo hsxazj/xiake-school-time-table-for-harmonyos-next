@@ -358,13 +358,6 @@ struct TreeHolePostNavPage {
     try {
       this.isPublishing = true;
 
-      // 获取学籍信息
-      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-      if (!userInfo.classId) {
-        this.showErrorDialog('请先完成学籍信息设置');
-        return;
-      }
-
       // 获取当前登录用户信息
       const currentUser: SimpleUserInfo | null =
         this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());

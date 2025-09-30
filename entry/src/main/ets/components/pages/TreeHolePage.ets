@@ -553,21 +553,21 @@ export struct TreeHolePage {
     // 显示登录提示和登录按钮
     this.getUIContext().showAlertDialog({
       title: '需要登录',
-      message: '请先完成学籍信息设置后再使用此功能',
+      message: '请先登录后再使用此功能',
       primaryButton: {
-        value: '暂不设置',
+        value: '取消',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户取消设置学籍信息');
+          console.info('🌳 [TreeHolePage] 用户取消登录');
         }
       },
       secondaryButton: {
-        value: '去设置',
+        value: '去登录',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户选择去设置学籍信息');
+          console.info('🌳 [TreeHolePage] 用户选择去登录');
           try {
-            this.pathStack.pushPathByName('ClassSelectNavPage', null);
+            this.pathStack.pushPathByName('LoginNavPage', null);
           } catch (error) {
-            console.error('🌳 [TreeHolePage] 跳转班级选择页面失败:', error);
+            console.error('🌳 [TreeHolePage] 跳转登录页面失败:', error);
           }
         }
       }
