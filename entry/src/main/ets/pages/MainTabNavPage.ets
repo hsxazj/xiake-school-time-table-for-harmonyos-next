@@ -20,7 +20,7 @@ struct MainTabNavPage {
         .height(26)
         .width(26)
       Text(title)
-        .fontColor(this.currentTabIndex === targetIndex ? '#45CAD9' : '#999999')
+        .fontColor(this.currentTabIndex === targetIndex ? $r('app.color.schedule_primary_color') : '#999999')
         .fontSize(16)
         .fontWeight(this.currentTabIndex === targetIndex ? FontWeight.Medium : FontWeight.Normal)
     }

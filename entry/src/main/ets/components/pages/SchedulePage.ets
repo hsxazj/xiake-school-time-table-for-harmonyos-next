@@ -147,13 +147,13 @@ export struct SchedulePage {
           if (!this.isCurrentWeekShowing()) {
             Button('回到本周')
               .fontSize(14)
-              .fontColor('#45CAD9')
+              .fontColor($r('app.color.schedule_primary_color'))
               .backgroundColor('#E3F2FD')
               .height(32)
               .borderRadius(16)
               .border({
                 width: 1,
-                color: '#45CAD9',
+                color: $r('app.color.schedule_primary_color'),
                 radius: 16
               })
               .padding({
@@ -250,7 +250,7 @@ export struct SchedulePage {
             if (this.weekDates) {
               Text(this.getDateForWeekDay(dayIndex))
                 .fontSize(14)
-                .fontColor(this.isToday(dayIndex) ? '#45CAD9' : '#666666')
+                .fontColor(this.isToday(dayIndex) ? $r('app.color.schedule_primary_color') : '#666666')
                 .backgroundColor(this.isToday(dayIndex) ? '#E3F2FD' : Color.Transparent)
                 .borderRadius(8)
                 .padding({
@@ -436,7 +436,7 @@ export struct SchedulePage {
         if (this.canGoToPreviousSemester()) {
           Button('< 上学期')
             .fontSize(14)
-            .fontColor('#45CAD9')
+            .fontColor($r('app.color.schedule_primary_color'))
             .backgroundColor(Color.Transparent)
             .height(30)
             .onClick(async () => {
@@ -467,7 +467,7 @@ export struct SchedulePage {
         if (this.canGoToNextSemester()) {
           Button('下学期 >')
             .fontSize(14)
-            .fontColor('#45CAD9')
+            .fontColor($r('app.color.schedule_primary_color'))
             .backgroundColor(Color.Transparent)
             .height(30)
             .onClick(async () => {
@@ -505,7 +505,7 @@ export struct SchedulePage {
               Text(`第${weekNum}周`)
                 .fontSize(16)
                 .fontColor(this.isWeekSelectableForCurrentGrade(weekNum)
-                  ? (this.currentWeek === weekNum ? '#45CAD9' : '#333333')
+                  ? (this.currentWeek === weekNum ? $r('app.color.schedule_primary_color') : '#333333')
                   : '#CCCCCC') // 不可选的周数显示灰色
                 .fontWeight(this.currentWeek === weekNum ? FontWeight.Medium : FontWeight.Normal)
 
@@ -514,7 +514,7 @@ export struct SchedulePage {
               if (this.currentWeek === weekNum && this.isWeekSelectableForCurrentGrade(weekNum)) {
                 Text('✓')
                   .fontSize(16)
-                  .fontColor('#45CAD9')
+                  .fontColor($r('app.color.schedule_primary_color'))
               }
             }
             .width('100%')

@@ -136,10 +136,10 @@ export struct MinePage {
           .width('90%')
           .height(44)
           .fontSize(16)
-          .fontColor('#45CAD9')
+          .fontColor($r('app.color.schedule_primary_color'))
           .backgroundColor(Color.White)
           .borderWidth(1)
-          .borderColor('#45CAD9')
+          .borderColor($r('app.color.schedule_primary_color'))
           .borderRadius(8)
           .margin({ bottom: 20 })
           .onClick(() => {

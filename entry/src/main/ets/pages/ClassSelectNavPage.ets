@@ -66,7 +66,7 @@ struct ClassSelectNavPage {
         range: this.collegeList.map(college => college.collegeName),
         selected: this.tempCollegeIndex
       })
-        .selectedTextStyle({ color: '#45CAD9' })
+        .selectedTextStyle({ color: $r('app.color.schedule_primary_color') })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -83,7 +83,7 @@ struct ClassSelectNavPage {
       Button('确定')
         .margin({ top: 16, bottom: 30 })
         .width('80%')
-        .backgroundColor('#45CAD9')
+        .backgroundColor($r('app.color.schedule_primary_color'))
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
@@ -125,7 +125,7 @@ struct ClassSelectNavPage {
         range: this.majorList.map(major => major.majorName),
         selected: this.tempMajorIndex
       })
-        .selectedTextStyle({ color: '#45CAD9' })
+        .selectedTextStyle({ color: $r('app.color.schedule_primary_color') })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -140,7 +140,7 @@ struct ClassSelectNavPage {
       Button('确定')
         .margin({ top: 16, bottom: 30 })
         .width('80%')
-        .backgroundColor('#45CAD9')
+        .backgroundColor($r('app.color.schedule_primary_color'))
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
@@ -180,7 +180,7 @@ struct ClassSelectNavPage {
         range: this.classList.map(classInfo => classInfo.className),
         selected: this.tempClassIndex
       })
-        .selectedTextStyle({ color: '#45CAD9' })
+        .selectedTextStyle({ color: $r('app.color.schedule_primary_color') })
         .defaultPickerItemHeight(52)
         .width('100%')
         .layoutWeight(1)// 使用layoutWeight占据剩余空间
@@ -197,7 +197,7 @@ struct ClassSelectNavPage {
       Button('确定')
         .margin({ top: 16, bottom: 30 })
         .width('80%')
-        .backgroundColor('#45CAD9')
+        .backgroundColor($r('app.color.schedule_primary_color'))
         .fontColor(Color.White)
         .onClick(() => {
           // 确定时才真正选择
@@ -320,7 +320,7 @@ struct ClassSelectNavPage {
           .height(45)
           .fontSize(16)
           .fontColor(Color.White)
-          .backgroundColor(this.isInitializing ? '#CCCCCC' : '#45CAD9')// 初始化时灰色
+          .backgroundColor(this.isInitializing ? '#CCCCCC' : $r('app.color.schedule_primary_color'))// 初始化时灰色
           .borderRadius(22)
           .margin({ bottom: 60 })
           .shadow({
@@ -339,7 +339,7 @@ struct ClassSelectNavPage {
             LoadingProgress()
               .width(50)
               .height(50)
-              .color('#45CAD9')
+              .color($r('app.color.schedule_primary_color'))
 
             Text(this.isInitializing ? '正在加载用户信息...' : '加载中...')
               .fontSize(14)

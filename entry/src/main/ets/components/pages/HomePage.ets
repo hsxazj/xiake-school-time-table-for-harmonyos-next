@@ -66,7 +66,7 @@ export struct HomePage {
 
               Text('切换')
                 .fontSize(16)
-                .fontColor('#45CAD9')
+                .fontColor($r('app.color.schedule_primary_color'))
                 .margin({ left: 8 })
             }
             .justifyContent(FlexAlign.SpaceBetween)
@@ -79,7 +79,7 @@ export struct HomePage {
 
               Text('切换')
                 .fontSize(12)
-                .fontColor('#45CAD9')
+                .fontColor($r('app.color.schedule_primary_color'))
                 .margin({ left: 8 })
             }
           }

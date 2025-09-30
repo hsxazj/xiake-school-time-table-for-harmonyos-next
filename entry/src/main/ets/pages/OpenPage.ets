@@ -39,7 +39,7 @@ struct OpenPage {
           LoadingProgress()
             .width(30)
             .height(30)
-            .color('#45CAD9')
+            .color($r('app.color.schedule_primary_color'))
             .margin({ top: 20 })
         }
         .alignRules({

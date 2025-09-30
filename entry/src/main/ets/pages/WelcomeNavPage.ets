@@ -30,7 +30,7 @@ struct WelcomeNavPage {
           LoadingProgress()
             .width(50)
             .height(50)
-            .color('#45CAD9')
+            .color($r('app.color.schedule_primary_color'))
             .margin({ top: 200 })
         } else {
           // 学期状态卡片 (参照class-schedule-c的homepage显示)
@@ -69,7 +69,7 @@ struct WelcomeNavPage {
               if (this.currentStatus.isInHoliday) {
                 Text('🏖️ 假期愉快！')
                   .fontSize(14)
-                  .fontColor('#45CAD9')
+                  .fontColor($r('app.color.schedule_primary_color'))
                   .margin({ top: 5 })
               }
             }
@@ -79,7 +79,7 @@ struct WelcomeNavPage {
             .borderRadius(12)
             .border({
               width: 1,
-              color: this.currentStatus.isInSemester ? '#45CAD9' : '#FFC107'
+              color: this.currentStatus.isInSemester ? $r('app.color.schedule_primary_color') : '#FFC107'
             })
             .margin({ bottom: 20 })
           }
@@ -140,7 +140,7 @@ struct WelcomeNavPage {
 
             Text('🎉 设置完成！')
               .fontSize(20)
-              .fontColor('#45CAD9')
+              .fontColor($r('app.color.schedule_primary_color'))
               .margin({ bottom: 20 })
 
             Text('您已成功选择了学院、专业和班级信息')
@@ -160,7 +160,7 @@ struct WelcomeNavPage {
             .height(45)
             .fontSize(16)
             .fontColor(Color.White)
-            .backgroundColor('#45CAD9')
+            .backgroundColor($r('app.color.schedule_primary_color'))
             .borderRadius(22)
             .shadow({
               radius: 20,
