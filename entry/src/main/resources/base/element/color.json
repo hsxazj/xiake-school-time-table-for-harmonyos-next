@@ -7,6 +7,18 @@
     {
       "name": "item_title_font",
       "value": "#E6000000"
+    },
+    {
+      "name": "schedule_primary_color",
+      "value": "#45CAD9"
+    },
+    {
+      "name": "schedule_primary_light",
+      "value": "#F0F9FB"
+    },
+    {
+      "name": "schedule_primary_dark",
+      "value": "#3B9FB0"
     }
   ]
 }

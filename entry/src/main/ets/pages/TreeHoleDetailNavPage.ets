@@ -83,7 +83,7 @@ struct TreeHoleDetailNavPage {
             Text(this.treeHoleItem.createAt.substring(8, 10))
               .fontSize(32)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#45CAD9')
+              .fontColor($r('app.color.schedule_primary_color'))
               .lineHeight(36)
 
             Text(this.treeHoleItem.createAt.substring(0, 7))
@@ -387,16 +387,16 @@ struct TreeHoleDetailNavPage {
               LoadingProgress()
                 .width(16)
                 .height(16)
-                .color('#007AFF')
+                .color($r('app.color.schedule_primary_color'))
                 .margin({ right: 4 })
               Text('发送中...')
                 .fontSize(12)
-                .fontColor('#007AFF')
+                .fontColor($r('app.color.schedule_primary_color'))
             }
             .height(40)
             .padding({ left: 12, right: 12 })
             .borderRadius(20)
-            .backgroundColor('#F0F8FF')
+            .backgroundColor($r('app.color.schedule_primary_light'))
             .margin({ left: 12 })
             .transition({
               type: TransitionType.Insert,
@@ -413,7 +413,7 @@ struct TreeHoleDetailNavPage {
             Button('发送')
               .fontSize(14)
               .fontColor('#FFFFFF')
-              .backgroundColor(this.commentText.length > 500 ? '#CCCCCC' : '#007AFF')
+              .backgroundColor(this.commentText.length > 500 ? '#CCCCCC' : $r('app.color.schedule_primary_color'))
               .borderRadius(20)
               .height(40)
               .width(60)
@@ -479,10 +479,10 @@ struct TreeHoleDetailNavPage {
 
       Button('去登录')
         .fontSize(14)
-        .fontColor('#45CAD9')
+        .fontColor($r('app.color.schedule_primary_color'))
         .backgroundColor(Color.Transparent)
         .borderWidth(1)
-        .borderColor('#45CAD9')
+        .borderColor($r('app.color.schedule_primary_color'))
         .borderRadius(16)
         .padding({
           left: 16,
@@ -916,7 +916,7 @@ struct TreeHoleDetailNavPage {
       },
       secondaryButton: {
         value: '去登录',
-        fontColor: '#45CAD9',
+        fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
           console.info('🌳 [TreeHoleDetailNavPage] 用户选择去登录');
           // TODO: 跳转到登录页面或切换到登录Tab
