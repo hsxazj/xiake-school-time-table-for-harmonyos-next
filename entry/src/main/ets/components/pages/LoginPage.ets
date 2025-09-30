@@ -123,7 +123,7 @@ export struct LoginPageContent {
           .height(48)
           .borderRadius(8)
           .backgroundColor(Color.White)
-          .borderColor(this.loginForm.username ? '#3B82F6' : '#E5E7EB')
+          .borderColor(this.loginForm.username ? $r('app.color.schedule_primary_color') : '#E5E7EB')
           .borderWidth(1)
           .placeholderColor('#9CA3AF')
           .fontSize(16)
@@ -151,7 +151,7 @@ export struct LoginPageContent {
             .height(48)
             .borderRadius(8)
             .backgroundColor(Color.White)
-            .borderColor(this.loginForm.password ? '#3B82F6' : '#E5E7EB')
+            .borderColor(this.loginForm.password ? $r('app.color.schedule_primary_color') : '#E5E7EB')
             .borderWidth(1)
             .placeholderColor('#9CA3AF')
             .fontSize(16)
@@ -191,7 +191,7 @@ export struct LoginPageContent {
     .width('100%')
     .height(48)
     .borderRadius(8)
-    .backgroundColor(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING ? '#3B82F6' : '#9CA3AF')
+    .backgroundColor(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING ? $r('app.color.schedule_primary_color') : '#9CA3AF')
     .enabled(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING)
     .onClick(() => {
       this.handleLogin();
