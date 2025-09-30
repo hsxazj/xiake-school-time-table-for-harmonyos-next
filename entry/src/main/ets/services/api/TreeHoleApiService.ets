@@ -7,6 +7,7 @@ import {
   TreeHolePaginationData
 } from '../../models/TreeHoleModels';
 import { ApiResponse, HttpService } from './HttpService';
+import { UserInfoManager } from '../../common/utils/UserInfoManager';
 
 // 导出类型
 export {
@@ -123,6 +124,7 @@ export interface DeleteCommentRequestParams {
 export class TreeHoleApiService {
   private static instance: TreeHoleApiService;
   private httpService = HttpService.getInstance();
+  private userInfoManager = UserInfoManager.getInstance();
 
   private constructor() {
     console.info('🌳 [TreeHoleApiService] 初始化树洞API服务');
@@ -263,13 +265,49 @@ export class TreeHoleApiService {
 
   /**
    * 发布评论
-   * POST /treeHole/comment
+   * POST /treeHole/add (参考class-schedule-c实现)
    */
   public async postComment(request: PostCommentRequest): Promise<ApiResponse<boolean>> {
     try {
       console.info(`🌳 [TreeHoleApiService] 发布评论 - 树洞ID:${request.treeHoleId}`);
 
-      const response = await this.httpService.post<PostCommentRequest, boolean>('/treeHole/comment', request);
+      // 获取当前用户信息（与发布树洞的方式一致）
+      const currentUser = this.userInfoManager.getCurrentUserInfo(undefined);
+      if (!currentUser || !currentUser.userId) {
+        throw new Error('用户未登录或用户信息获取失败');
+      }
+
+      // 转换为后端期望的PostTreeHoleRequest格式（与发布树洞完全一致）
+      const backendRequest: PostTreeHoleRequest = {
+        content: request.content,
+        anonymous: request.isAnonymous ? 1 : 0,
+        parentId: request.treeHoleId, // 评论时parentId为树洞ID
+        userId: currentUser.userId, // 使用真实的用户ID（与发布树洞一致）
+        deleteTime: "" // 评论不设置删除时间
+      };
+
+      console.info(`🌳 [TreeHoleApiService] 评论请求参数:`, JSON.stringify(backendRequest));
+
+      const response = await this.httpService.post<PostTreeHoleRequest, boolean>('/treeHole/add', backendRequest);
+
+      console.info('🌳 [TreeHoleApiService] 发布评论成功');
+      return response;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 发布评论失败:', error);
+      throw new Error('发布评论失败');
+    }
+  }
+
+  /**
+   * 发布评论（使用完整请求参数）
+   * POST /treeHole/add (与发布树洞使用相同的接口和格式)
+   */
+  public async postCommentWithFullRequest(request: PostTreeHoleRequest): Promise<ApiResponse<boolean>> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] 发布评论（完整参数） - 树洞ID:${request.parentId}`);
+      console.info(`🌳 [TreeHoleApiService] 评论请求参数:`, JSON.stringify(request));
+
+      const response = await this.httpService.post<PostTreeHoleRequest, boolean>('/treeHole/add', request);
 
       console.info('🌳 [TreeHoleApiService] 发布评论成功');
       return response;

@@ -2,9 +2,10 @@
  * 树洞详情页面导航组件
  * 参考MainTabNavPage的结构，将TreeHoleDetailPage直接集成
  */
-import { TreeHoleComment, TreeHoleItem } from '../models/TreeHoleModels';
+import { TreeHoleComment, TreeHoleItem, PostTreeHoleRequest } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
 import { LoginApiService } from '../services/api/LoginApiService';
+import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../common/constants/AppConstants';
 
@@ -29,6 +30,7 @@ struct TreeHoleDetailNavPage {
   private treeHoleId: number = 0;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
   private loginService: LoginApiService = LoginApiService.getInstance();
+  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     console.info('🌳 [TreeHoleDetailNavPage] 页面初始化');
@@ -336,39 +338,77 @@ struct TreeHoleDetailNavPage {
 
   @Builder
   buildCommentInput() {
-    Row() {
-      TextInput({ placeholder: '写下你的评论...', text: this.commentText })
-        .layoutWeight(1)
-        .height(40)
-        .fontSize(14)
-        .backgroundColor('#F5F5F5')
-        .borderRadius(20)
-        .padding({ left: 16, right: 16 })
-        .onChange((value: string) => {
-          this.commentText = value;
-        })
-        .onSubmit(() => {
-          this.handleSendComment();
-        })
-        .enabled(!this.isCommenting)
+    Column() {
+      // 字数统计提示
+      if (this.commentText.length > 0) {
+        Row() {
+          Blank()
+          Text(`${this.commentText.length}/500`)
+            .fontSize(12)
+            .fontColor(this.commentText.length > 500 ? '#FF6B6B' : '#999999')
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, bottom: 8 })
+      }
 
-      if (this.commentText.trim().length > 0) {
-        Button('发送')
-          .fontSize(14)
-          .fontColor('#FFFFFF')
-          .backgroundColor('#007AFF')
-          .borderRadius(20)
+      // 输入框和发送按钮
+      Row() {
+        TextInput({ placeholder: '写下你的评论...', text: this.commentText })
+          .layoutWeight(1)
           .height(40)
-          .width(60)
-          .margin({ left: 12 })
-          .enabled(!this.isCommenting)
-          .onClick(() => {
+          .fontSize(14)
+          .backgroundColor('#F5F5F5')
+          .borderRadius(20)
+          .padding({ left: 16, right: 16 })
+          .borderWidth(this.commentText.length > 500 ? 1 : 0)
+          .borderColor(this.commentText.length > 500 ? '#FF6B6B' : 'transparent')
+          .onChange((value: string) => {
+            this.commentText = value;
+          })
+          .onSubmit(() => {
             this.handleSendComment();
           })
+          .enabled(!this.isCommenting)
+
+        if (this.commentText.trim().length > 0) {
+          if (this.isCommenting) {
+            // 发送中状态
+            Row() {
+              LoadingProgress()
+                .width(16)
+                .height(16)
+                .color('#007AFF')
+                .margin({ right: 4 })
+              Text('发送中...')
+                .fontSize(12)
+                .fontColor('#007AFF')
+            }
+            .height(40)
+            .padding({ left: 12, right: 12 })
+            .borderRadius(20)
+            .backgroundColor('#F0F8FF')
+            .margin({ left: 12 })
+          } else {
+            // 正常发送按钮
+            Button('发送')
+              .fontSize(14)
+              .fontColor('#FFFFFF')
+              .backgroundColor(this.commentText.length > 500 ? '#CCCCCC' : '#007AFF')
+              .borderRadius(20)
+              .height(40)
+              .width(60)
+              .margin({ left: 12 })
+              .enabled(!this.isCommenting && this.commentText.length <= 500)
+              .onClick(() => {
+                this.handleSendComment();
+              })
+          }
+        }
       }
+      .width('100%')
+      .padding({ left: 16, right: 16, bottom: 16 })
     }
     .width('100%')
-    .padding(16)
     .backgroundColor('#FFFFFF')
     .borderColor('#E5E5E5')
     .borderWidth({ top: 1 })
@@ -535,8 +575,38 @@ struct TreeHoleDetailNavPage {
    * 检查登录状态
    */
   private checkLoginStatus(): void {
-    this.isLoggedIn = this.loginService.isLoggedIn();
-    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态: ${this.isLoggedIn}`);
+    // 检查token和用户信息（与发布树洞页面保持一致）
+    const hasToken = this.loginService.isLoggedIn();
+    const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+    const hasValidUserInfo = currentUser !== null && currentUser.userId > 0;
+    
+    this.isLoggedIn = hasToken && hasValidUserInfo;
+    
+    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态检查 - Token: ${hasToken}, UserInfo: ${hasValidUserInfo}, UserId: ${currentUser?.userId}, 最终结果: ${this.isLoggedIn}`);
+    
+    // 如果有token但没有用户信息，尝试异步获取
+    if (hasToken && !hasValidUserInfo) {
+      console.info('🌳 [TreeHoleDetailNavPage] 有token但缺少用户信息，尝试异步获取');
+      this.tryLoadUserInfo();
+    }
+  }
+
+  /**
+   * 尝试异步加载用户信息
+   */
+  private async tryLoadUserInfo(): Promise<void> {
+    try {
+      const userInfoResponse = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
+      if (userInfoResponse) {
+        const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+        const hasValidUserInfo = currentUser !== null && currentUser.userId > 0;
+        this.isLoggedIn = this.loginService.isLoggedIn() && hasValidUserInfo;
+        console.info('🌳 [TreeHoleDetailNavPage] 用户信息获取成功，更新登录状态:', this.isLoggedIn);
+      }
+    } catch (error) {
+      console.warn('🌳 [TreeHoleDetailNavPage] 用户信息获取失败:', error);
+      this.isLoggedIn = false;
+    }
   }
 
   // ===== 事件处理方法 =====
@@ -575,28 +645,84 @@ struct TreeHoleDetailNavPage {
    * 发送评论
    */
   private async handleSendComment(): Promise<void> {
+    // 1. 验证输入内容
     if (this.commentText.trim().length === 0) {
+      this.showToast('请输入评论内容');
+      return;
+    }
+
+    if (this.commentText.trim().length > 500) {
+      this.showToast('评论内容不能超过500个字符');
+      return;
+    }
+
+    // 2. 检查登录状态（与发布树洞页面一致）
+    if (!this.isLoggedIn) {
+      this.showLoginRequiredDialog();
+      return;
+    }
+
+    // 3. 获取用户信息（与发布树洞页面一致的方式）
+    const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
+    if (!currentUser || !currentUser.userId) {
+      this.showToast('用户信息获取失败，请重新登录');
+      this.isLoggedIn = false; // 更新登录状态
       return;
     }
 
     try {
+      // 4. 设置loading状态
       this.isCommenting = true;
-      console.info('🌳 [TreeHoleDetailNavPage] 发送评论');
+      console.info('🌳 [TreeHoleDetailNavPage] 开始发送评论');
 
-      const result = await this.treeHoleApiService.postComment({
-        treeHoleId: this.treeHoleId,
+      // 5. 构造API请求参数（与发布树洞完全一致的格式）
+      const request: PostTreeHoleRequest = {
         content: this.commentText.trim(),
-        isAnonymous: false
-      });
+        anonymous: 0, // 评论暂不支持匿名，固定为0
+        parentId: this.treeHoleId, // 评论时parentId为树洞ID
+        userId: currentUser.userId, // 使用真实的用户ID
+        deleteTime: "" // 评论不设置删除时间
+      };
 
+      console.info('🌳 [TreeHoleDetailNavPage] 开始发布评论，请求参数:', JSON.stringify(request));
+
+      // 6. 调用API发布评论
+      const result = await this.treeHoleApiService.postCommentWithFullRequest(request);
+
+      // 7. 处理响应结果
       if (result.code === 200) {
+        console.info('🌳 [TreeHoleDetailNavPage] 评论发布成功');
+        
+        // 清空输入框
         this.commentText = '';
-        // 重新加载评论
+        
+        // 显示成功提示
+        this.showToast('评论发布成功');
+        
+        // 8. 刷新评论列表
         await this.loadComments();
+      } else {
+        console.error('🌳 [TreeHoleDetailNavPage] 评论发布失败:', result.msg);
+        this.showToast(result.msg || '评论发布失败');
       }
     } catch (error) {
       console.error('🌳 [TreeHoleDetailNavPage] 发送评论失败:', error);
+      
+      // 友好的错误提示
+      if (error instanceof Error) {
+        if (error.message.includes('用户未登录')) {
+          this.showToast('登录状态已过期，请重新登录');
+          this.isLoggedIn = false; // 更新登录状态
+        } else if (error.message.includes('网络')) {
+          this.showToast('网络连接异常，请检查网络');
+        } else {
+          this.showToast('评论发布失败，请稍后重试');
+        }
+      } else {
+        this.showToast('评论发布失败，请稍后重试');
+      }
     } finally {
+      // 9. 重置loading状态
       this.isCommenting = false;
     }
   }
@@ -719,6 +845,23 @@ struct TreeHoleDetailNavPage {
     // 实现点赞逻辑
     console.info('🌳 [TreeHoleDetailNavPage] 处理帖子点赞');
     // TODO: 调用API接口
+  }
+
+  /**
+   * 显示Toast提示
+   */
+  private showToast(message: string): void {
+    this.getUIContext().showAlertDialog({
+      message: message,
+      alignment: DialogAlignment.Center,
+      autoCancel: true,
+      primaryButton: {
+        value: '确定',
+        action: () => {
+          console.info('🌳 [TreeHoleDetailNavPage] Toast确认');
+        }
+      }
+    });
   }
 
   /**
