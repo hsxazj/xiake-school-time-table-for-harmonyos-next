@@ -66,6 +66,9 @@ export interface TreeHoleItem {
 
   /** 树洞类型（3-普通树洞，其他类型待扩展） */
   type: number;
+
+  /** 图片列表（最多3张） */
+  images?: string[];
 }
 
 /**
@@ -103,6 +106,31 @@ export interface TreeHoleComment {
   isAnonymous: boolean;
 
   /** 父级树洞ID */
+  treeHoleId: number;
+}
+
+/**
+ * 树洞图片接口
+ */
+export interface TreeHolePicture {
+  /** 图片ID */
+  id: number;
+
+  /** 图片URL路径 */
+  url: string;
+
+  /** 关联的树洞ID */
+  treeHoleId: number;
+
+  /** 创建时间 */
+  createTime?: string;
+}
+
+/**
+ * 获取树洞图片的请求参数
+ */
+export interface GetPicturesRequest {
+  /** 树洞ID */
   treeHoleId: number;
 }
 

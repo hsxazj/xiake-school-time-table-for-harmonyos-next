@@ -4,7 +4,9 @@ import {
   TreeHoleApiPaginationData,
   TreeHoleComment,
   TreeHoleItem,
-  TreeHolePaginationData
+  TreeHolePaginationData,
+  TreeHolePicture,
+  GetPicturesRequest
 } from '../../models/TreeHoleModels';
 import { ApiResponse, HttpService } from './HttpService';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
@@ -14,7 +16,9 @@ export {
   TreeHoleItem,
   TreeHoleComment,
   PostTreeHoleRequest,
-  PostCommentRequest
+  PostCommentRequest,
+  TreeHolePicture,
+  GetPicturesRequest
 } from '../../models/TreeHoleModels';
 
 /**
@@ -423,6 +427,25 @@ export class TreeHoleApiService {
     } catch (error) {
       console.error('🌳 [TreeHoleApiService] 删除评论失败:', error);
       throw new Error('删除评论失败');
+    }
+  }
+
+  /**
+   * 获取树洞图片
+   * GET /picture/getPictures?treeHoleId=xxx
+   */
+  public async getPictures(treeHoleId: number): Promise<TreeHolePicture[]> {
+    try {
+      console.info(`🌳 [TreeHoleApiService] 获取树洞图片 - 树洞ID:${treeHoleId}`);
+
+      const params: GetPicturesRequest = { treeHoleId };
+      const response = await this.httpService.get<GetPicturesRequest, TreeHolePicture[]>('/picture/getPictures', params);
+
+      console.info(`🌳 [TreeHoleApiService] 获取树洞图片成功，共${response.data.length}张图片`);
+      return response.data;
+    } catch (error) {
+      console.error('🌳 [TreeHoleApiService] 获取树洞图片失败:', error);
+      throw new Error('获取树洞图片失败');
     }
   }
 

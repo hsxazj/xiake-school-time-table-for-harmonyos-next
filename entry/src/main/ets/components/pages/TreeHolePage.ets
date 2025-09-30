@@ -9,6 +9,8 @@ import { UserApiService } from '../../services/api/UserApiService';
 import { SimpleUserInfo } from '../../models/UserModels';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../../common/constants/AppConstants';
+import { TreeHoleImageGrid, ImageClickCallback } from '../base/TreeHoleImageGrid';
+import { ImagePreviewDialog, ImagePreviewCloseCallback } from '../base/ImagePreviewDialog';
 
 @Component
 export struct TreeHolePage {
@@ -22,6 +24,10 @@ export struct TreeHolePage {
   @State private currentPage: number = 1;
   @State private hasMore: boolean = true;
   @State private transitionEffect: TransitionEffect = TransitionEffect.IDENTITY;
+  // 图片预览相关状态
+  @State private imagePreviewVisible: boolean = false;
+  @State private previewImages: string[] = [];
+  @State private previewCurrentIndex: number = 0;
   // 服务实例
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
@@ -48,6 +54,16 @@ export struct TreeHolePage {
         this.buildEmptyStateWithHeader()
       } else {
         this.buildScrollableContent()
+      }
+
+      // 图片预览对话框
+      if (this.imagePreviewVisible) {
+        ImagePreviewDialog({
+          isVisible: this.imagePreviewVisible,
+          images: this.previewImages,
+          currentIndex: this.previewCurrentIndex,
+          onClose: new ImagePreviewCloseCallback(this.handleImagePreviewClose.bind(this))
+        })
       }
     }
     .width('100%')
@@ -250,6 +266,16 @@ export struct TreeHolePage {
         .width('100%')
         .margin({ bottom: 15, left: 10, right: 10 })
         .geometryTransition(`content_${item.id}`, { follow: true })
+
+      // 图片展示区域（列表中显示缩略图）
+      if (item.images && item.images.length > 0) {
+        TreeHoleImageGrid({
+          images: item.images,
+          onImageClick: new ImageClickCallback(this.handleImageClick.bind(this)),
+          imageBorderRadius: 8
+        })
+          .margin({ bottom: 12, left: 10, right: 10 })
+      }
 
       // 底部信息
       Row() {
@@ -497,6 +523,27 @@ export struct TreeHolePage {
     } catch (error) {
       console.error('🌳 [TreeHolePage] 点赞操作失败:', error);
     }
+  }
+
+  /**
+   * 处理图片点击事件
+   */
+  private handleImageClick(imageUrl: string, imageIndex: number, allImages: string[]): void {
+    console.info(`🖼️ [TreeHolePage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
+    
+    this.previewImages = allImages;
+    this.previewCurrentIndex = imageIndex;
+    this.imagePreviewVisible = true;
+  }
+
+  /**
+   * 处理图片预览关闭事件
+   */
+  private handleImagePreviewClose(): void {
+    console.info('🖼️ [TreeHolePage] 关闭图片预览');
+    this.imagePreviewVisible = false;
+    this.previewImages = [];
+    this.previewCurrentIndex = 0;
   }
 
   /**

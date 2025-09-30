@@ -2,12 +2,14 @@
  * 树洞详情页面导航组件
  * 参考MainTabNavPage的结构，将TreeHoleDetailPage直接集成
  */
-import { TreeHoleComment, TreeHoleItem, PostTreeHoleRequest } from '../models/TreeHoleModels';
+import { TreeHoleComment, TreeHoleItem, PostTreeHoleRequest, TreeHolePicture } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
 import { LoginApiService } from '../services/api/LoginApiService';
 import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../common/constants/AppConstants';
+import { TreeHoleImageGrid, ImageClickCallback } from '../components/base/TreeHoleImageGrid';
+import { ImagePreviewDialog, ImagePreviewCloseCallback } from '../components/base/ImagePreviewDialog';
 
 @Builder
 export function TreeHoleDetailNavPageBuilder() {
@@ -26,6 +28,10 @@ struct TreeHoleDetailNavPage {
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   @State private transitionEffect: TransitionEffect = TransitionEffect.IDENTITY;
+  // 图片预览相关状态
+  @State private imagePreviewVisible: boolean = false;
+  @State private previewImages: string[] = [];
+  @State private previewCurrentIndex: number = 0;
   // 接收参数
   private treeHoleId: number = 0;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
@@ -127,6 +133,15 @@ struct TreeHoleDetailNavPage {
           .margin({ bottom: 16 })
           .textAlign(TextAlign.Start)
           .geometryTransition(`content_${this.treeHoleItem.id}`, { follow: true })
+
+        // 图片展示区域
+        if (this.treeHoleItem.images && this.treeHoleItem.images.length > 0) {
+          TreeHoleImageGrid({
+            images: this.treeHoleItem.images,
+            onImageClick: new ImageClickCallback(this.handleImageClick.bind(this)),
+            imageBorderRadius: 12
+          })
+        }
 
         // 作者信息
         Row() {
@@ -568,6 +583,16 @@ struct TreeHoleDetailNavPage {
         iterations: 1,
         playMode: PlayMode.Normal
       })
+
+      // 图片预览对话框
+      if (this.imagePreviewVisible) {
+        ImagePreviewDialog({
+          isVisible: this.imagePreviewVisible,
+          images: this.previewImages,
+          currentIndex: this.previewCurrentIndex,
+          onClose: new ImagePreviewCloseCallback(this.handleImagePreviewClose.bind(this))
+        })
+      }
     }
     .title('树洞详情')
     .hideTitleBar(true)
@@ -581,7 +606,9 @@ struct TreeHoleDetailNavPage {
         console.info('🌳 [TreeHoleDetailNavPage] 接收到参数:', JSON.stringify(params));
         this.treeHoleItem = params;
         this.treeHoleId = params.id;
+        // 并行加载评论和图片数据
         this.loadComments();
+        this.loadImages();
       } else {
         console.error('🌳 [TreeHoleDetailNavPage] 未接收到树洞数据');
       }
@@ -674,6 +701,33 @@ struct TreeHoleDetailNavPage {
       console.error('🌳 [TreeHoleDetailNavPage] 加载评论失败:', error);
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  /**
+   * 加载树洞图片数据
+   */
+  private async loadImages(): Promise<void> {
+    try {
+      console.info(`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的图片`);
+
+      const pictures = await this.treeHoleApiService.getPictures(this.treeHoleId);
+      
+      // 转换图片URL，添加baseUrl前缀（参考class-schedule-c实现）
+      const imageUrls = pictures.map(item => `${API_CONFIG.BASE_URL}${item.url}`);
+      
+      // 更新树洞项目的图片数据
+      if (this.treeHoleItem) {
+        this.treeHoleItem.images = imageUrls;
+      }
+
+      console.info(`🌳 [TreeHoleDetailNavPage] 加载了 ${imageUrls.length} 张图片:`, imageUrls);
+    } catch (error) {
+      console.error('🌳 [TreeHoleDetailNavPage] 加载图片失败:', error);
+      // 图片加载失败不影响主要功能，设置空数组
+      if (this.treeHoleItem) {
+        this.treeHoleItem.images = [];
+      }
     }
   }
 
@@ -881,6 +935,27 @@ struct TreeHoleDetailNavPage {
     // 实现点赞逻辑
     console.info('🌳 [TreeHoleDetailNavPage] 处理帖子点赞');
     // TODO: 调用API接口
+  }
+
+  /**
+   * 处理图片点击事件
+   */
+  private handleImageClick(imageUrl: string, imageIndex: number, allImages: string[]): void {
+    console.info(`🖼️ [TreeHoleDetailNavPage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
+    
+    this.previewImages = allImages;
+    this.previewCurrentIndex = imageIndex;
+    this.imagePreviewVisible = true;
+  }
+
+  /**
+   * 处理图片预览关闭事件
+   */
+  private handleImagePreviewClose(): void {
+    console.info('🖼️ [TreeHoleDetailNavPage] 关闭图片预览');
+    this.imagePreviewVisible = false;
+    this.previewImages = [];
+    this.previewCurrentIndex = 0;
   }
 
   /**
