@@ -146,22 +146,49 @@ export struct ImagePreviewDialog {
                   }
                 }),
 
-              // 拖拽手势（仅在放大时启用）
-              PanGesture({ fingers: 1, distance: 5 })
+              // 拖拽/滑动手势（支持放大拖拽和图片切换）
+              PanGesture({ fingers: 1, distance: 3, direction: PanDirection.All })
                 .onActionStart(() => {
-                  if (this.imageScale > 1) {
+                  if (this.imageScale > 1.1) {
                     console.info('🖼️ [ImagePreviewDialog] 开始拖拽手势');
+                  } else {
+                    console.info('🖼️ [ImagePreviewDialog] 开始滑动手势');
                   }
                 })
                 .onActionUpdate((event: GestureEvent) => {
-                  if (this.imageScale > 1) {
+                  if (this.imageScale > 1.1) {
+                    // 放大状态下的拖拽移动
                     this.imageOffsetX += event.offsetX;
                     this.imageOffsetY += event.offsetY;
+                  } else if (this.images.length > 1 && this.imageScale <= 1.1) {
+                    // 正常状态下只允许水平滑动
+                    if (Math.abs(event.offsetX) > Math.abs(event.offsetY)) {
+                      const maxOffset = 60;
+                      const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, event.offsetX * 0.5));
+                      this.imageOffsetX = clampedOffset;
+                    }
                   }
                 })
-                .onActionEnd(() => {
-                  if (this.imageScale > 1) {
+                .onActionEnd((event: GestureEvent) => {
+                  if (this.imageScale > 1.1) {
                     console.info('🖼️ [ImagePreviewDialog] 拖拽手势结束');
+                  } else if (this.images.length > 1 && this.imageScale <= 1.1) {
+                    // 判断是否为有效的水平滑动
+                    const isHorizontalSwipe = Math.abs(event.offsetX) > Math.abs(event.offsetY) && Math.abs(event.offsetX) > 20;
+                    
+                    this.resetImageOffset();
+                    
+                    if (isHorizontalSwipe) {
+                      if (event.offsetX > 20 && this.currentImageIndex > 0) {
+                        // 向右滑动，显示上一张
+                        console.info('🖼️ [ImagePreviewDialog] 滑动到上一张');
+                        this.switchToPrevious();
+                      } else if (event.offsetX < -20 && this.currentImageIndex < this.images.length - 1) {
+                        // 向左滑动，显示下一张
+                        console.info('🖼️ [ImagePreviewDialog] 滑动到下一张');
+                        this.switchToNext();
+                      }
+                    }
                   }
                 })
             )
@@ -186,21 +213,6 @@ export struct ImagePreviewDialog {
     }
     .width('100%')
     .layoutWeight(1)
-    .gesture(
-      // 左右滑动切换图片
-      PanGesture({ fingers: 1, distance: 50, direction: PanDirection.Horizontal })
-        .onActionEnd((event: GestureEvent) => {
-          if (this.images.length > 1 && this.imageScale === 1) {
-            if (event.offsetX > 50 && this.currentImageIndex > 0) {
-              // 向右滑动，显示上一张
-              this.switchToPrevious();
-            } else if (event.offsetX < -50 && this.currentImageIndex < this.images.length - 1) {
-              // 向左滑动，显示下一张
-              this.switchToNext();
-            }
-          }
-        })
-    )
   }
 
   @Builder
@@ -273,7 +285,7 @@ export struct ImagePreviewDialog {
       }, () => {
         this.currentImageIndex--;
       });
-      console.info(`🖼️ [ImagePreviewDialog] 切换到上一张: ${this.currentImageIndex}`);
+      console.info(`🖼️ [ImagePreviewDialog] 切换到上一张: ${this.currentImageIndex - 1}`);
     }
   }
 
@@ -289,7 +301,7 @@ export struct ImagePreviewDialog {
       }, () => {
         this.currentImageIndex++;
       });
-      console.info(`🖼️ [ImagePreviewDialog] 切换到下一张: ${this.currentImageIndex}`);
+      console.info(`🖼️ [ImagePreviewDialog] 切换到下一张: ${this.currentImageIndex + 1}`);
     }
   }
 
@@ -302,6 +314,19 @@ export struct ImagePreviewDialog {
       curve: Curve.EaseOut
     }, () => {
       this.imageScale = 1;
+      this.imageOffsetX = 0;
+      this.imageOffsetY = 0;
+    });
+  }
+
+  /**
+   * 重置图片位置偏移
+   */
+  private resetImageOffset(): void {
+    this.getUIContext().animateTo({
+      duration: 200,
+      curve: Curve.EaseOut
+    }, () => {
       this.imageOffsetX = 0;
       this.imageOffsetY = 0;
     });
