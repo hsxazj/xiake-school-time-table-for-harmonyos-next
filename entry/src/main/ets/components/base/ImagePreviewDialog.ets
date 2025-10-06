@@ -34,11 +34,20 @@ export struct ImagePreviewDialog {
   @State private imageOffsetY: number = 0;
   @State private dialogOpacity: number = 0;
   @State private imageOpacity: number = 0;
+  @State private clickTimer: number = 0;
 
   aboutToAppear(): void {
     this.currentImageIndex = this.currentIndex;
     if (this.isVisible) {
       this.startShowAnimation();
+    }
+  }
+
+  aboutToDisappear(): void {
+    // 清理定时器
+    if (this.clickTimer) {
+      clearTimeout(this.clickTimer);
+      this.clickTimer = 0;
     }
   }
 
@@ -194,9 +203,28 @@ export struct ImagePreviewDialog {
             )
           )
           .gesture(
+            // 单击手势关闭预览
+            TapGesture({ count: 1 })
+              .onAction(() => {
+                console.info('🖼️ [ImagePreviewDialog] 单击图片');
+                // 激进优化：延时减少到50ms，最大化响应速度
+                this.clickTimer = setTimeout(() => {
+                  console.info('🖼️ [ImagePreviewDialog] 单击关闭预览');
+                  this.handleClose();
+                }, 50);
+              })
+          )
+          .gesture(
             // 双击手势切换缩放状态
             TapGesture({ count: 2 })
               .onAction(() => {
+                console.info('🖼️ [ImagePreviewDialog] 双击切换缩放');
+                // 清除单击定时器
+                if (this.clickTimer) {
+                  clearTimeout(this.clickTimer);
+                  this.clickTimer = 0;
+                }
+                
                 if (this.imageScale === 1) {
                   this.getUIContext().animateTo({
                     duration: 300,
@@ -250,7 +278,7 @@ export struct ImagePreviewDialog {
    */
   private startHideAnimation(): void {
     this.getUIContext().animateTo({
-      duration: 250,
+      duration: 100,
       curve: Curve.EaseIn
     }, () => {
       this.dialogOpacity = 0;
@@ -262,7 +290,7 @@ export struct ImagePreviewDialog {
       if (this.onClose) {
         this.onClose.call();
       }
-    }, 250);
+    }, 100);
   }
 
   /**
