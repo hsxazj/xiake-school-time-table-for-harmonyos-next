@@ -395,23 +395,23 @@ export struct MinePage {
     try {
       const newState = !this.treeHoleEnabled;
       const context = this.getUIContext().getHostContext();
-      
+
       // 检查context是否有效
       if (!context) {
         console.error('[MinePage] 无法获取有效的context');
         this.showToast('设置失败，请重试');
         return;
       }
-      
+
       // 保存新状态到AppConfigManager
       this.appConfigManager.setTreeHoleEnabled(newState, context);
       this.treeHoleEnabled = newState;
-      
+
       console.info(`[MinePage] 树洞功能已${newState ? '启用' : '禁用'}`);
-      
+
       // 显示重启提示对话框
       this.showRestartConfirmDialog();
-      
+
     } catch (error) {
       console.error('[MinePage] 切换树洞功能失败:', error);
       this.showToast('设置失败，请重试');
@@ -424,18 +424,20 @@ export struct MinePage {
   private showRestartConfirmDialog(): void {
     this.getUIContext().showAlertDialog({
       title: '设置已更新',
-      message: `树洞功能已${this.treeHoleEnabled ? '启用' : '禁用'}，需要重启应用才能完全生效。`,
+      message: `树洞功能已${this.treeHoleEnabled ? '启用' : '禁用'}，需要重启应用才能生效。`,
       alignment: DialogAlignment.Center,
       primaryButton: {
-        value: '立即重启',
+        value: '稍后重启',
+        fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
-          this.restartApp();
+          this.showToast('设置已保存，下次启动时生效');
         }
       },
       secondaryButton: {
-        value: '稍后重启',
+        value: '立即重启',
+        fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
-          this.showToast('设置已保存，下次启动时生效');
+          this.restartApp();
         }
       }
     });
@@ -447,19 +449,19 @@ export struct MinePage {
   private restartApp(): void {
     try {
       const context = this.getUIContext().getHostContext();
-      
+
       // 检查context是否有效
       if (!context) {
         console.error('[MinePage] 无法获取有效的context');
         this.showToast('重启失败，请手动重启应用');
         return;
       }
-      
+
       console.info('[MinePage] 准备重启应用...');
-      
+
       // 获取UIAbilityContext来执行重启
       const abilityContext = context as common.UIAbilityContext;
-      
+
       // 使用HarmonyOS API重启应用
       abilityContext.terminateSelf((error: Error) => {
         if (error) {
