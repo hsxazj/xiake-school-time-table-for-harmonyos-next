@@ -193,7 +193,7 @@ export struct HomePage {
         .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
-      Text(CourseTimeUtil.getTimeRange(courseInfo.courseTime))
+      Text(`${courseInfo.section} (${CourseTimeUtil.getTimeRange(courseInfo.courseTime)})`)
         .fontSize(14)
         .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .fontWeight(FontWeight.Medium)

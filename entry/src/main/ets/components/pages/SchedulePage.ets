@@ -614,7 +614,7 @@ export struct SchedulePage {
         Text('时间：')
           .fontSize(14)
           .fontColor('#666666')
-        Text(CourseTimeUtil.formatSectionWithTime(course.section, course.originalCourseTime))
+        Text(`${course.section.join(',')}节 (${CourseTimeUtil.getTimeRange(course.originalCourseTime)})`)
           .fontSize(14)
           .fontColor('#333333')
           .fontWeight(FontWeight.Medium)

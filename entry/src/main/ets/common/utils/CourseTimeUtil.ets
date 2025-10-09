@@ -1,3 +1,5 @@
+import { CourseInfo } from '../../models/CourseModels';
+
 /**
  * 时间段接口
  */
@@ -30,42 +32,6 @@ export class CourseTimeUtil {
     const endTime = lastTime.split('-')[1];
 
     return `${startTime}-${endTime}`;
-  }
-
-  /**
-   * 格式化节次和时间显示
-   * @param section 节次数组，如[1, 2]
-   * @param courseTime 课程时间数组，如["08:30-09:15", "09:25-10:10"]
-   * @returns 格式化的时间字符串，如"第1-2节 (08:30-10:10)"
-   */
-  static formatSectionWithTime(section: number[], courseTime?: string[]): string {
-    if (!section || section.length === 0) {
-      return '';
-    }
-
-    // 格式化节次
-    let sectionText = '';
-    if (section.length === 1) {
-      sectionText = `第${section[0]}节`;
-    } else {
-      const minSection = Math.min(...section);
-      const maxSection = Math.max(...section);
-      if (maxSection - minSection + 1 === section.length) {
-        // 连续节次
-        sectionText = `第${minSection}-${maxSection}节`;
-      } else {
-        // 非连续节次
-        sectionText = `第${section.join(',')}节`;
-      }
-    }
-
-    // 添加时间信息
-    const timeRange = CourseTimeUtil.getTimeRange(courseTime);
-    if (timeRange) {
-      return `${sectionText} (${timeRange})`;
-    }
-
-    return sectionText;
   }
 
   /**
