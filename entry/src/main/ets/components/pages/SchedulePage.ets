@@ -3,6 +3,7 @@ import { CourseApiService, CourseInfo } from '../../services/api/CourseApiServic
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
+import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { curves, promptAction } from '@kit.ArkUI';
 
 // 周日期范围接口
@@ -22,6 +23,7 @@ interface ScheduleCourse {
   section: number[]; // 节次数组
   courseId: string[];
   isPlaceholder?: boolean; // 标识是否为空白占位块
+  originalCourseTime?: string[]; // 保存原始时间信息，如["08:30-09:15", "09:25-10:10"]
 }
 
 // 扩展的课程接口，包含周次信息
@@ -607,12 +609,12 @@ export struct SchedulePage {
         .alignItems(VerticalAlign.Center)
       }
 
-      // 节次信息
+      // 节次和时间信息
       Row() {
-        Text('节次：')
+        Text('时间：')
           .fontSize(14)
           .fontColor('#666666')
-        Text(`第${course.section.join(',')}节`)
+        Text(CourseTimeUtil.formatSectionWithTime(course.section, course.originalCourseTime))
           .fontSize(14)
           .fontColor('#333333')
           .fontWeight(FontWeight.Medium)
@@ -727,7 +729,8 @@ export struct SchedulePage {
         weekday: this.parseWeekday(course.weekday),
         section: this.parseSection(course.section),
         courseId: [course.courseId.toString()], // 转换为字符串数组
-        weeks: course.weeks // 保存原始周次信息用于过滤
+        weeks: course.weeks, // 保存原始周次信息用于过滤
+        originalCourseTime: course.courseTime // 保存原始时间信息
       };
       return scheduleCourse;
     });

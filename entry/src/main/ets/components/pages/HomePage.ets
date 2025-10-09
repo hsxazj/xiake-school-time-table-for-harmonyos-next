@@ -1,6 +1,7 @@
 import { UserInfoManager, UserSchoolInfo } from '../../common/utils/UserInfoManager';
 import { CourseInfo } from '../../models/CourseModels';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
+import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
@@ -192,7 +193,7 @@ export struct HomePage {
         .margin({ bottom: 6 })
         .alignSelf(ItemAlign.Start)
 
-      Text(this.getTimeRange(courseInfo.courseTime))
+      Text(CourseTimeUtil.getTimeRange(courseInfo.courseTime))
         .fontSize(14)
         .fontColor(CourseColorUtil.getCourseTextColor(courseInfo.courseName, this.courseColorsList))
         .fontWeight(FontWeight.Medium)
@@ -228,19 +229,6 @@ export struct HomePage {
     .transition(this.effect) // 应用转场动画
   }
 
-  private getTimeRange(courseTime?: string[]): string {
-    if (!courseTime || courseTime.length === 0) {
-      return '';
-    }
-
-    const firstTime = courseTime[0];
-    const lastTime = courseTime[courseTime.length - 1];
-
-    const startTime = firstTime.split('-')[0];
-    const endTime = lastTime.split('-')[1];
-
-    return `${startTime}-${endTime}`;
-  }
 
   private async loadTodayCourses(): Promise<void> {
     this.isLoading = true;
