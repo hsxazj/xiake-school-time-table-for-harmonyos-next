@@ -2,6 +2,8 @@ import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { LoginApiService } from '../../services/api/LoginApiService';
 import { SimpleUserInfo } from '../../models/UserModels';
 import { API_CONFIG } from '../../common/constants/AppConstants';
+import { AppConfigManager } from '../../services/AppConfigManager';
+import { common } from '@kit.AbilityKit';
 
 // 用户信息接口
 interface UserInfo {
@@ -38,12 +40,15 @@ export struct MinePage {
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   @State private isLoggingOut: boolean = false; // 是否正在退出登录
   @State private isLoggedIn: boolean = false; // 登录状态
+  @State private treeHoleEnabled: boolean = true; // 树洞功能状态
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private loginService: LoginApiService = LoginApiService.getInstance();
+  private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
 
   aboutToAppear(): void {
     this.loadUserInfo();
     this.checkLoginStatus();
+    this.loadTreeHoleSettings();
     // 启动渐显动画
     this.startFadeInAnimation();
   }
@@ -108,12 +113,20 @@ export struct MinePage {
       })
       .margin({ top: 50, bottom: 20 })
 
+      // 功能设置列表 - 树洞开关
+      Column() {
+        this.MenuSection('功能设置', this.getFunctionItems())
+      }
+      .width('90%')
+      .margin({ bottom: 20 })
+
       // 功能列表 - 只保留问题反馈和关于我们
       Column() {
         this.MenuSection('帮助与信息', this.getHelpItems())
       }
       .width('90%')
-      .layoutWeight(1)
+
+      Blank()
 
       // 登录/退出登录按钮
       if (this.isLoggedIn) {
@@ -195,9 +208,23 @@ export struct MinePage {
             .alignItems(HorizontalAlign.Start)
             .layoutWeight(1)
 
-            Text('>')
-              .fontSize(16)
-              .fontColor('#CCCCCC')
+            // 根据section类型显示不同的右侧组件
+            if (title === '功能设置' && item.title === '树洞功能') {
+              // 树洞功能显示开关
+              Toggle({ type: ToggleType.Switch, isOn: this.treeHoleEnabled })
+                .selectedColor($r('app.color.schedule_primary_color'))
+                .switchPointColor(Color.White)
+                .onChange((isOn: boolean) => {
+                  if (isOn !== this.treeHoleEnabled) {
+                    this.toggleTreeHoleFunction();
+                  }
+                })
+            } else {
+              // 其他项目显示箭头
+              Text('>')
+                .fontSize(16)
+                .fontColor('#CCCCCC')
+            }
           }
           .width('100%')
           .height(60)
@@ -205,6 +232,10 @@ export struct MinePage {
           .alignItems(VerticalAlign.Center)
           .onClick(() => {
             // 处理点击事件
+            if (title === '功能设置' && item.title === '树洞功能') {
+              // 树洞功能开关点击
+              this.toggleTreeHoleFunction();
+            }
           })
 
           if (index < items.length - 1) {
@@ -332,6 +363,116 @@ export struct MinePage {
       { icon: $r("app.media.problemFeedback"), title: '问题反馈', desc: '反馈使用问题和建议' },
       { icon: $r("app.media.aboutUs"), title: '关于我们', desc: '应用信息和版本' }
     ];
+  }
+
+  /**
+   * 获取功能设置列表项
+   */
+  private getFunctionItems(): MenuItemType[] {
+    return [
+      { icon: $r("app.media.treehole"), title: '树洞功能', desc: this.treeHoleEnabled ? '已启用' : '已禁用' }
+    ];
+  }
+
+  /**
+   * 加载树洞功能设置
+   */
+  private loadTreeHoleSettings(): void {
+    try {
+      // 从AppConfigManager获取树洞功能状态
+      this.treeHoleEnabled = this.appConfigManager.getTreeHoleEnabled();
+      console.info(`[MinePage] 树洞功能状态: ${this.treeHoleEnabled}`);
+    } catch (error) {
+      console.error('[MinePage] 加载树洞功能设置失败:', error);
+      this.treeHoleEnabled = true; // 默认启用
+    }
+  }
+
+  /**
+   * 切换树洞功能状态
+   */
+  private toggleTreeHoleFunction(): void {
+    try {
+      const newState = !this.treeHoleEnabled;
+      const context = this.getUIContext().getHostContext();
+      
+      // 检查context是否有效
+      if (!context) {
+        console.error('[MinePage] 无法获取有效的context');
+        this.showToast('设置失败，请重试');
+        return;
+      }
+      
+      // 保存新状态到AppConfigManager
+      this.appConfigManager.setTreeHoleEnabled(newState, context);
+      this.treeHoleEnabled = newState;
+      
+      console.info(`[MinePage] 树洞功能已${newState ? '启用' : '禁用'}`);
+      
+      // 显示重启提示对话框
+      this.showRestartConfirmDialog();
+      
+    } catch (error) {
+      console.error('[MinePage] 切换树洞功能失败:', error);
+      this.showToast('设置失败，请重试');
+    }
+  }
+
+  /**
+   * 显示重启确认对话框
+   */
+  private showRestartConfirmDialog(): void {
+    this.getUIContext().showAlertDialog({
+      title: '设置已更新',
+      message: `树洞功能已${this.treeHoleEnabled ? '启用' : '禁用'}，需要重启应用才能完全生效。`,
+      alignment: DialogAlignment.Center,
+      primaryButton: {
+        value: '立即重启',
+        action: () => {
+          this.restartApp();
+        }
+      },
+      secondaryButton: {
+        value: '稍后重启',
+        action: () => {
+          this.showToast('设置已保存，下次启动时生效');
+        }
+      }
+    });
+  }
+
+  /**
+   * 重启应用
+   */
+  private restartApp(): void {
+    try {
+      const context = this.getUIContext().getHostContext();
+      
+      // 检查context是否有效
+      if (!context) {
+        console.error('[MinePage] 无法获取有效的context');
+        this.showToast('重启失败，请手动重启应用');
+        return;
+      }
+      
+      console.info('[MinePage] 准备重启应用...');
+      
+      // 获取UIAbilityContext来执行重启
+      const abilityContext = context as common.UIAbilityContext;
+      
+      // 使用HarmonyOS API重启应用
+      abilityContext.terminateSelf((error: Error) => {
+        if (error) {
+          console.error('[MinePage] 重启应用失败:', error);
+          this.showToast('重启失败，请手动重启应用');
+        } else {
+          console.info('[MinePage] 应用重启成功');
+        }
+      });
+    } catch (error) {
+      console.error('[MinePage] 重启应用异常:', error);
+      this.showToast('重启失败，请手动重启应用');
+    }
   }
 
   /**

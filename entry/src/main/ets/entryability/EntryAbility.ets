@@ -62,7 +62,7 @@ export default class EntryAbility extends UIAbility {
       hilog.info(DOMAIN, 'testTag', '🔄 [EntryAbility] 开始初始化应用配置...');
 
       // 使用AppConfigManager统一管理配置初始化
-      await this.appConfigManager.initialize();
+      await this.appConfigManager.initialize(this.context);
 
       hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 应用配置初始化完成');
 
