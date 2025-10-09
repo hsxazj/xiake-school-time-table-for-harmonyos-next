@@ -27,7 +27,7 @@ export struct ImagePreviewDialog {
   @Prop isVisible: boolean = false;
   @Prop images: string[] = [];
   @Prop currentIndex: number = 0;
-  @Prop onClose?: ImagePreviewCloseCallback;
+  @Prop onClose: ImagePreviewCloseCallback = new ImagePreviewCloseCallback();
   @State private currentImageIndex: number = 0;
   @State private imageScale: number = 1;
   @State private imageOffsetX: number = 0;

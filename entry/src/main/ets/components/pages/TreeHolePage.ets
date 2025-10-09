@@ -62,7 +62,7 @@ export struct TreeHolePage {
           isVisible: this.imagePreviewVisible,
           images: this.previewImages,
           currentIndex: this.previewCurrentIndex,
-          onClose: new ImagePreviewCloseCallback(this.handleImagePreviewClose.bind(this))
+          onClose: new ImagePreviewCloseCallback(() => this.handleImagePreviewClose())
         })
       }
     }
@@ -278,7 +278,7 @@ export struct TreeHolePage {
       if (item.images && item.images.length > 0) {
         TreeHoleImageGrid({
           images: item.images,
-          onImageClick: new ImageClickCallback(this.handleImageClick.bind(this)),
+          onImageClick: new ImageClickCallback((imageUrl: string, imageIndex: number, allImages: string[]) => this.handleImageClick(imageUrl, imageIndex, allImages)),
           imageBorderRadius: 8
         })
           .margin({ bottom: 12, left: 10, right: 10 })

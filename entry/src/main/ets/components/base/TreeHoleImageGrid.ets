@@ -24,7 +24,7 @@ export class ImageClickCallback {
 @Component
 export struct TreeHoleImageGrid {
   @Prop images: string[] = [];
-  @Prop onImageClick?: ImageClickCallback;
+  @Prop onImageClick: ImageClickCallback = new ImageClickCallback();
   @Prop maxWidth: number = 300;
   @Prop imageBorderRadius: number = 8;
 

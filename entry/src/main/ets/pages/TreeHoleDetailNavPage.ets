@@ -145,7 +145,7 @@ struct TreeHoleDetailNavPage {
         if (this.treeHoleItem.images && this.treeHoleItem.images.length > 0) {
           TreeHoleImageGrid({
             images: this.treeHoleItem.images,
-            onImageClick: new ImageClickCallback(this.handleImageClick.bind(this)),
+            onImageClick: new ImageClickCallback((imageUrl: string, imageIndex: number, allImages: string[]) => this.handleImageClick(imageUrl, imageIndex, allImages)),
             imageBorderRadius: 12
           })
         }
@@ -602,7 +602,7 @@ struct TreeHoleDetailNavPage {
           isVisible: this.imagePreviewVisible,
           images: this.previewImages,
           currentIndex: this.previewCurrentIndex,
-          onClose: new ImagePreviewCloseCallback(this.handleImagePreviewClose.bind(this))
+          onClose: new ImagePreviewCloseCallback(() => this.handleImagePreviewClose())
         })
       }
     }
