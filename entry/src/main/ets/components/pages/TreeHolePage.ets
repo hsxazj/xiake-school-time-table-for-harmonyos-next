@@ -149,30 +149,37 @@ export struct TreeHolePage {
    */
   @Builder
   buildEmptyStateWithHeader() {
-    Column() {
-      // 发布区域
+    Refresh({ refreshing: $$this.isRefreshing }) {
       Column() {
-        this.buildPublishArea()
-      }
-      .margin({ top: 20, bottom: 15 })
+        // 发布区域
+        Column() {
+          this.buildPublishArea()
+        }
+        .margin({ top: 20, bottom: 15 })
 
-      // 空状态
-      Column() {
-        Image($r('app.media.startIcon'))
-          .width(80)
-          .height(80)
-          .opacity(0.3)
-          .margin({ bottom: 15 })
+        // 空状态
+        Column() {
+          Image($r('app.media.startIcon'))
+            .width(80)
+            .height(80)
+            .opacity(0.3)
+            .margin({ bottom: 15 })
 
-        Text('— 暂无树洞内容 —')
-          .fontSize(16)
-          .fontColor('#999999')
+          Text('— 暂无树洞内容 —')
+            .fontSize(16)
+            .fontColor('#999999')
+        }
+        .justifyContent(FlexAlign.Center)
+        .layoutWeight(1)
       }
-      .justifyContent(FlexAlign.Center)
-      .layoutWeight(1)
+      .width('100%')
+      .height('100%')
     }
     .width('100%')
     .height('100%')
+    .onRefreshing(() => {
+      this.handleRefresh();
+    })
   }
 
   /**
