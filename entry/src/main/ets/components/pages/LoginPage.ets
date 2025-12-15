@@ -256,6 +256,9 @@ export struct LoginPageContent {
         this.errorMessage = '登录失败，请重试';
         hilog.error(DOMAIN, 'LoginPage', '❌ [Login] 登录失败: 未知错误');
       }
+
+      // 显示错误提示
+      this.showErrorMessage();
     }
   }
 
@@ -296,6 +299,20 @@ export struct LoginPageContent {
     this.startFadeOutAnimation();
 
     hilog.info(DOMAIN, 'LoginPage', '🎉 [Success] 登录成功提示已显示');
+  }
+
+  /**
+   * 显示错误提示
+   */
+  private showErrorMessage(): void {
+    // 显示错误提示
+    this.promptAction.showToast({
+      message: this.errorMessage || '登录失败，请重试',
+      duration: 2000,
+      bottom: 100
+    });
+
+    hilog.info(DOMAIN, 'LoginPage', '⚠️ [Error] 登录失败提示已显示');
   }
 
   /**

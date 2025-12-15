@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "E:/arkts/xiake-hm-key/kb.p12",
-          "storePassword": "0000001B9488B82607C2870FC64BBCF09752F3E14D8B58EB7B292FDBF331AC4D32245404A5D3F21B465E6D",
-          "keyAlias": "kb",
-          "keyPassword": "0000001B4D9DF741655656B4563AF67C9196F12C3351263F8B0FFB77BB2DDC9AD5F714457310D9E791BACE",
+          "certpath": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001AC06D00BCCADF553A2D26328DCFC038BA5A5A6BC28AF865005B42A334E60EBBD964B0D6F8D59A",
+          "profile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p7b",
           "signAlg": "SHA256withECDSA",
-          "profile": "E:/arkts/xiake-hm-key/xiake-kb-prodRelease.p7b",
-          "certpath": "E:/arkts/xiake-hm-key/kb.cer"
+          "storeFile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p12",
+          "storePassword": "0000001A157F2979D650FE722962D692CA0E0C620E8D0452095866EA5E70CC121EA35A166EEE4F4A35D5"
         }
       }
     ],
@@ -20,7 +20,7 @@
         "name": "default",
         "signingConfig": "default",
         "targetSdkVersion": "5.0.5(17)",
-        "compatibleSdkVersion": "5.0.2(14)",
+        "compatibleSdkVersion": "5.0.5(17)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {

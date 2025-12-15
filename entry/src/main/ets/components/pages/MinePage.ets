@@ -120,11 +120,11 @@ export struct MinePage {
       .width('90%')
       .margin({ bottom: 20 })
 
-      // 功能列表 - 只保留问题反馈和关于我们
-      Column() {
-        this.MenuSection('帮助与信息', this.getHelpItems())
-      }
-      .width('90%')
+      // // 功能列表 - 只保留问题反馈和关于我们
+      // Column() {
+      //   this.MenuSection('帮助与信息', this.getHelpItems())
+      // }
+      // .width('90%')
 
       Blank()
 
@@ -159,8 +159,6 @@ export struct MinePage {
             this.navigateToLogin();
           })
       }
-
-      Blank()
     }
     .width('100%')
     .height('100%')
