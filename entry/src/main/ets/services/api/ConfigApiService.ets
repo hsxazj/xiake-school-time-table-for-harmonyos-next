@@ -1,9 +1,15 @@
 import { ApiResponse, HttpService } from './HttpService';
 import { DateUtil } from '../../common/utils/DateUtil';
 import { ConfigApiResponseData, CurrentSemesterStatus, SemesterInfo, WeekDateRange } from '../../models/ConfigModels';
+import { CacheManager } from '../../common/utils/CacheManager';
+import { ErrorUtil } from '../../common/utils/ErrorUtil';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 导出类型
 export { CurrentSemesterStatus, SemesterInfo } from '../../models/ConfigModels';
+
+const DOMAIN: number = 0x0002;
+const TAG: string = 'ConfigApiService';
 
 // 最远学期信息接口
 interface FarthestSemesterInfo {
@@ -35,10 +41,11 @@ export class ConfigApiService {
   }
 
   /**
-   * 获取配置信息
+   * 获取配置信息 (支持缓存和降级)
    */
   public async getConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
+      // 1. 发起HTTP请求
       const response = await HttpService.getInstance().get<null, Record<string, Object>>('/config');
 
       // 转换原始数据为Map结构
@@ -64,11 +71,42 @@ export class ConfigApiService {
         code: response.code || 200,
         data: { start: startMap, end: endMap }
       };
+
+      // 2. 请求成功: 异步缓存配置 (不阻塞返回)
+      if (configResponse.code === 200) {
+        CacheManager.saveConfigCache(configResponse.data)
+          .catch((err: Error) => {
+            hilog.error(DOMAIN, TAG, `缓存配置失败: ${err.message}`);
+          });
+      }
+
       // 处理学期数据
       this.processSemesterData(configResponse.data);
 
       return configResponse;
     } catch (error) {
+      // 3. 网络错误: 尝试降级到缓存
+      if (ErrorUtil.isNetworkError(error)) {
+        hilog.warn(DOMAIN, TAG, `网络错误,尝试读取缓存: ${ErrorUtil.formatError(error)}`);
+
+        const cached = await CacheManager.getConfigCache();
+        if (cached) {
+          hilog.info(DOMAIN, TAG, `✅ 使用缓存配置`);
+
+          // 处理学期数据
+          this.processSemesterData(cached);
+
+          return {
+            code: 200,
+            data: cached,
+            msg: '离线数据'
+          };
+        } else {
+          hilog.warn(DOMAIN, TAG, `⚠️ 缓存不存在,无法降级`);
+        }
+      }
+
+      // 4. 无缓存或非网络错误: 抛出原始错误
       console.error('获取配置失败:', error);
       throw new Error('获取配置失败');
     }

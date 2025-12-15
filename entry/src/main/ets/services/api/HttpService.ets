@@ -23,6 +23,26 @@ interface ErrorResponseData {
   code?: number;
 }
 
+// 网络错误响应接口
+interface NetworkErrorResponse {
+  status?: number;
+  data?: ErrorResponseData;
+}
+
+// 扩展 Error 接口以包含网络错误信息
+interface NetworkErrorInfo extends Error {
+  code?: string | number;
+  response?: NetworkErrorResponse;
+  request?: object;
+  originalError?: AxiosError;
+}
+
+// 解析后的错误信息接口
+interface ParsedErrorInfo {
+  code?: number;
+  message?: string;
+}
+
 // 请求配置接口
 interface RequestConfig {
   method: string;
@@ -270,15 +290,29 @@ export class HttpService {
   }
 
   /**
-   * 错误处理
+   * 错误处理 - 创建 Error 对象并附加网络错误信息用于缓存降级判断
    */
   private handleError(error: AxiosError): Error {
     let errorMessage = '网络请求失败';
+
+    // 创建自定义错误对象
+    const networkError = new Error(errorMessage) as NetworkErrorInfo;
+
+    // 附加 AxiosError 的关键信息
+    networkError.originalError = error;
+    networkError.code = error.code;
+    networkError.request = error.request;
 
     if (error.response) {
       // 服务器响应错误
       const status = error.response.status;
       const data = error.response.data as ErrorResponseData;
+
+      const errorResponse: NetworkErrorResponse = {
+        status: status,
+        data: data
+      };
+      networkError.response = errorResponse;
 
       switch (status) {
         case 400:
@@ -300,14 +334,37 @@ export class HttpService {
           errorMessage = data?.message || `请求失败 (${status})`;
       }
     } else if (error.request) {
-      // 网络错误
-      errorMessage = '网络连接失败，请检查网络设置';
+      // 网络错误 - 尝试提取 HarmonyOS 错误信息
+      if (error.message) {
+        try {
+          // HarmonyOS 可能将错误序列化为 JSON
+          if (error.message.startsWith('{')) {
+            const parsedError: ParsedErrorInfo = JSON.parse(error.message) as ParsedErrorInfo;
+            if (parsedError.code) {
+              networkError.code = parsedError.code;
+              errorMessage = parsedError.message || '网络连接失败';
+            }
+          } else {
+            errorMessage = error.message;
+          }
+        } catch (parseError) {
+          errorMessage = '网络连接失败，请检查网络设置';
+        }
+      } else {
+        errorMessage = '网络连接失败，请检查网络设置';
+      }
     } else {
       // 其他错误
       errorMessage = error.message || '未知错误';
     }
 
+    // 更新错误消息
+    networkError.message = errorMessage;
+
     console.error('[Error Handler]', errorMessage);
-    return new Error(errorMessage);
+    console.error('[Error Code]', networkError.code);
+
+    // 返回附加了网络信息的 Error 对象
+    return networkError;
   }
 }

@@ -4,6 +4,8 @@ import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
+import { CacheManager } from '../../common/utils/CacheManager';
+import { ErrorUtil } from '../../common/utils/ErrorUtil';
 import { curves, promptAction } from '@kit.ArkUI';
 
 // 周日期范围接口
@@ -989,6 +991,11 @@ export struct SchedulePage {
         this.processWeekScheduleData();
 
         console.info(`📚 [Course] 成功加载${courseResponse.data.length}门课程`);
+
+        // 异步清理旧缓存 (保持最多20周,不阻塞UI)
+        CacheManager.cleanOldScheduleCaches().catch((err: Error) => {
+          console.warn(`⚠️ [Cache] 清理旧缓存失败: ${err.message}`);
+        });
       } else {
         console.warn(`📚 [Course] 课程数据加载失败: ${courseResponse.msg}`);
         this.courseList = [];
@@ -998,6 +1005,17 @@ export struct SchedulePage {
 
     } catch (error) {
       console.error('📚 [Course] 加载课程数据失败:', error);
+
+      // 判断是否为网络错误且无缓存
+      if (ErrorUtil.isNetworkError(error)) {
+        this.promptAction.showToast({
+          message: '网络连接失败，请检查网络后重试',
+          duration: 3000,
+          bottom: '100vp'
+        });
+        console.warn('📚 [Course] 网络错误且无缓存，已提示用户');
+      }
+
       this.courseList = [];
       // 即使出错也要初始化空的网格
       this.processWeekScheduleData();

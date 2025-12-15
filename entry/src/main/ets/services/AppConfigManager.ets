@@ -6,6 +6,13 @@ const DOMAIN = 0x1000; // App Config domain
 const TREE_HOLE_ENABLED_KEY = 'tree_hole_enabled'; // 树洞功能启用状态存储键
 
 /**
+ * 初始化结果接口
+ */
+export interface InitializeResult {
+  usedCache: boolean;  // 是否使用了缓存数据
+}
+
+/**
  * 应用配置管理器 - 统一管理全局配置状态
  * 参照class-schedule-c的初始化流程
  */
@@ -13,7 +20,7 @@ export class AppConfigManager {
   private static instance: AppConfigManager;
   private configService: ConfigApiService;
   private isInitialized: boolean = false;
-  private initPromise: Promise<void> | null = null;
+  private initPromise: Promise<InitializeResult> | null = null;
   private preferencesUtil: PreferencesUtil;
   private treeHoleEnabled: boolean = true; // 树洞功能默认启用
 
@@ -32,10 +39,12 @@ export class AppConfigManager {
   /**
    * 初始化应用配置 (参照class-schedule-c的getKxTime逻辑)
    * 确保只初始化一次，支持多处调用
+   * @returns InitializeResult 包含是否使用了缓存的信息
    */
-  public async initialize(context?: Context): Promise<void> {
+  public async initialize(context?: Context): Promise<InitializeResult> {
     if (this.isInitialized) {
-      return Promise.resolve();
+      const result: InitializeResult = { usedCache: false };
+      return Promise.resolve(result);
     }
 
     if (this.initPromise) {
@@ -60,7 +69,7 @@ export class AppConfigManager {
   /**
    * 强制重新初始化配置
    */
-  public async reinitialize(context?: Context): Promise<void> {
+  public async reinitialize(context?: Context): Promise<InitializeResult> {
     hilog.info(DOMAIN, 'AppConfig', '🔄 [AppConfigManager] 强制重新初始化...');
     this.isInitialized = false;
     this.initPromise = null;
@@ -121,7 +130,7 @@ export class AppConfigManager {
     }
   }
 
-  private async performInitialization(context?: Context): Promise<void> {
+  private async performInitialization(context?: Context): Promise<InitializeResult> {
     try {
       hilog.info(DOMAIN, 'AppConfig', '🔄 [AppConfigManager] 开始初始化应用配置...');
 
@@ -132,7 +141,13 @@ export class AppConfigManager {
 
       // Step 1: 获取配置数据 (对应class-schedule-c的api.getKxTime())
       const configResponse = await this.configService.getConfig();
-      hilog.info(DOMAIN, 'AppConfig', '✅ [AppConfigManager] Config数据获取成功');
+      const usedCache = configResponse.msg === '离线数据';
+
+      if (usedCache) {
+        hilog.warn(DOMAIN, 'AppConfig', '⚠️ [AppConfigManager] 使用了缓存配置数据');
+      } else {
+        hilog.info(DOMAIN, 'AppConfig', '✅ [AppConfigManager] Config数据获取成功');
+      }
 
       // Step 2: 计算当前学期状态 (对应class-schedule-c的getWeek逻辑)
       const currentStatus = this.configService.calculateCurrentSemesterStatus();
@@ -153,6 +168,7 @@ export class AppConfigManager {
       this.isInitialized = true;
       hilog.info(DOMAIN, 'AppConfig', '🎉 [AppConfigManager] 应用配置初始化完成');
 
+      return { usedCache };
     } catch (error) {
       hilog.error(DOMAIN, 'AppConfig', '❌ [AppConfigManager] 配置初始化失败: %{public}s', JSON.stringify(error));
       this.initPromise = null; // 允许重试
