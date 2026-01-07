@@ -98,13 +98,6 @@ export class JwxtGetExamService {
         hilog.warn(DOMAIN, TAG, '⚠️ [GetExam] POST表单请求失败，尝试GET请求...');
       }
 
-      // 如果POST失败，尝试GET请求
-      if (!data || typeof data !== 'object') {
-        hilog.info(DOMAIN, TAG, '🔄 [GetExam] 尝试GET请求...');
-        data = await this.httpClient.get<ESObject>(apiUrl, referer);
-        hilog.info(DOMAIN, TAG, '✅ [GetExam] GET请求成功');
-      }
-
       // 验证响应数据
       if (!data || typeof data !== 'object') {
         hilog.error(DOMAIN, TAG, '❌ [GetExam] 返回数据为空或类型错误');
