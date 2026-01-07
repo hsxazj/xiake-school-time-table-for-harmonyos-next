@@ -1,6 +1,8 @@
 import { LoginApiService } from '../../services/api/LoginApiService';
 import { LoginForm, LoginStatus } from '../../models/LoginModels';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
+import { JwxtCredentialsManager } from '../../services/jwxt/JwxtCredentialsManager';
+import { JwxtLoginService } from '../../services/jwxt/JwxtLoginService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { common } from '@kit.AbilityKit';
 
@@ -46,6 +48,9 @@ export struct LoginPageContent {
   private promptAction = this.getUIContext().getPromptAction();
   private loginService: LoginApiService = LoginApiService.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
+  // JWXT教务系统服务
+  private jwxtCredentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
+  private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();
 
   aboutToAppear(): void {
     // 启动渐显动画
@@ -211,7 +216,7 @@ export struct LoginPageContent {
   }
 
   /**
-   * 处理登录逻辑
+   * 处理登录逻辑（使用JWXT教务系统Cookie Session方式）
    */
   private async handleLogin(): Promise<void> {
     if (!this.isFormValid()) {
@@ -227,21 +232,20 @@ export struct LoginPageContent {
       // 获取UIAbilityContext
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
 
-      // 调用登录API，传递context用于token持久化
-      await this.loginService.login(this.loginForm, context);
+      // 步骤1: 保存凭证到JWXT凭证管理器
+      this.jwxtCredentialsManager.saveCredentials(
+        context,
+        this.loginForm.username,
+        this.loginForm.password
+      );
+      hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 凭证已保存');
+
+      // 步骤2: 调用JWXT登录服务执行登录
+      // 登录流程: logout → 获取CSRF → 获取公钥 → 加密密码 → 提交表单
+      await this.jwxtLoginService.login(context);
 
       this.loginStatus = LoginStatus.SUCCESS;
       hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 登录成功');
-
-      // 登录成功后自动获取用户信息
-      try {
-        hilog.info(DOMAIN, 'LoginPage', '🔄 [Login] 开始获取用户信息...');
-        await this.userInfoManager.checkLoginStatus(context);
-        hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 用户信息获取成功');
-      } catch (error) {
-        hilog.error(DOMAIN, 'LoginPage', `⚠️ [Login] 获取用户信息失败: ${JSON.stringify(error)}`);
-        // 用户信息获取失败不影响登录流程
-      }
 
       // 登录成功的提示
       this.showSuccessMessage();
