@@ -8,6 +8,7 @@ import { CacheManager } from '../../common/utils/CacheManager';
 import { ErrorUtil } from '../../common/utils/ErrorUtil';
 import { CourseParser } from '../../common/utils/CourseParser';
 import { curves, promptAction } from '@kit.ArkUI';
+import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -79,6 +80,10 @@ export struct SchedulePage {
   private configService: ConfigApiService = ConfigApiService.getInstance();
   private jwxtCourseService: JwxtCourseService = JwxtCourseService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  // 新增：学生信息服务和状态
+  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
+  @State private studentInfo: StudentInfo | null = null;
+  @State private userGrade: number = 0; // 学生入学年份(数字格式)
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   // 参照class-schedule-c的sections配置
   private sections: SectionsConfig = {
@@ -121,6 +126,9 @@ export struct SchedulePage {
       return;
     }
     await this.jwxtCourseService.initialize(context);
+
+    // 获取学生信息(包括入学年份)
+    await this.loadStudentInfo();
 
     // 基于日期的初始化逻辑
     await this.initializeWithCurrentDate();
@@ -800,6 +808,28 @@ export struct SchedulePage {
   }
 
   /**
+   * 加载学生信息(获取入学年份用于年级限制)
+   */
+  private async loadStudentInfo(): Promise<void> {
+    try {
+      console.info('📋 [Schedule] 开始获取学生信息...');
+      this.studentInfo = await this.jwxtGetInfoService.getInfo();
+
+      if (this.studentInfo && this.studentInfo.grade) {
+        // 将 grade 字符串转换为数字 (如 "2024" -> 2024)
+        this.userGrade = parseInt(this.studentInfo.grade);
+        console.info(`📋 [Schedule] 学生入学年份: ${this.userGrade}`);
+      } else {
+        console.warn('📋 [Schedule] 未获取到学生入学年份，将不限制年级');
+        this.userGrade = 0; // 0 表示不限制
+      }
+    } catch (error) {
+      console.error('📋 [Schedule] 获取学生信息失败:', error);
+      this.userGrade = 0; // 失败时不限制年级
+    }
+  }
+
+  /**
    * 基于当前日期初始化 - 找到最近的学期并计算当前周数
    */
   private async initializeWithCurrentDate(): Promise<void> {
@@ -1082,6 +1112,56 @@ export struct SchedulePage {
   }
 
   /**
+   * 判断指定学期是否在学生入学后(年级限制)
+   *
+   * @param targetSemester 要判断的学期
+   * @returns true表示可以访问,false表示不可访问
+   */
+  private canAccessSemester(targetSemester: SemesterInfo | null): boolean {
+    // 如果没有获取到学生入学年份,不限制
+    if (!this.userGrade || this.userGrade === 0) {
+      console.info('📋 [Schedule] 未获取到入学年份，不限制访问');
+      return true;
+    }
+
+    // 如果目标学期为空,不允许访问
+    if (!targetSemester) {
+      console.warn('📋 [Schedule] 目标学期为空');
+      return false;
+    }
+
+    // 获取目标学期的学年(起始年份)
+    const academicYear = parseInt(targetSemester.academicYear);
+
+    // 判断: 入学年份 >= 学年起始年份 才能访问
+    // 例如: 2024年入学的学生,可以访问2024学年及以后的学期,不能访问2023学年及之前的学期
+    const canAccess = this.userGrade <= academicYear;
+
+    console.info(`📋 [Schedule] 年级限制检查: 入学年份=${this.userGrade}, 目标学年=${academicYear}, 可访问=${canAccess}`);
+
+    return canAccess;
+  }
+
+  /**
+   * 判断从当前日期滑动到指定日期是否合法
+   *
+   * @param targetDate 目标日期
+   * @returns true表示可以滑动,false表示受年级限制
+   */
+  private canSwipeToDate(targetDate: Date): boolean {
+    // 计算目标日期对应的学期
+    const targetStatus = this.configService.calculateCurrentSemesterStatus(targetDate);
+
+    if (!targetStatus || !targetStatus.currentSemester) {
+      console.warn('📋 [Schedule] 无法计算目标日期的学期信息');
+      return false;
+    }
+
+    // 检查年级限制
+    return this.canAccessSemester(targetStatus.currentSemester);
+  }
+
+  /**
    * 触摸结束 (参考class-schedule-c的touchEnd方法)
    */
   private touchEnd(event: TouchEvent): void {
@@ -1099,26 +1179,33 @@ export struct SchedulePage {
 
       if (elePosition === 'right') {
         // 右滑：显示上一周 (对应class-schedule-c的leftClick)
-        // 检查是否可以继续右滑到上一周
-        // TODO 检查是否可以继续右滑
-        // if (this.configService.canSwipeLeft(this.currentDate, userInfo.className)) {
-        //   console.info(`📅 [Navigate] 右滑到上一周`)
-        //   this.navigateToPreviousWeek();
-        // } else {
-        //   // 显示暂无数据提示
-        //   this.showNoDataToast();
-        // }
+        // 计算上一周的日期
+        const previousWeekDate = new Date(this.currentDate);
+        previousWeekDate.setDate(this.currentDate.getDate() - 7);
+
+        // 检查是否可以右滑到上一周
+        if (this.canSwipeToDate(previousWeekDate)) {
+          console.info(`📅 [Navigate] 右滑到上一周`);
+          this.navigateToPreviousWeek();
+        } else {
+          // 显示年级限制提示
+          this.showGradeRestrictedToast();
+        }
 
       } else if (elePosition === 'left') {
-        // 左滑：显示下一周 (对应class-schedule-c的rightClick)  
-        // TODO 检查是否可以继续左滑到下一周
-        // if (this.configService.canSwipeRight(this.currentDate)) {
-        //   console.info(`📅 [Navigate] 左滑到下一周`)
-        //   this.navigateToNextWeek();
-        // } else {
-        //   // 显示暂无数据提示
-        //   this.showNoDataToast();
-        // }
+        // 左滑：显示下一周 (对应class-schedule-c的rightClick)
+        // 计算下一周的日期
+        const nextWeekDate = new Date(this.currentDate);
+        nextWeekDate.setDate(this.currentDate.getDate() + 7);
+
+        // 检查是否可以左滑到下一周
+        if (this.canSwipeToDate(nextWeekDate)) {
+          console.info(`📅 [Navigate] 左滑到下一周`);
+          this.navigateToNextWeek();
+        } else {
+          // 显示暂无数据提示
+          this.showNoDataToast();
+        }
       }
     }
   }
@@ -1127,8 +1214,17 @@ export struct SchedulePage {
    * 判断指定周数是否对当前年级可选
    */
   private isWeekSelectableForCurrentGrade(weekNum: number): boolean {
-    // TODO t
-    return true;
+    if (!this.currentSemester) {
+      return false;
+    }
+
+    // 计算该周对应的日期
+    const semesterStartDate = new Date(this.currentSemester.startDate);
+    const targetDate = new Date(semesterStartDate);
+    targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
+
+    // 检查该周所在学期是否可访问
+    return this.canSwipeToDate(targetDate);
   }
 
   /**
@@ -1179,16 +1275,34 @@ export struct SchedulePage {
    * 判断是否可以前往上一个学期
    */
   private canGoToPreviousSemester(): boolean {
-    // TODO 检查是否可以前往上一个学期
-    return true;
+    if (!this.currentSemester) {
+      return false;
+    }
+
+    // 获取上一个学期
+    const previousSemester = this.configService.getAdjacentSemester(this.currentSemester, 'prev');
+
+    // 检查上一个学期是否存在且是否可访问
+    if (!previousSemester) {
+      return false;
+    }
+
+    return this.canAccessSemester(previousSemester);
   }
 
   /**
    * 判断是否可以前往下一个学期
    */
   private canGoToNextSemester(): boolean {
-    // TODO 检查是否可以前往下一个学期
-    return true;
+    if (!this.currentSemester) {
+      return false;
+    }
+
+    // 获取下一个学期
+    const nextSemester = this.configService.getAdjacentSemester(this.currentSemester, 'next');
+
+    // 检查下一个学期是否存在(无需检查年级限制,因为下一个学期一定比当前学期新)
+    return nextSemester !== null;
   }
 
   /**

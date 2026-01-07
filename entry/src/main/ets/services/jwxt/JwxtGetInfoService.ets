@@ -84,11 +84,13 @@ interface JwxtInfoResponse {
 
 /**
  * JWXT获取个人信息服务类
- * 单例模式
+ * 单例模式,包含内存缓存(应用生命周期内有效)
  */
 export class JwxtGetInfoService {
   private static instance: JwxtGetInfoService;
   private httpClient: JwxtHttpClient;
+  // 内存缓存(应用关闭后自动清除,无需时间限制)
+  private cachedStudentInfo: StudentInfo | null = null;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
@@ -106,20 +108,25 @@ export class JwxtGetInfoService {
   }
 
   /**
-   * 获取学生个人信息
+   * 获取学生个人信息(带内存缓存)
    *
    * 流程：
-   * 1. 尝试通过POST表单获取JSON数据（AJAX方式）
-   * 2. 如果失败则尝试GET请求
-   * 3. 解析响应数据
-   * 4. 映射字段到StudentInfo接口
+   * 1. 检查内存缓存是否存在
+   * 2. 如果缓存存在,直接返回
+   * 3. 否则请求API并缓存结果
    *
    * @returns Promise<StudentInfo> 学生个人信息
    * @throws Error 获取信息失败时抛出异常
    */
   public async getInfo(): Promise<StudentInfo> {
+    // 检查缓存是否存在
+    if (this.cachedStudentInfo) {
+      hilog.info(DOMAIN, TAG, '✅ [GetInfo] 使用内存缓存，姓名: %{public}s', this.cachedStudentInfo.name);
+      return this.cachedStudentInfo;
+    }
+
     try {
-      hilog.info(DOMAIN, TAG, '📝 [GetInfo] 开始获取学生个人信息...');
+      hilog.info(DOMAIN, TAG, '📝 [GetInfo] 开始从教务系统获取学生个人信息...');
 
       // API路径
       const apiUrl: string = 'xsxxxggl/xsxxwh_cxCkDgxsxx.html?gnmkdm=N100801';
@@ -154,9 +161,12 @@ export class JwxtGetInfoService {
         major: data.zyh_id || ''
       };
 
-      hilog.info(DOMAIN, TAG, '🎉 [GetInfo] 学生信息获取成功');
-      hilog.info(DOMAIN, TAG, '👤 [GetInfo] 姓名: %{public}s, 学号: %{public}s, 班级: %{public}s',
-        studentInfo.name, studentInfo.student_id, studentInfo.class_name);
+      // 保存到内存缓存
+      this.cachedStudentInfo = studentInfo;
+
+      hilog.info(DOMAIN, TAG, '🎉 [GetInfo] 学生信息获取成功并已缓存');
+      hilog.info(DOMAIN, TAG, '👤 [GetInfo] 姓名: %{public}s, 学号: %{public}s, 班级: %{public}s, 入学年份: %{public}s',
+        studentInfo.name, studentInfo.student_id, studentInfo.class_name, studentInfo.grade);
 
       return studentInfo;
     } catch (error) {
@@ -168,5 +178,13 @@ export class JwxtGetInfoService {
         throw new Error('获取学生信息失败');
       }
     }
+  }
+
+  /**
+   * 清除内存缓存
+   */
+  public clearCache(): void {
+    this.cachedStudentInfo = null;
+    hilog.info(DOMAIN, TAG, '🗑️ [GetInfo] 内存缓存已清除');
   }
 }

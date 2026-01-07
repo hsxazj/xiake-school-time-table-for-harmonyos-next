@@ -130,15 +130,9 @@ export struct ExamPage {
           }
         }
         .width('100%')
-        .padding(20)
+        .padding(10)
         .backgroundColor(Color.White)
         .borderRadius(24)
-        .shadow({
-          radius: 10,
-          color: '#80000000', // 半透明黑
-          offsetX: 0,
-          offsetY: 4
-        })
         .margin({ bottom: 20 })
         .layoutWeight(1)
       }
