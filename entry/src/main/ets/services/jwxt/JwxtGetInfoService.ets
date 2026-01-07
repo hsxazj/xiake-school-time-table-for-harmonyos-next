@@ -126,7 +126,7 @@ export class JwxtGetInfoService {
       const referer: string = 'xsxxxggl/xsxxwh_cxCkDgxsxx.html?gnmkdm=N100801&layout=default';
       let data: JwxtInfoResponse | undefined = undefined;
 
-      hilog.info(DOMAIN, TAG, '🔄 [GetInfo] 尝试方法2: GET请求...');
+      hilog.info(DOMAIN, TAG, '🔄 [GetInfo] 尝试GET请求...');
       data = await this.httpClient.get<JwxtInfoResponse>(apiUrl, referer);
       hilog.info(DOMAIN, TAG, '✅ [GetInfo] GET请求成功');
 

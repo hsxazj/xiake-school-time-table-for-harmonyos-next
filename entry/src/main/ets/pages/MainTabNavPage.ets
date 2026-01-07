@@ -2,6 +2,7 @@ import { HomePage } from '../components/pages/HomePage';
 import { SchedulePage } from '../components/pages/SchedulePage';
 import { TreeHolePage } from '../components/pages/TreeHolePage';
 import { MinePage } from '../components/pages/MinePage';
+import { ExamPage } from '../components/pages/ExamPage';
 import { AppConfigManager } from '../services/AppConfigManager';
 
 @Builder
@@ -53,19 +54,25 @@ struct MainTabNavPage {
         }
         .tabBar(this.TabBuilder('课表', 1, $r('app.media.classList'), $r('app.media.classListActive')))
 
+        // 考试 Tab - 始终显示
+        TabContent() {
+          ExamPage()
+        }
+        .tabBar(this.TabBuilder('考试', 2, $r('app.media.classList'), $r('app.media.classListActive')))
+
         // 树洞 Tab - 根据设置动态显示
         if (this.treeHoleEnabled) {
           TabContent() {
             TreeHolePage()
           }
-          .tabBar(this.TabBuilder('树洞', 2, $r('app.media.treehole'), $r("app.media.treehole_active")))
+          .tabBar(this.TabBuilder('树洞', 3, $r('app.media.treehole'), $r("app.media.treehole_active")))
         }
 
         // 我的 Tab - 始终显示，索引需要根据树洞是否显示动态调整
         TabContent() {
           MinePage()
         }
-        .tabBar(this.TabBuilder('我的', this.treeHoleEnabled ? 3 : 2, $r('app.media.me'), $r("app.media.meActive")))
+        .tabBar(this.TabBuilder('我的', this.treeHoleEnabled ? 4 : 3, $r('app.media.me'), $r("app.media.meActive")))
       }
       .width('100%')
       .height('100%')
