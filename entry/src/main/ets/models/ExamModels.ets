@@ -26,6 +26,9 @@ export interface ExamInfo {
 
   /** 座位号 */
   seat: string;
+
+  /** 考试成绩（可选，从成绩接口获取） */
+  score?: string;
 }
 
 /**

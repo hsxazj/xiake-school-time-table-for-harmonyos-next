@@ -58,7 +58,7 @@ struct MainTabNavPage {
         TabContent() {
           ExamPage()
         }
-        .tabBar(this.TabBuilder('考试', 2, $r('app.media.classList'), $r('app.media.classListActive')))
+        .tabBar(this.TabBuilder('考试', 2, $r('app.media.exam'), $r('app.media.examActive')))
 
         // 树洞 Tab - 根据设置动态显示
         if (this.treeHoleEnabled) {
