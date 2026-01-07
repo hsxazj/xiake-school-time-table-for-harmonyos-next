@@ -1,10 +1,12 @@
 import { ExamInfo } from '../../models/ExamModels';
 import { JwxtGetExamService } from '../../services/jwxt/JwxtGetExamService';
 import { JwxtGetGradeService, GradeInfo } from '../../services/jwxt/JwxtGetGradeService';
+import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { ConfigApiService, SemesterInfo } from '../../services/api/ConfigApiService';
 
 const DOMAIN: number = 0x0010;
 const TAG = 'ExamPage';
@@ -18,7 +20,18 @@ export struct ExamPage {
   @State private errorMessage: string = '';
   private jwxtGetExamService: JwxtGetExamService = JwxtGetExamService.getInstance();
   private jwxtGetGradeService: JwxtGetGradeService = JwxtGetGradeService.getInstance();
+  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private configService: ConfigApiService = ConfigApiService.getInstance();
+
+  // 考试页面独立的学期状态管理
+  @State private currentExamSemester: SemesterInfo | null = null;
+  @State private semesterList: SemesterInfo[] = [];
+  @State private showSemesterPicker: boolean = false;
+
+  // 学生信息和年级限制
+  @State private studentInfo: StudentInfo | null = null;
+  @State private userGrade: number = 0; // 学生入学年份(数字格式)
 
   // 动画效果 - 与HomePage保持一致
   private effect: TransitionEffect =
@@ -26,19 +39,104 @@ export struct ExamPage {
       .combine(TransitionEffect.scale({ x: 0, y: 0 }))
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
 
-  aboutToAppear(): void {
+  async aboutToAppear(): Promise<void> {
+    // 获取学生信息(包括入学年份)
+    await this.loadStudentInfo();
+    // 初始化学期数据
+    await this.initializeSemesterData();
+    // 加载考试列表
     this.loadExamList();
+  }
+
+  /**
+   * 加载学生信息(获取入学年份用于年级限制)
+   */
+  private async loadStudentInfo(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, TAG, '📋 [ExamPage] 开始获取学生信息...');
+      this.studentInfo = await this.jwxtGetInfoService.getInfo();
+
+      if (this.studentInfo && this.studentInfo.grade) {
+        // 将 grade 字符串转换为数字 (如 "2024" -> 2024)
+        this.userGrade = parseInt(this.studentInfo.grade);
+        hilog.info(DOMAIN, TAG, '📋 [ExamPage] 学生入学年份: %{public}d', this.userGrade);
+      } else {
+        hilog.warn(DOMAIN, TAG, '📋 [ExamPage] 未获取到学生入学年份，将不限制年级');
+        this.userGrade = 0; // 0 表示不限制
+      }
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '📋 [ExamPage] 获取学生信息失败: %{public}s', JSON.stringify(error));
+      this.userGrade = 0; // 失败时不限制年级
+    }
+  }
+
+  /**
+   * 初始化学期数据 - 独立管理考试页面的学期状态
+   */
+  private async initializeSemesterData(): Promise<void> {
+    try {
+      // 等待配置管理器初始化
+      await this.appConfigManager.initialize();
+
+      // 获取学期列表
+      this.semesterList = this.configService.getSemesterList();
+
+      // 获取当前学期状态
+      const currentStatus = this.configService.calculateCurrentSemesterStatus(new Date());
+      if (currentStatus && currentStatus.currentSemester) {
+        this.currentExamSemester = currentStatus.currentSemester;
+        hilog.info(DOMAIN, TAG, '✅ [ExamPage] 初始化学期: %{public}s学年第%{public}d学期',
+          this.currentExamSemester.academicYear, this.currentExamSemester.semester);
+      } else {
+        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 无法获取当前学期信息');
+      }
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '❌ [ExamPage] 初始化学期数据失败: %{public}s', JSON.stringify(error));
+    }
   }
 
   build() {
     Column() {
-      // 顶部标题栏
+      // 顶部标题栏 - 包含学期切换
       Row() {
-        Text('考试安排')
-          .fontSize(24)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
-          .layoutWeight(1)
+        Column() {
+          Text('考试安排')
+            .fontSize(24)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333333')
+
+          // 显示当前学期信息
+          if (this.currentExamSemester) {
+            Text(`${this.currentExamSemester.academicYear}学年第${this.currentExamSemester.semester}学期`)
+              .fontSize(14)
+              .fontColor('#666666')
+              .margin({ top: 4 })
+          }
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        // 切换学期按钮
+        Button('切换学期')
+          .fontSize(14)
+          .fontColor($r('app.color.schedule_primary_color'))
+          .backgroundColor('#E3F2FD')
+          .height(36)
+          .borderRadius(18)
+          .border({
+            width: 1,
+            color: $r('app.color.schedule_primary_color'),
+            radius: 18
+          })
+          .padding({
+            left: 16,
+            right: 16,
+            top: 0,
+            bottom: 0
+          })
+          .onClick(() => {
+            this.showSemesterPicker = true;
+          })
       }
       .width('100%')
       .padding({
@@ -46,6 +144,18 @@ export struct ExamPage {
         right: 5,
         top: 50,
         bottom: 20
+      })
+      .bindSheet($$this.showSemesterPicker, this.SemesterPickerBuilder(), {
+        showClose: false,
+        height: 400,
+        dragBar: true,
+        maskColor: 'rgba(0, 0, 0, 0.4)',
+        onAppear: () => {
+          hilog.info(DOMAIN, TAG, '📅 [ExamPage] 学期选择器显示');
+        },
+        onDisappear: () => {
+          hilog.info(DOMAIN, TAG, '📅 [ExamPage] 学期选择器隐藏');
+        }
       })
 
       // 考试列表区域 - 使用Refresh组件支持下拉刷新
@@ -243,6 +353,85 @@ export struct ExamPage {
   }
 
   /**
+   * 学期选择器 (仿照 SchedulePage，带年级过滤)
+   */
+  @Builder
+  SemesterPickerBuilder() {
+    Column() {
+      // 学期列表
+      Text('选择学期')
+        .fontSize(18)
+        .fontWeight(FontWeight.Bold)
+        .fontColor('#333333')
+        .margin({ bottom: 20 })
+
+      Scroll() {
+        Column() {
+          ForEach(this.getAccessibleSemesterList(), (semester: SemesterInfo) => {
+            Row() {
+              Column() {
+                Text(`${semester.academicYear}学年第${semester.semester}学期`)
+                  .fontSize(16)
+                  .fontColor(this.isSameSemester(semester, this.currentExamSemester)
+                    ? $r('app.color.schedule_primary_color')
+                    : '#333333')
+                  .fontWeight(this.isSameSemester(semester, this.currentExamSemester)
+                    ? FontWeight.Medium
+                    : FontWeight.Normal)
+
+                Text(`${semester.startDate} ~ ${semester.endDate}`)
+                  .fontSize(12)
+                  .fontColor('#999999')
+                  .margin({ top: 4 })
+              }
+              .layoutWeight(1)
+              .alignItems(HorizontalAlign.Start)
+
+              Blank()
+
+              if (this.isSameSemester(semester, this.currentExamSemester)) {
+                Text('✓')
+                  .fontSize(16)
+                  .fontColor($r('app.color.schedule_primary_color'))
+              }
+            }
+            .width('100%')
+            .height(70)
+            .padding({ left: 20, right: 20 })
+            .onClick(async () => {
+              await this.onSemesterItemClick(semester);
+            })
+
+            Divider()
+              .color('#F0F0F0')
+              .strokeWidth(0.5)
+          })
+        }
+      }
+      .layoutWeight(1)
+
+      Row() {
+        Button('取消')
+          .width('80%')
+          .height(45)
+          .fontSize(16)
+          .fontColor('#666666')
+          .backgroundColor('#F5F5F5')
+          .onClick(() => {
+            this.showSemesterPicker = false;
+          })
+      }
+      .width('100%')
+      .margin({ top: 20 })
+      .justifyContent(FlexAlign.Center)
+    }
+    .width('100%')
+    .padding(20)
+    .backgroundColor(Color.White)
+    .borderRadius({ topLeft: 20, topRight: 20 })
+  }
+
+  /**
    * 根据成绩获取显示颜色
    * @param score 成绩字符串
    * @returns 颜色值（及格绿色，不及格红色，其他黑色）
@@ -277,6 +466,48 @@ export struct ExamPage {
   }
 
   /**
+   * 获取可访问的学期列表(过滤掉入学年之前的学期)
+   */
+  private getAccessibleSemesterList(): SemesterInfo[] {
+    return this.semesterList.filter((semester: SemesterInfo) => {
+      return this.canAccessSemester(semester);
+    });
+  }
+
+  /**
+   * 判断两个学期是否相同
+   */
+  private isSameSemester(semester1: SemesterInfo | null, semester2: SemesterInfo | null): boolean {
+    if (!semester1 || !semester2) {
+      return false;
+    }
+    return semester1.academicYear === semester2.academicYear && semester1.semester === semester2.semester;
+  }
+
+  /**
+   * 处理学期选择点击事件
+   */
+  private async onSemesterItemClick(semester: SemesterInfo): Promise<void> {
+    if (this.isSameSemester(semester, this.currentExamSemester)) {
+      // 点击当前学期,直接关闭选择器
+      this.showSemesterPicker = false;
+      return;
+    }
+
+    hilog.info(DOMAIN, TAG, '📅 [ExamPage] 切换学期: %{public}s学年第%{public}d学期',
+      semester.academicYear, semester.semester);
+
+    // 更新当前学期
+    this.currentExamSemester = semester;
+
+    // 关闭选择器
+    this.showSemesterPicker = false;
+
+    // 重新加载考试数据
+    await this.loadExamList();
+  }
+
+  /**
    * 加载考试列表（使用缓存优先策略）
    *
    * 策略：
@@ -289,22 +520,18 @@ export struct ExamPage {
     try {
       hilog.info(DOMAIN, TAG, '📝 [ExamPage] 开始加载考试列表...');
 
-      // 等待配置管理器初始化
-      await this.appConfigManager.initialize();
-
-      // 获取当前学期状态
-      const currentStatus = this.appConfigManager.getCurrentStatus();
-      if (!currentStatus || !currentStatus.currentSemester) {
-        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 无法获取当前学期信息');
+      // 检查当前学期是否存在
+      if (!this.currentExamSemester) {
+        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 当前学期信息为空');
         this.errorMessage = '无法获取学期信息，请稍后重试';
         this.isLoading = false;
         return;
       }
 
-      const academicYear = parseInt(currentStatus.currentSemester.academicYear);
-      const semester = currentStatus.currentSemester.semester;
+      const academicYear = parseInt(this.currentExamSemester.academicYear);
+      const semester = this.currentExamSemester.semester;
 
-      hilog.info(DOMAIN, TAG, '📅 [ExamPage] 当前学期: year=%{public}d, term=%{public}d',
+      hilog.info(DOMAIN, TAG, '📅 [ExamPage] 加载学期: year=%{public}d, term=%{public}d',
         academicYear, semester);
 
       // 步骤1: 尝试从缓存加载
@@ -394,17 +621,14 @@ export struct ExamPage {
       this.isRefreshing = true;
       hilog.info(DOMAIN, TAG, '🔄 [ExamPage] 下拉刷新：直接请求API更新数据');
 
-      // 获取当前学期状态
-      await this.appConfigManager.initialize();
-      const currentStatus = this.appConfigManager.getCurrentStatus();
-
-      if (!currentStatus || !currentStatus.currentSemester) {
-        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 无法获取当前学期信息');
+      // 检查当前学期是否存在
+      if (!this.currentExamSemester) {
+        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 当前学期信息为空');
         return;
       }
 
-      const academicYear = parseInt(currentStatus.currentSemester.academicYear);
-      const semester = currentStatus.currentSemester.semester;
+      const academicYear = parseInt(this.currentExamSemester.academicYear);
+      const semester = this.currentExamSemester.semester;
 
       // 直接并行调用API获取最新数据
       const results = await Promise.all([
@@ -438,6 +662,38 @@ export struct ExamPage {
     } finally {
       this.isRefreshing = false;
     }
+  }
+
+  /**
+   * 判断指定学期是否在学生入学后(年级限制)
+   *
+   * @param targetSemester 要判断的学期
+   * @returns true表示可以访问,false表示不可访问
+   */
+  private canAccessSemester(targetSemester: SemesterInfo | null): boolean {
+    // 如果没有获取到学生入学年份,不限制
+    if (!this.userGrade || this.userGrade === 0) {
+      hilog.info(DOMAIN, TAG, '📋 [ExamPage] 未获取到入学年份，不限制访问');
+      return true;
+    }
+
+    // 如果目标学期为空,不允许访问
+    if (!targetSemester) {
+      hilog.warn(DOMAIN, TAG, '📋 [ExamPage] 目标学期为空');
+      return false;
+    }
+
+    // 获取目标学期的学年(起始年份)
+    const academicYear = parseInt(targetSemester.academicYear);
+
+    // 判断: 入学年份 <= 学年起始年份 才能访问
+    // 例如: 2024年入学的学生,可以访问2024学年及以后的学期,不能访问2023学年及之前的学期
+    const canAccess = this.userGrade <= academicYear;
+
+    hilog.info(DOMAIN, TAG, '📋 [ExamPage] 年级限制检查: 入学年份=%{public}d, 目标学年=%{public}d, 可访问=%{public}s',
+      this.userGrade, academicYear, canAccess ? 'true' : 'false');
+
+    return canAccess;
   }
 
   /**
