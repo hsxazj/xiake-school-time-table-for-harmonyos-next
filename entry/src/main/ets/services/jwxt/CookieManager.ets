@@ -82,15 +82,77 @@ export class CookieManager {
       // 处理数组情况
       const cookieArray = Array.isArray(setCookieValues) ? setCookieValues : [setCookieValues];
 
-      // 使用 ;;; 分隔多个Cookie（简化处理）
-      const cookieStr = cookieArray.join(';;;');
+      // 打印每个 Set-Cookie 值
+      hilog.info(DOMAIN, TAG, '🔍 [Save] 准备保存 %{public}d 个Set-Cookie响应头:', cookieArray.length);
+      cookieArray.forEach((cookie, index) => {
+        hilog.info(DOMAIN, TAG, '🔍 [Save] Set-Cookie[%{public}d]: %{public}s', index, cookie);
+      });
+
+      // 读取现有Cookie
+      const existingCookieStr = await this.preferencesStore.get(host, '') as string;
+      const existingCookies = new Map<string, string>();
+
+      // 解析现有Cookie（跳过非 name=value 的部分，如 Path=xxx）
+      if (existingCookieStr) {
+        const pairs = existingCookieStr.split(';').map(s => s.trim());
+        for (const pair of pairs) {
+          const eqIndex = pair.indexOf('=');
+          if (eqIndex > 0) {
+            const name = pair.substring(0, eqIndex);
+            const value = pair.substring(eqIndex + 1);
+            // 跳过 Path、Domain、Expires 等属性
+            if (name !== 'Path' && name !== 'Domain' && name !== 'Expires' &&
+                name !== 'Max-Age' && name !== 'HttpOnly' && name !== 'Secure' &&
+                name !== 'SameSite') {
+              existingCookies.set(name, value);
+            }
+          }
+        }
+        hilog.info(DOMAIN, TAG, '🔍 [Save] 现有Cookie: %{public}s', existingCookieStr);
+      }
+
+      // 解析新Cookie，只提取 name=value 部分，忽略过期的Cookie
+      for (const setCookie of cookieArray) {
+        // 提取第一个分号之前的部分（name=value）
+        const parts = setCookie.split(';').map(s => s.trim());
+        const cookiePair = parts[0]; // "name=value"
+
+        if (!cookiePair || !cookiePair.includes('=')) {
+          continue;
+        }
+
+        // 检查是否是删除Cookie的标记
+        const isDeleting = setCookie.includes('Max-Age=0') || setCookie.includes('Expires=') && new Date(setCookie.split('Expires=')[1]?.split(';')[0]) < new Date();
+
+        const eqIndex = cookiePair.indexOf('=');
+        const name = cookiePair.substring(0, eqIndex);
+        const value = cookiePair.substring(eqIndex + 1);
+
+        if (isDeleting) {
+          // 删除过期的Cookie
+          existingCookies.delete(name);
+          hilog.info(DOMAIN, TAG, '🗑️ [Save] 删除过期Cookie: %{public}s', name);
+        } else {
+          // 添加或更新Cookie
+          existingCookies.set(name, value);
+          hilog.info(DOMAIN, TAG, '✅ [Save] 更新Cookie: %{public}s=%{public}s', name, value);
+        }
+      }
+
+      // 构建最终的Cookie字符串
+      const finalCookies: string[] = [];
+      existingCookies.forEach((value, name) => {
+        finalCookies.push(`${name}=${value}`);
+      });
+      const cookieStr = finalCookies.join('; ');
 
       // 保存到Preferences
       await this.preferencesStore.put(host, cookieStr);
       await this.preferencesStore.flush();
 
       hilog.info(DOMAIN, TAG, '💾 [Save] Cookie已保存: host=%{public}s, count=%{public}d',
-        host, cookieArray.length);
+        host, existingCookies.size);
+      hilog.info(DOMAIN, TAG, '💾 [Save] 保存的完整Cookie字符串: %{public}s', cookieStr);
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [Save] 保存Cookie失败: %{public}s', JSON.stringify(error));
       // 不抛出异常，避免影响主流程
@@ -118,13 +180,11 @@ export class CookieManager {
         return '';
       }
 
-      // 将 ;;; 替换为标准的 ; 分隔符
-      const standardCookie = cookieStr.replace(/;;;+/g, '; ');
-
+      hilog.info(DOMAIN, TAG, '🔍 [Get] 从存储读取的Cookie: %{public}s', cookieStr);
       hilog.info(DOMAIN, TAG, '✅ [Get] Cookie获取成功: host=%{public}s, length=%{public}d',
-        host, standardCookie.length);
+        host, cookieStr.length);
 
-      return standardCookie;
+      return cookieStr;
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [Get] 获取Cookie失败: %{public}s', JSON.stringify(error));
       return '';

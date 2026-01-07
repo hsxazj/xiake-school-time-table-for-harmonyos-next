@@ -6,6 +6,8 @@ import { curves } from '@kit.ArkUI';
 import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { FormService } from '../../services/FormService';
+import { JwxtLoginService } from '../../services/jwxt/JwxtLoginService';
+import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
 
 interface TodayParm {
   year: number;
@@ -25,6 +27,8 @@ export struct HomePage {
   private courseApiService: CourseApiService = CourseApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private formService: FormService = FormService.getInstance();
+  private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();
+  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   // 今日课程参数缓存
   private todayParams: TodayParm | null = null;
   // 动画支持 - 与周课程页保持一致
@@ -93,8 +97,52 @@ export struct HomePage {
           right: 4
         })
         .borderRadius(8)
-        .onClick(() => {
-          this.pathStack.pushPathByName('ClassSelectNavPage', null);
+        .onClick(async () => {
+          // 临时改为测试获取个人信息
+          try {
+            console.info('🔍 [HomePage] 开始测试获取个人信息...');
+
+            // 获取上下文
+            const context = this.getUIContext().getHostContext();
+            if (!context) {
+              console.error('❌ [HomePage] 无法获取应用上下文');
+              return;
+            }
+
+            // 步骤1: 先登录获取 Cookie
+            console.info('🔐 [HomePage] 步骤1: 开始登录教务系统...');
+            await this.jwxtLoginService.login(context);
+            console.info('✅ [HomePage] 步骤1: 登录成功');
+
+            // 步骤2: 获取个人信息
+            console.info('📝 [HomePage] 步骤2: 开始获取个人信息...');
+            const studentInfo = await this.jwxtGetInfoService.getInfo();
+            console.info('✅ [HomePage] 步骤2: 个人信息获取成功');
+
+            // 步骤3: 打印完整信息
+            console.info('📋 [HomePage] ========== 学生个人信息 ==========');
+            console.info('📋 [HomePage] 姓名: %{public}s', studentInfo.name);
+            console.info('📋 [HomePage] 学号: %{public}s', studentInfo.student_id);
+            console.info('📋 [HomePage] 班级: %{public}s', studentInfo.class_name);
+            console.info('📋 [HomePage] 学院: %{public}s', studentInfo.college);
+            console.info('📋 [HomePage] 专业: %{public}s', studentInfo.major);
+            console.info('📋 [HomePage] 年级: %{public}s', studentInfo.grade);
+            console.info('📋 [HomePage] 性别: %{public}s', studentInfo.gender);
+            console.info('📋 [HomePage] 生日: %{public}s', studentInfo.birthday);
+            console.info('📋 [HomePage] 入学日期: %{public}s', studentInfo.enrollment_date);
+            console.info('📋 [HomePage] 手机: %{public}s', studentInfo.phone);
+            console.info('📋 [HomePage] 邮箱: %{public}s', studentInfo.email);
+            console.info('📋 [HomePage] QQ: %{public}s', studentInfo.qq);
+            console.info('📋 [HomePage] =====================================');
+            console.info('📋 [HomePage] 完整JSON: %{public}s', JSON.stringify(studentInfo, null, 2));
+
+          } catch (error) {
+            console.error('❌ [HomePage] 获取个人信息失败:', JSON.stringify(error));
+            console.error('❌ [HomePage] 错误详情:', error instanceof Error ? error.message : String(error));
+          }
+
+          // 原来的跳转逻辑注释掉
+          // this.pathStack.pushPathByName('ClassSelectNavPage', null);
         })
 
         Blank()

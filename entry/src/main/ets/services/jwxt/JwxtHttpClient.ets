@@ -202,6 +202,9 @@ export class JwxtHttpClient {
         const fullUrl = config.baseURL + (config.url || '');
         const host = this.cookieManager.extractHostFromUrl(fullUrl);
 
+        hilog.info(DOMAIN, TAG, '🔍 [Request] 完整URL: %{public}s', fullUrl);
+        hilog.info(DOMAIN, TAG, '🔍 [Request] 提取的域名: %{public}s', host);
+
         if (host) {
           // 从CookieManager获取Cookie
           const cookieStr = await this.cookieManager.getCookie(host);
@@ -212,8 +215,13 @@ export class JwxtHttpClient {
               config.headers = {} as AxiosRequestHeaders;
             }
             config.headers['Cookie'] = cookieStr;
-            hilog.info(DOMAIN, TAG, '🍪 [Request] 已添加Cookie: %{public}s', host);
+            hilog.info(DOMAIN, TAG, '🍪 [Request] 已添加Cookie到请求头: %{public}s', host);
+            hilog.info(DOMAIN, TAG, '🍪 [Request] Cookie内容: %{public}s', cookieStr);
+          } else {
+            hilog.warn(DOMAIN, TAG, '⚠️ [Request] 未获取到Cookie: %{public}s', host);
           }
+        } else {
+          hilog.warn(DOMAIN, TAG, '⚠️ [Request] 无法提取域名: %{public}s', fullUrl);
         }
 
         hilog.info(DOMAIN, TAG, '🚀 [Request] %{public}s %{public}s', config.method?.toUpperCase(), config.url);
