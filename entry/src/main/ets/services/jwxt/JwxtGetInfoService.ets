@@ -29,26 +29,37 @@ const TAG: string = 'JwxtGetInfoService';
 export interface StudentInfo {
   /** 姓名 */
   name: string;
+
   /** 班级 */
   class_name: string;
+
   /** 出生日期 */
   birthday: string;
+
   /** 邮箱 */
   email: string;
+
   /** 学院 */
   college: string;
+
   /** 年级 */
   grade: string;
+
   /** QQ号码 */
   qq: string;
+
   /** 入学日期 */
   enrollment_date: string;
+
   /** 手机号码 */
   phone: string;
+
   /** 性别 */
   gender: string;
+
   /** 学号 */
   student_id: string;
+
   /** 专业 */
   major: string;
 }
@@ -57,18 +68,18 @@ export interface StudentInfo {
  * JWXT原始响应数据接口（教务系统返回的字段）
  */
 interface JwxtInfoResponse {
-  xm: string;          // 姓名
-  bh_id: string;       // 班级
-  csrq: string;        // 出生日期
-  dzyx: string;        // 电子邮箱
-  jg_id: string;       // 机构（学院）
-  njdm_id: string;     // 年级代码
-  qqhm: string;        // QQ号码
-  rxrq: string;        // 入学日期
-  sjhm: string;        // 手机号码
-  xbm: string;         // 性别码
-  xh: string;          // 学号
-  zyh_id: string;      // 专业号
+  xm: string; // 姓名
+  bh_id: string; // 班级
+  csrq: string; // 出生日期
+  dzyx: string; // 电子邮箱
+  jg_id: string; // 机构（学院）
+  njdm_id: string; // 年级代码
+  qqhm: string; // QQ号码
+  rxrq: string; // 入学日期
+  sjhm: string; // 手机号码
+  xbm: string; // 性别码
+  xh: string; // 学号
+  zyh_id: string; // 专业号
 }
 
 /**
@@ -113,28 +124,11 @@ export class JwxtGetInfoService {
       // API路径
       const apiUrl: string = 'xsxxxggl/xsxxwh_cxCkDgxsxx.html?gnmkdm=N100801';
       const referer: string = 'xsxxxggl/xsxxwh_cxCkDgxsxx.html?gnmkdm=N100801&layout=default';
-
-      // 尝试方法1: POST空表单（AJAX方式）
-      hilog.info(DOMAIN, TAG, '🔄 [GetInfo] 尝试方法1: POST表单请求...');
-      const form: url.URLSearchParams = new url.URLSearchParams();
       let data: JwxtInfoResponse | undefined = undefined;
 
-      try {
-        data = await this.httpClient.postForm<JwxtInfoResponse>(apiUrl, form, referer);
-        hilog.info(DOMAIN, TAG, '✅ [GetInfo] POST请求成功');
-      } catch (error) {
-        hilog.warn(DOMAIN, TAG, '⚠️ [GetInfo] POST请求失败，尝试GET请求: %{public}s',
-          error instanceof Error ? error.message : String(error));
-
-        // 尝试方法2: GET请求
-        hilog.info(DOMAIN, TAG, '🔄 [GetInfo] 尝试方法2: GET请求...');
-        data = await this.httpClient.get<JwxtInfoResponse>(apiUrl, referer);
-        hilog.info(DOMAIN, TAG, '✅ [GetInfo] GET请求成功');
-      }
-
-      // 打印原始响应数据用于调试
-      hilog.info(DOMAIN, TAG, '🔍 [GetInfo] 原始响应数据类型: %{public}s', typeof data);
-      hilog.info(DOMAIN, TAG, '🔍 [GetInfo] 原始响应数据: %{public}s', JSON.stringify(data));
+      hilog.info(DOMAIN, TAG, '🔄 [GetInfo] 尝试方法2: GET请求...');
+      data = await this.httpClient.get<JwxtInfoResponse>(apiUrl, referer);
+      hilog.info(DOMAIN, TAG, '✅ [GetInfo] GET请求成功');
 
       // 验证响应数据
       if (!data || typeof data !== 'object') {

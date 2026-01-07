@@ -28,6 +28,7 @@ import { JwxtHttpClient } from './JwxtHttpClient';
 import { JwxtLogoutService } from './JwxtLogoutService';
 import { JwxtCredentialsManager } from './JwxtCredentialsManager';
 import { JwxtConstants } from './JwxtConstants';
+import { CookieManager } from './CookieManager';
 import { buildRsaSpki, detectRsaKeySize } from './RsaSpki';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
@@ -57,11 +58,13 @@ export class JwxtLoginService {
   private httpClient: JwxtHttpClient;
   private logoutService: JwxtLogoutService;
   private credentialsManager: JwxtCredentialsManager;
+  private cookieManager: CookieManager;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
     this.logoutService = JwxtLogoutService.getInstance();
     this.credentialsManager = JwxtCredentialsManager.getInstance();
+    this.cookieManager = CookieManager.getInstance();
     hilog.info(DOMAIN, TAG, '✅ JwxtLoginService初始化完成');
   }
 
@@ -78,7 +81,7 @@ export class JwxtLoginService {
   /**
    * 登录教务系统
    *
-   * 流程: 初始化Cookie管理 → logout → 获取CSRF → 获取公钥 → 加密密码 → 提交表单
+   * 流程: 清空旧Cookie → 初始化Cookie管理 → 获取CSRF → 获取公钥 → 加密密码 → 提交表单
    *
    * @param context 应用上下文（用于获取凭证和初始化Cookie存储）
    * @throws Error 登录失败时抛出异常
@@ -87,18 +90,22 @@ export class JwxtLoginService {
     try {
       hilog.info(DOMAIN, TAG, '🔐 [Login] 开始登录教务系统...');
 
-      // 步骤0: 初始化HttpClient的Cookie管理（必须在任何请求前调用）
-      await this.httpClient.initialize(context);
-      hilog.info(DOMAIN, TAG, '✅ [Login] 步骤0: Cookie管理已初始化');
+      // 步骤0: 清空旧Cookie，确保使用全新会话
+      await this.cookieManager.clearAllCookies();
+      hilog.info(DOMAIN, TAG, '🗑️ [Login] 步骤0: 已清空旧Cookie');
 
-      // 步骤1: 获取凭证
+      // 步骤1: 初始化HttpClient的Cookie管理（必须在任何请求前调用）
+      await this.httpClient.initialize(context);
+      hilog.info(DOMAIN, TAG, '✅ [Login] 步骤1: Cookie管理已初始化');
+
+      // 步骤2: 获取凭证
       const credentials = this.credentialsManager.getCredentials(context);
       if (!credentials) {
         throw new Error('请先设置学号和密码');
       }
       const sid = credentials.sid;
       const password = credentials.password;
-      hilog.info(DOMAIN, TAG, '✅ [Login] 步骤1: 凭证获取成功');
+      hilog.info(DOMAIN, TAG, '✅ [Login] 步骤2: 凭证获取成功');
 
       // 步骤3: 获取登录页HTML，提取csrftoken
       const html = await this.httpClient.getHtml(
