@@ -2,6 +2,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesUtil } from './PreferencesUtil';
 import { ConfigApiResponseData } from '../../models/ConfigModels';
 import { CourseInfo } from '../../models/CourseModels';
+import { JwxtCourse } from '../../models/JwxtCourseModels';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'CacheManager';
@@ -10,6 +11,7 @@ const TAG: string = 'CacheManager';
 const CACHE_KEY_PREFIX_SCHEDULE = 'cache_schedule_';
 const CACHE_KEY_CONFIG = 'cache_config';
 const CACHE_KEY_WEEKS_LIST = 'cache_weeks_list';
+const CACHE_KEY_PREFIX_SEMESTER_COURSES = 'cache_semester_courses_'; // 新增：学期课程缓存
 
 // 缓存容量限制
 const MAX_CACHED_WEEKS = 20;
@@ -19,6 +21,15 @@ interface CachedScheduleData {
   data: CourseInfo[];
   cachedAt: number;
   version: string;
+}
+
+// 新增：学期课程缓存数据结构
+interface CachedSemesterCoursesData {
+  data: JwxtCourse[];
+  cachedAt: number;
+  version: string;
+  academicYear: string;  // 学年，如 "2024"
+  semester: number;      // 学期，1 或 2
 }
 
 // 配置数据结构接口
@@ -323,6 +334,68 @@ export class CacheManager {
     } catch (error) {
       hilog.error(DOMAIN, TAG, `❌ 清理缓存失败: ${JSON.stringify(error)}`);
       // 错误静默处理
+    }
+  }
+
+  /**
+   * 保存学期课程缓存（整个学期的所有课程）
+   * @param academicYear 学年，如 "2024"
+   * @param semester 学期，1 或 2
+   * @param courses 课程列表
+   */
+  public static async saveSemesterCourses(
+    academicYear: string,
+    semester: number,
+    courses: JwxtCourse[]
+  ): Promise<void> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_SEMESTER_COURSES}${academicYear}_${semester}`;
+      const cacheData: CachedSemesterCoursesData = {
+        data: courses,
+        cachedAt: Date.now(),
+        version: '1.0',
+        academicYear: academicYear,
+        semester: semester
+      };
+      const cacheValue = JSON.stringify(cacheData);
+
+      const context = getContext();
+      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+
+      hilog.info(DOMAIN, TAG, `✅ 缓存学期课程成功: ${academicYear}学年第${semester}学期, 共${courses.length}门课程`);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 缓存学期课程失败: ${JSON.stringify(error)}`);
+      // 错误静默处理,不抛出
+    }
+  }
+
+  /**
+   * 获取学期课程缓存
+   * @param academicYear 学年，如 "2024"
+   * @param semester 学期，1 或 2
+   * @returns 课程列表，如果不存在则返回null
+   */
+  public static async getSemesterCourses(
+    academicYear: string,
+    semester: number
+  ): Promise<JwxtCourse[] | null> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_SEMESTER_COURSES}${academicYear}_${semester}`;
+      const context = getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+
+      if (!cacheValue) {
+        hilog.info(DOMAIN, TAG, `📭 学期课程缓存不存在: ${academicYear}学年第${semester}学期`);
+        return null;
+      }
+
+      const cached: CachedSemesterCoursesData = JSON.parse(cacheValue);
+      hilog.info(DOMAIN, TAG, `📦 读取学期课程缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}门课程, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+
+      return cached.data;
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 读取学期课程缓存失败: ${JSON.stringify(error)}`);
+      return null;
     }
   }
 }

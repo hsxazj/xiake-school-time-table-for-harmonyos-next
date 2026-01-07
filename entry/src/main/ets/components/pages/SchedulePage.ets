@@ -838,6 +838,11 @@ export struct SchedulePage {
 
   /**
    * 加载课程数据 (使用教务系统接口)
+   *
+   * 新策略：缓存优先 + 后台刷新
+   * 1. 优先从缓存加载并立即渲染
+   * 2. 异步请求API更新数据
+   * 3. API成功后覆盖旧数据和缓存
    */
   private async loadCourseData(): Promise<void> {
     if (!this.currentSemester) {
@@ -845,41 +850,62 @@ export struct SchedulePage {
       return;
     }
 
-    this.isLoadingCourses = true;
+    const academicYear = this.currentSemester.academicYear;
+    const semester = this.currentSemester.semester;
 
     try {
-      console.info(`📚 [Course] 开始加载课程: ${this.currentSemester.academicYear}学年 第${this.currentSemester.semester}学期`);
+      // 步骤1: 尝试从缓存加载
+      console.info(`📚 [Course] 优先从缓存加载: ${academicYear}学年 第${semester}学期`);
+      const cachedCourses = await CacheManager.getSemesterCourses(academicYear, semester);
 
-      // 构建请求参数 - 只需要学年和学期
-      const params = this.jwxtCourseService.buildCourseParams(
-        this.currentSemester.academicYear,
-        this.currentSemester.semester
-      );
+      if (cachedCourses && cachedCourses.length > 0) {
+        // 有缓存，立即使用缓存数据渲染
+        console.info(`📚 [Course] 使用缓存数据: ${cachedCourses.length}门课程`);
+        this.courseList = cachedCourses;
+        this.processWeekScheduleData();
+      } else {
+        console.info(`📚 [Course] 无缓存数据，等待API请求`);
+        this.isLoadingCourses = true;
+      }
 
+      // 步骤2: 异步请求API更新（无论缓存是否存在都请求）
+      console.info(`📚 [Course] 后台请求API更新数据: ${academicYear}学年 第${semester}学期`);
+
+      // 构建请求参数
+      const params = this.jwxtCourseService.buildCourseParams(academicYear, semester);
       console.info(`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
 
-      // 获取课程列表 (直接返回 JwxtCourse[])
+      // 获取课程列表
       const courseList: JwxtCourse[] = await this.jwxtCourseService.getCourseList(params);
 
-      // 将接口数据赋值给 courseList 状态变量
+      // 步骤3: API成功，覆盖旧数据和缓存
+      console.info(`📚 [Course] API请求成功，更新数据: ${courseList.length}门课程`);
       this.courseList = courseList;
 
-      // 处理课程数据，生成课表网格
+      // 保存到缓存
+      await CacheManager.saveSemesterCourses(academicYear, semester, courseList);
+
+      // 重新处理课表数据
       this.processWeekScheduleData();
 
-      console.info(`📚 [Course] 成功加载${courseList.length}门课程`);
+      console.info(`📚 [Course] 成功加载并缓存${courseList.length}门课程`);
 
     } catch (error) {
       console.error('📚 [Course] 加载课程数据失败:', error);
 
       // 判断是否为网络错误
       if (ErrorUtil.isNetworkError(error)) {
-        this.promptAction.showToast({
-          message: '网络连接失败，请检查网络后重试',
-          duration: 3000,
-          bottom: '100vp'
-        });
-        console.warn('📚 [Course] 网络错误，已提示用户');
+        // 网络错误且有缓存数据，静默处理
+        if (this.courseList.length > 0) {
+          console.warn('📚 [Course] 网络错误，继续使用缓存数据');
+        } else {
+          // 无缓存数据，提示用户
+          this.promptAction.showToast({
+            message: '网络连接失败，请检查网络后重试',
+            duration: 3000,
+            bottom: '100vp'
+          });
+        }
       } else {
         // 其他错误
         this.promptAction.showToast({
@@ -889,9 +915,10 @@ export struct SchedulePage {
         });
       }
 
-      this.courseList = [];
-      // 即使出错也要初始化空的网格
-      this.processWeekScheduleData();
+      // 如果没有任何数据，初始化空的网格
+      if (this.courseList.length === 0) {
+        this.processWeekScheduleData();
+      }
     } finally {
       this.isLoadingCourses = false;
     }
@@ -941,6 +968,8 @@ export struct SchedulePage {
 
   /**
    * 导航到上一周
+   *
+   * 新策略：不再请求API，直接使用本地数据重新渲染
    */
   private async navigateToPreviousWeek(): Promise<void> {
     // 先播放退场动画
@@ -951,17 +980,31 @@ export struct SchedulePage {
     newDate.setDate(this.currentDate.getDate() - 7);
 
     this.currentDate = newDate;
+
+    // 检查学期是否发生变化
+    const oldSemester = this.currentSemester;
     this.updateCurrentSemesterFromDate(this.currentDate);
     this.calculateWeekDatesFromCurrentDate();
 
-    // 重新加载课程数据（如果学期发生变化）
-    await this.loadCourseData();
+    if (oldSemester &&
+      (oldSemester.academicYear !== this.currentSemester?.academicYear ||
+        oldSemester.semester !== this.currentSemester?.semester)) {
+      // 学期变化了，需要加载新学期数据
+      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      await this.loadCourseData();
+    } else {
+      // 学期未变化，直接重新处理显示
+      console.info(`📅 [Navigate] 左滑到上一周，使用本地数据`);
+      this.processWeekScheduleData();
+    }
 
     console.info(`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
 
   /**
    * 导航到下一周
+   *
+   * 新策略：不再请求API，直接使用本地数据重新渲染
    */
   private async navigateToNextWeek(): Promise<void> {
     // 先播放退场动画
@@ -972,11 +1015,24 @@ export struct SchedulePage {
     newDate.setDate(this.currentDate.getDate() + 7);
 
     this.currentDate = newDate;
-    this.updateCurrentSemesterFromDate(this.currentDate);
-    this.calculateWeekDatesFromCurrentDate();
 
-    // 重新加载课程数据（如果学期发生变化）
-    await this.loadCourseData();
+    // 检查学期是否发生变化
+    const oldSemester = this.currentSemester;
+    this.updateCurrentSemesterFromDate(this.currentDate);
+
+    if (oldSemester &&
+      (oldSemester.academicYear !== this.currentSemester?.academicYear ||
+        oldSemester.semester !== this.currentSemester?.semester)) {
+      // 学期变化了，需要加载新学期数据
+      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      await this.loadCourseData();
+    } else {
+      // 学期未变化，直接重新处理显示
+      console.info(`📅 [Navigate] 右滑到下一周，使用本地数据`);
+      this.processWeekScheduleData();
+    }
+
+    this.calculateWeekDatesFromCurrentDate();
 
     console.info(`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
@@ -1087,6 +1143,8 @@ export struct SchedulePage {
 
   /**
    * 处理周数项点击事件
+   *
+   * 新策略：不再请求API，直接使用本地数据重新渲染
    */
   private async onWeekItemClick(weekNum: number): Promise<void> {
     // 只有年级有效的周数才可以点击
@@ -1104,8 +1162,9 @@ export struct SchedulePage {
         this.updateCurrentSemesterFromDate(this.currentDate);
         this.calculateWeekDatesFromCurrentDate();
 
-        // 重新请求接口获取课程数据
-        await this.loadCourseData();
+        // 直接重新处理显示，不请求API
+        console.info(`📅 [Week Select] 选择第${weekNum}周，使用本地数据`);
+        this.processWeekScheduleData();
       }
       this.showWeekPicker = false;
     } else {
@@ -1408,6 +1467,8 @@ export struct SchedulePage {
 
   /**
    * 导航回到当前真实周
+   *
+   * 新策略：不再请求API，直接使用本地数据重新渲染
    */
   private async navigateToCurrentWeek(): Promise<void> {
     console.info('📅 [Navigate] 回到本周');
@@ -1419,12 +1480,24 @@ export struct SchedulePage {
     const today = new Date();
     this.currentDate = new Date(today);
 
+    // 检查学期是否发生变化
+    const oldSemester = this.currentSemester;
+
     // 重新计算基于今天的学期状态
     this.updateCurrentSemesterFromDate(this.currentDate);
     this.calculateWeekDatesFromCurrentDate();
 
-    // 重新加载课程数据
-    await this.loadCourseData();
+    if (oldSemester &&
+      (oldSemester.academicYear !== this.currentSemester?.academicYear ||
+        oldSemester.semester !== this.currentSemester?.semester)) {
+      // 学期变化了，需要加载新学期数据
+      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      await this.loadCourseData();
+    } else {
+      // 学期未变化，直接重新处理显示
+      console.info(`📅 [Navigate] 回到本周，使用本地数据`);
+      this.processWeekScheduleData();
+    }
 
     console.info(`📅 [Navigate] 已回到本周: ${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
   }
