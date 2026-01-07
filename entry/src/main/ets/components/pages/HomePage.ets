@@ -1,9 +1,8 @@
-import { UserInfoManager, UserSchoolInfo } from '../../common/utils/UserInfoManager';
+
 import { CourseInfo } from '../../models/CourseModels';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { curves } from '@kit.ArkUI';
-import { CourseApiService } from '../../services/api/CourseApiService';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { FormService } from '../../services/FormService';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
@@ -23,14 +22,10 @@ const TAG = 'HomePage';
 export struct HomePage {
   @Consume('NavStack') pathStack: NavPathStack;
   // pathStack: NavPathStack = new NavPathStack();
-  @State private userInfo: UserSchoolInfo | null = null;
   @State private todayCourses: CourseInfo[] = [];
   @State private isLoading: boolean = false;
   @State private studentName: string = '同学'; // 学生姓名
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
-  private courseApiService: CourseApiService = CourseApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private formService: FormService = FormService.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   // 今日课程参数缓存
   private todayParams: TodayParm | null = null;
@@ -208,6 +203,9 @@ export struct HomePage {
   }
 
   private async loadTodayCourses(): Promise<void> {
+
+    // TODO 需要重写
+
     this.isLoading = true;
 
     try {
@@ -215,11 +213,6 @@ export struct HomePage {
       await this.appConfigManager.initialize();
 
       // 获取用户信息
-      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-      if (!userInfo || !userInfo.classId) {
-        console.warn('未找到用户班级信息');
-        return;
-      }
 
       // 如果还没有缓存今日课程参数，则初始化
       if (!this.todayParams) {
@@ -233,14 +226,6 @@ export struct HomePage {
 
       console.info(`🔍 [Today Course] 使用缓存参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
 
-      const response = await this.courseApiService.getTodayCourseList(
-        userInfo.classId,
-        this.todayParams.year,
-        this.todayParams.termCode,
-        this.todayParams.week,
-        this.todayParams.weekDay
-      );
-
       // const response = await this.courseApiService.getTodayCourseList(
       //   userInfo.classId,
       //   2025,
@@ -248,19 +233,6 @@ export struct HomePage {
       //   3,
       //   '星期一'
       // );
-
-
-      if (response.code === 200 && response.data) {
-        this.todayCourses = response.data;
-        // 更新课程颜色列表
-        this.courseColorsList = CourseColorUtil.extractCourseNamesList(response.data);
-
-        // 同时更新所有活跃卡片的数据
-        console.info(`📱 [HomePage] 同步更新卡片数据，课程数量: ${response.data.length}`);
-        this.formService.updateAllActiveWidgetsWithData(this.getUIContext().getHostContext(), response.data);
-      } else {
-        console.warn('获取今日课程失败');
-      }
 
     } catch (error) {
       console.error('加载今日课程失败:', error);
@@ -302,7 +274,7 @@ export struct HomePage {
   }
 
   private loadUserInfo(): void {
-    this.userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+    // TODO 获取
   }
 
   /**

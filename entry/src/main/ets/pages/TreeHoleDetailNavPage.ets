@@ -4,8 +4,6 @@
  */
 import { TreeHoleComment, TreeHoleItem, PostTreeHoleRequest, TreeHolePicture } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
-import { LoginApiService } from '../services/api/LoginApiService';
-import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../common/constants/AppConstants';
 import { TreeHoleImageGrid, ImageClickCallback } from '../components/base/TreeHoleImageGrid';
@@ -36,8 +34,6 @@ struct TreeHoleDetailNavPage {
   // 接收参数
   private treeHoleId: number = 0;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
-  private loginService: LoginApiService = LoginApiService.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     console.info('🌳 [TreeHoleDetailNavPage] 页面初始化');
@@ -650,60 +646,14 @@ struct TreeHoleDetailNavPage {
    * 检查登录状态
    */
   private checkLoginStatus(): void {
-    // 检查token和用户信息（与发布树洞页面保持一致）
-    const hasToken = this.loginService.isLoggedIn();
-    const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-    const hasValidUserInfo = currentUser !== null && currentUser.userId > 0;
-    
-    this.isLoggedIn = hasToken && hasValidUserInfo;
-    
-    console.info(`🌳 [TreeHoleDetailNavPage] 登录状态检查 - Token: ${hasToken}, UserInfo: ${hasValidUserInfo}, UserId: ${currentUser?.userId}, 最终结果: ${this.isLoggedIn}`);
-    
-    // 如果有token但没有用户信息，尝试异步获取
-    if (hasToken && !hasValidUserInfo) {
-      console.info('🌳 [TreeHoleDetailNavPage] 有token但缺少用户信息，尝试异步获取');
-      this.tryLoadUserInfo();
-    }
+    // TODO 重写
   }
 
   /**
-   * 异步检查登录状态（完整验证，包括token验证）
+   * 异步检查登录状态
    */
   private async checkLoginStatusAsync(): Promise<void> {
-    try {
-      console.info('🌳 [TreeHoleDetailNavPage] 开始异步验证登录状态');
-      const isLoggedIn = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
-
-      this.isLoggedIn = isLoggedIn;
-      const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-
-      if (isLoggedIn && currentUser) {
-        console.info(`🌳 [TreeHoleDetailNavPage] 登录验证成功 - ${currentUser.realName}`);
-      } else {
-        console.info('🌳 [TreeHoleDetailNavPage] 登录验证失败或用户未登录');
-      }
-    } catch (error) {
-      console.error(`🌳 [TreeHoleDetailNavPage] 异步登录状态检查失败: ${error}`);
-      this.isLoggedIn = false;
-    }
-  }
-
-  /**
-   * 尝试异步加载用户信息
-   */
-  private async tryLoadUserInfo(): Promise<void> {
-    try {
-      const userInfoResponse = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
-      if (userInfoResponse) {
-        const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-        const hasValidUserInfo = currentUser !== null && currentUser.userId > 0;
-        this.isLoggedIn = this.loginService.isLoggedIn() && hasValidUserInfo;
-        console.info('🌳 [TreeHoleDetailNavPage] 用户信息获取成功，更新登录状态:', this.isLoggedIn);
-      }
-    } catch (error) {
-      console.warn('🌳 [TreeHoleDetailNavPage] 用户信息获取失败:', error);
-      this.isLoggedIn = false;
-    }
+    // TODO 重写
   }
 
   // ===== 事件处理方法 =====
@@ -778,206 +728,44 @@ struct TreeHoleDetailNavPage {
    * 发送评论
    */
   private async handleSendComment(): Promise<void> {
-    // 1. 验证输入内容
-    if (this.commentText.trim().length === 0) {
-      this.showToast('请输入评论内容');
-      return;
-    }
-
-    if (this.commentText.trim().length > 500) {
-      this.showToast('评论内容不能超过500个字符');
-      return;
-    }
-
-    // 2. 检查登录状态（与发布树洞页面一致）
-    if (!this.isLoggedIn) {
-      this.showLoginRequiredDialog();
-      return;
-    }
-
-    // 3. 获取用户信息（与发布树洞页面一致的方式）
-    const currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-    if (!currentUser || !currentUser.userId) {
-      this.showToast('用户信息获取失败，请重新登录');
-      this.isLoggedIn = false; // 更新登录状态
-      return;
-    }
-
-    try {
-      // 4. 设置loading状态
-      this.isCommenting = true;
-      console.info('🌳 [TreeHoleDetailNavPage] 开始发送评论');
-
-      // 5. 构造API请求参数（与发布树洞完全一致的格式）
-      const request: PostTreeHoleRequest = {
-        content: this.commentText.trim(),
-        anonymous: 0, // 评论暂不支持匿名，固定为0
-        parentId: this.treeHoleId, // 评论时parentId为树洞ID
-        userId: currentUser.userId, // 使用真实的用户ID
-        deleteTime: "" // 评论不设置删除时间
-      };
-
-      console.info('🌳 [TreeHoleDetailNavPage] 开始发布评论，请求参数:', JSON.stringify(request));
-
-      // 6. 调用API发布评论
-      const result = await this.treeHoleApiService.postCommentWithFullRequest(request);
-
-      // 7. 处理响应结果
-      if (result.code === 200) {
-        console.info('🌳 [TreeHoleDetailNavPage] 评论发布成功');
-        
-        // 清空输入框
-        this.commentText = '';
-        
-        // 显示成功提示
-        this.showToast('评论发布成功');
-        
-        // 8. 刷新评论列表
-        await this.loadComments();
-      } else {
-        console.error('🌳 [TreeHoleDetailNavPage] 评论发布失败:', result.msg);
-        this.showToast(result.msg || '评论发布失败');
-      }
-    } catch (error) {
-      console.error('🌳 [TreeHoleDetailNavPage] 发送评论失败:', error);
-      
-      // 友好的错误提示
-      if (error instanceof Error) {
-        if (error.message.includes('用户未登录')) {
-          this.showToast('登录状态已过期，请重新登录');
-          this.isLoggedIn = false; // 更新登录状态
-        } else if (error.message.includes('网络')) {
-          this.showToast('网络连接异常，请检查网络');
-        } else {
-          this.showToast('评论发布失败，请稍后重试');
-        }
-      } else {
-        this.showToast('评论发布失败，请稍后重试');
-      }
-    } finally {
-      // 9. 重置loading状态
-      this.isCommenting = false;
-    }
+    // TODO 重写
   }
 
   /**
    * 处理评论点赞
    */
   private async handleCommentLike(comment: TreeHoleComment): Promise<void> {
-    try {
-      console.info(`🌳 [TreeHoleDetailNavPage] 点赞评论 ${comment.id}`);
-
-      const newIsLiked = !(comment.isLiked ?? false);
-      const result = await this.treeHoleApiService.toggleCommentLike(comment.id, newIsLiked);
-
-      if (result.code === 200) {
-        // 更新本地状态
-        const index = this.commentsList.findIndex(c => c.id === comment.id);
-        if (index >= 0) {
-          this.commentsList[index].isLiked = newIsLiked;
-          this.commentsList[index].likeCount += newIsLiked ? 1 : -1;
-        }
-      }
-    } catch (error) {
-      console.error('🌳 [TreeHoleDetailNavPage] 评论点赞失败:', error);
-    }
+    // TODO 重写
   }
 
   /**
    * 处理评论点踩
    */
   private async handleCommentDislike(comment: TreeHoleComment): Promise<void> {
-    try {
-      console.info(`🌳 [TreeHoleDetailNavPage] 点踩评论 ${comment.id}`);
-
-      const newIsDisliked = !(comment.isDisliked ?? false);
-      const result = await this.treeHoleApiService.toggleCommentDislike(comment.id, newIsDisliked);
-
-      if (result.code === 200) {
-        // 更新本地状态
-        const index = this.commentsList.findIndex(c => c.id === comment.id);
-        if (index >= 0) {
-          this.commentsList[index].isDisliked = newIsDisliked;
-          this.commentsList[index].dislikeCount += newIsDisliked ? 1 : -1;
-        }
-      }
-    } catch (error) {
-      console.error('🌳 [TreeHoleDetailNavPage] 评论点踩失败:', error);
-    }
+    // TODO 重写
   }
 
   /**
    * 格式化评论时间
    */
   private formatCommentTime(timeStr: string): string {
-    try {
-      const commentTime = new Date(timeStr).getTime();
-      const currentTime = new Date().getTime();
-      const timeDiff = currentTime - commentTime;
-
-      const minutes = Math.floor(timeDiff / (1000 * 60));
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-
-      if (minutes < 1) {
-        return '刚刚';
-      } else if (minutes < 60) {
-        return `${minutes}分钟前`;
-      } else if (hours < 24) {
-        return `${hours}小时前`;
-      } else if (days < 7) {
-        return `${days}天前`;
-      } else {
-        return timeStr.substring(5, 16); // 显示月-日 时:分
-      }
-    } catch (error) {
-      return timeStr;
-    }
+    // TODO 重写
+    return "";
   }
 
   /**
    * 格式化销毁时间
    */
   private formatDeleteTime(): string {
-    if (!this.treeHoleItem?.deleteTime) {
-      return '';
-    }
-
-    try {
-      const deleteTime = new Date(this.treeHoleItem.deleteTime).getTime();
-      const currentTime = new Date().getTime();
-      const timeDiff = deleteTime - currentTime;
-
-      if (timeDiff <= 0) {
-        return '已销毁';
-      }
-
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-
-      if (hours > 0) {
-        return `${hours}小时${minutes}分钟后销毁`;
-      } else {
-        return `${minutes}分钟后销毁`;
-      }
-    } catch (error) {
-      console.error('🌳 [TreeHoleDetailNavPage] 格式化销毁时间失败:', error);
-      return '时间错误';
-    }
+    // TODO 重写
+    return ""
   }
 
   /**
    * 处理帖子点赞点击
    */
   private handleLikeClick(): void {
-    if (!this.isLoggedIn) {
-      this.showLoginRequiredDialog();
-      return;
-    }
-
-    // 实现点赞逻辑
-    console.info('🌳 [TreeHoleDetailNavPage] 处理帖子点赞');
-    // TODO: 调用API接口
+    // TODO 重写
   }
 
   /**

@@ -4,8 +4,6 @@
  */
 import { TreeHoleItem } from '../../models/TreeHoleModels';
 import { TreeHoleApiService } from '../../services/api/TreeHoleApiService';
-import { UserInfoManager } from '../../common/utils/UserInfoManager';
-import { UserApiService } from '../../services/api/UserApiService';
 import { SimpleUserInfo } from '../../models/UserModels';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../../common/constants/AppConstants';
@@ -30,8 +28,6 @@ export struct TreeHolePage {
   @State private previewCurrentIndex: number = 0;
   // 服务实例
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
-  private userApiService: UserApiService = UserApiService.getInstance();
   // 分页参数
   private readonly pageSize: number = 10;
 
@@ -357,46 +353,14 @@ export struct TreeHolePage {
    * 检查登录状态（同步方法，用于快速检查）
    */
   private checkLoginStatus(): void {
-    try {
-      // 使用同步方法快速检查登录状态
-      const isLoggedIn = this.userInfoManager.isLoggedInSync(this.getUIContext().getHostContext());
-      this.isLoggedIn = isLoggedIn;
-
-      if (isLoggedIn) {
-        this.currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-        console.info(`🌳 [TreeHolePage] 用户已登录 - ${this.currentUser?.realName} (${this.currentUser?.userName})`);
-      } else {
-        this.currentUser = null;
-        console.info(`🌳 [TreeHolePage] 用户未登录`);
-      }
-    } catch (error) {
-      console.error(`🌳 [TreeHolePage] 检查登录状态失败: ${error}`);
-      this.isLoggedIn = false;
-      this.currentUser = null;
-    }
+    // TODO 待实现
   }
 
   /**
    * 异步检查登录状态（完整验证，包括token验证）
    */
   private async checkLoginStatusAsync(): Promise<void> {
-    try {
-      console.info('🌳 [TreeHolePage] 开始异步验证登录状态');
-      const isLoggedIn = await this.userInfoManager.checkLoginStatus(this.getUIContext().getHostContext());
-
-      this.isLoggedIn = isLoggedIn;
-      this.currentUser = this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-
-      if (isLoggedIn && this.currentUser) {
-        console.info(`🌳 [TreeHolePage] 登录验证成功 - ${this.currentUser.realName}`);
-      } else {
-        console.info('🌳 [TreeHolePage] 登录验证失败或用户未登录');
-      }
-    } catch (error) {
-      console.error(`🌳 [TreeHolePage] 异步登录状态检查失败: ${error}`);
-      this.isLoggedIn = false;
-      this.currentUser = null;
-    }
+    // TODO
   }
 
   /**

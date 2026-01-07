@@ -1,8 +1,6 @@
 import { formBindingData, FormExtensionAbility, formInfo, formProvider } from '@kit.FormKit';
 import { Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { UserInfoManager } from '../common/utils/UserInfoManager';
-import { CourseApiService } from '../services/api/CourseApiService';
 import { AppConfigManager } from '../services/AppConfigManager';
 import { CourseInfo } from '../models/CourseModels';
 import { FormService } from '../services/FormService';
@@ -24,9 +22,7 @@ interface TodayCourseFormData {
 const TAG: string = 'EntryFormAbility';
 
 export default class EntryFormAbility extends FormExtensionAbility {
-  private courseApiService: CourseApiService = CourseApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private formService: FormService = FormService.getInstance();
 
   onAddForm(want: Want) {
@@ -102,19 +98,6 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
       await this.appConfigManager.initialize();
 
-      // 优先使用传递的班级ID，否则从首选项中获取
-      const classId = overrideClassId || this.userInfoManager.getClassId(this.context);
-
-      hilog.info(0x0000, TAG,
-        `👤 [FormAbility] 使用班级ID: ${classId} (来源: ${overrideClassId ? '主应用传递' : '首选项获取'})`);
-
-      if (!classId) {
-        hilog.warn(0x0000, TAG, '未找到用户班级信息');
-        // 显示请先选择班级提示
-        this.updateFormData(formId, [], false, '请先选择班级');
-        return;
-      }
-
       const todayParams = this.initTodayParams();
       if (!todayParams) {
         hilog.warn(0x0000, TAG, '无法获取今日课程参数');
@@ -125,21 +108,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
       hilog.info(0x0000, TAG,
         `🔍 [Today Course Form] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
 
-      const response = await this.courseApiService.getTodayCourseList(
-        classId,
-        todayParams.year,
-        todayParams.termCode,
-        todayParams.week,
-        todayParams.weekDay
-      );
-
-      if (response.code === 200 && response.data) {
-        this.updateFormData(formId, response.data, false, '');
-      } else {
-        hilog.warn(0x0000, TAG, '获取今日课程失败');
-        this.updateFormData(formId, [], false, '获取课程数据失败');
-      }
-
+      // TODO 重写
     } catch (error) {
       hilog.error(0x0000, TAG, '加载今日课程失败:', JSON.stringify(error));
       this.updateFormData(formId, [], false, '加载课程数据失败');

@@ -1,7 +1,3 @@
-import { UserInfoManager } from '../../common/utils/UserInfoManager';
-import { LoginApiService } from '../../services/api/LoginApiService';
-import { SimpleUserInfo } from '../../models/UserModels';
-import { API_CONFIG } from '../../common/constants/AppConstants';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { common } from '@kit.AbilityKit';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
@@ -48,8 +44,6 @@ export struct MinePage {
   @State private isLoggedIn: boolean = false; // 登录状态
   @State private isCheckingLogin: boolean = true; // 是否正在检查登录状态
   @State private treeHoleEnabled: boolean = true; // 树洞功能状态
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
-  private loginService: LoginApiService = LoginApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   private cookieManager: CookieManager = CookieManager.getInstance();
@@ -520,44 +514,7 @@ export struct MinePage {
    * 处理退出登录
    */
   private async handleLogout(): Promise<void> {
-    try {
-      this.isLoggingOut = true;
-      hilog.info(DOMAIN, TAG, '🔄 [Logout] 开始退出登录...');
-
-      // 获取context用于清除首选项
-      const context = this.getUIContext().getHostContext();
-
-      // 清除Cookie缓存（重要！）
-      await this.cookieManager.clearAllCookies();
-      hilog.info(DOMAIN, TAG, '✅ [Logout] Cookie缓存已清除');
-
-      // 使用UserInfoManager清除登录信息
-      this.userInfoManager.clearAllInfo(context);
-
-      // 清除AppStorage中的token
-      AppStorage.setOrCreate('token', '');
-
-      hilog.info(DOMAIN, TAG, '✅ [Logout] 退出登录成功');
-
-      // 更新本地登录状态
-      this.isLoggedIn = false;
-
-      // 重置用户信息（显示未登录状态）
-      this.resetUserInfoToDefault();
-
-      // 通知登录状态变化
-      AppStorage.setOrCreate('loginStatusChanged', Date.now());
-      hilog.info(DOMAIN, TAG, '📢 [Logout] 已发送登录状态变化通知');
-
-      // 显示成功提示
-      this.showToast('已退出登录');
-
-    } catch (error) {
-      hilog.error(DOMAIN, TAG, '❌ [Logout] 退出登录失败: %{public}s', JSON.stringify(error));
-      this.showToast('退出登录失败，请重试');
-    } finally {
-      this.isLoggingOut = false;
-    }
+    // TODO 重写优先级高
   }
 
   /**

@@ -106,26 +106,6 @@ export interface GetUserInfoResponse {
   user: UserInfo;
 }
 
-/**
- * /getInfo接口的原始响应类型（直接返回，不包装在ApiResponse中）
- * 该接口与其他API接口的响应格式不同，直接返回完整数据
- */
-export interface GetUserInfoApiResponse {
-  /** 响应消息 */
-  msg: string;
-
-  /** 响应代码 */
-  code: number;
-
-  /** 权限列表 */
-  permissions: string[];
-
-  /** 角色列表 */
-  roles: string[];
-
-  /** 用户信息 */
-  user: UserInfo;
-}
 
 /**
  * 简化的用户信息接口（用于本地存储和状态管理）

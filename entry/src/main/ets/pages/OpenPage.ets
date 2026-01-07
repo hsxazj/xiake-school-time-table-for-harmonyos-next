@@ -1,5 +1,4 @@
 import { AppConfigManager } from '../services/AppConfigManager';
-import { UserInfoManager } from '../common/utils/UserInfoManager';
 
 
 @Entry
@@ -9,7 +8,6 @@ struct OpenPage {
   @State message: string = '欢迎使用霞客课表';
   @State initMessage: string = '正在加载...';
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     this.waitForInitAndNavigate();
@@ -61,21 +59,12 @@ struct OpenPage {
    */
   private async waitForInitAndNavigate(): Promise<void> {
     try {
-      // 等待AppConfigManager初始化完成
-      const initResult = await this.appConfigManager.initialize();
-
-      // 检查是否已设置完整的学籍信息
-      const hasCompleteInfo = this.userInfoManager.hasCompleteUserInfo(this.getUIContext().getHostContext());
 
       // 短暂延迟后跳转
       setTimeout(() => {
-        if (hasCompleteInfo) {
+        // TODO 去登陆页
           // 已有完整信息，直接跳转到主页Tab页面
           this.pathStack.replacePathByName('MainTabNavPage', null);
-        } else {
-          // 没有完整信息，跳转到学院选择页面
-          this.pathStack.replacePathByName('ClassSelectNavPage', null);
-        }
       }, 500);
 
     } catch (error) {

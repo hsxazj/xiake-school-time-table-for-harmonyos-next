@@ -2,7 +2,6 @@ import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../ser
 import { JwxtCourseService } from '../../services/jwxt/JwxtCourseService';
 import { JwxtCourse } from '../../models/JwxtCourseModels';
 import { AppConfigManager } from '../../services/AppConfigManager';
-import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { CacheManager } from '../../common/utils/CacheManager';
@@ -80,7 +79,6 @@ export struct SchedulePage {
   private configService: ConfigApiService = ConfigApiService.getInstance();
   private jwxtCourseService: JwxtCourseService = JwxtCourseService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   // 参照class-schedule-c的sections配置
   private sections: SectionsConfig = {
@@ -1102,25 +1100,25 @@ export struct SchedulePage {
       if (elePosition === 'right') {
         // 右滑：显示上一周 (对应class-schedule-c的leftClick)
         // 检查是否可以继续右滑到上一周
-        const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-        if (this.configService.canSwipeLeft(this.currentDate, userInfo.className)) {
-          console.info(`📅 [Navigate] 右滑到上一周`)
-          this.navigateToPreviousWeek();
-        } else {
-          // 显示暂无数据提示
-          this.showNoDataToast();
-        }
+        // TODO 检查是否可以继续右滑
+        // if (this.configService.canSwipeLeft(this.currentDate, userInfo.className)) {
+        //   console.info(`📅 [Navigate] 右滑到上一周`)
+        //   this.navigateToPreviousWeek();
+        // } else {
+        //   // 显示暂无数据提示
+        //   this.showNoDataToast();
+        // }
 
       } else if (elePosition === 'left') {
         // 左滑：显示下一周 (对应class-schedule-c的rightClick)  
-        // 检查是否可以继续左滑到下一周
-        if (this.configService.canSwipeRight(this.currentDate)) {
-          console.info(`📅 [Navigate] 左滑到下一周`)
-          this.navigateToNextWeek();
-        } else {
-          // 显示暂无数据提示
-          this.showNoDataToast();
-        }
+        // TODO 检查是否可以继续左滑到下一周
+        // if (this.configService.canSwipeRight(this.currentDate)) {
+        //   console.info(`📅 [Navigate] 左滑到下一周`)
+        //   this.navigateToNextWeek();
+        // } else {
+        //   // 显示暂无数据提示
+        //   this.showNoDataToast();
+        // }
       }
     }
   }
@@ -1129,12 +1127,8 @@ export struct SchedulePage {
    * 判断指定周数是否对当前年级可选
    */
   private isWeekSelectableForCurrentGrade(weekNum: number): boolean {
-    if (!this.currentSemester) {
-      return true;
-    }
-
-    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-    return this.configService.isWeekValidForGrade(this.currentSemester, weekNum, userInfo.className);
+    // TODO t
+    return true;
   }
 
   /**
@@ -1185,24 +1179,16 @@ export struct SchedulePage {
    * 判断是否可以前往上一个学期
    */
   private canGoToPreviousSemester(): boolean {
-    if (!this.currentSemester) {
-      return false;
-    }
-
-    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-    return this.configService.canSwitchSemester(this.currentSemester, 'prev', userInfo.className);
+    // TODO 检查是否可以前往上一个学期
+    return true;
   }
 
   /**
    * 判断是否可以前往下一个学期
    */
   private canGoToNextSemester(): boolean {
-    if (!this.currentSemester) {
-      return false;
-    }
-
-    const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-    return this.configService.canSwitchSemester(this.currentSemester, 'next', userInfo.className);
+    // TODO 检查是否可以前往下一个学期
+    return true;
   }
 
   /**

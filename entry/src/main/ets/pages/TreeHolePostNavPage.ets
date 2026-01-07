@@ -4,7 +4,6 @@
  */
 import { PostTreeHoleRequest } from '../models/TreeHoleModels';
 import { TreeHoleApiService } from '../services/api/TreeHoleApiService';
-import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { SimpleUserInfo } from '../models/UserModels';
 
 // 内容验证结果接口
@@ -28,7 +27,6 @@ struct TreeHolePostNavPage {
   // 配置参数
   private readonly maxLength: number = 500;
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
 
   aboutToAppear(): void {
     console.info('🌳 [TreeHolePostNavPage] 发布页面初始化');
@@ -348,76 +346,7 @@ struct TreeHolePostNavPage {
    * 处理发布操作
    */
   private async handlePublish(): Promise<void> {
-    // 详细验证
-    const validation = this.validateContent();
-    if (!validation.isValid) {
-      this.showErrorDialog(validation.message || '内容验证失败');
-      return;
-    }
-
-    try {
-      this.isPublishing = true;
-
-      // 获取当前登录用户信息
-      const currentUser: SimpleUserInfo | null =
-        this.userInfoManager.getCurrentUserInfo(this.getUIContext().getHostContext());
-      if (!currentUser || !currentUser.userId) {
-        this.showErrorDialog('请先登录后再发布');
-        return;
-      }
-
-      // 构造API请求参数（匹配后端接口格式）
-      const request: PostTreeHoleRequest = {
-        content: this.content.trim(),
-        anonymous: this.isAnonymous ? 1 : 0, // 转换为数字格式
-        parentId: 0, // 发布树洞时为0
-        userId: currentUser.userId, // 使用真实的用户ID
-        deleteTime: ""  // 空字符串表示不设置删除时间
-      };
-
-      console.info('🌳 [TreeHolePostNavPage] 开始发布树洞，请求参数:', JSON.stringify(request));
-      const result = await this.treeHoleApiService.postTreeHole(request);
-
-      if (result.code === 200) {
-        console.info('🌳 [TreeHolePostNavPage] 发布成功');
-
-        // 发布成功后的提示
-        const message = this.isAnonymous ?
-          '发布成功！内容已提交，等待管理员审核后显示' :
-          '发布成功！内容已发布';
-
-        // 显示成功提示
-        this.getUIContext().showAlertDialog({
-          title: '发布成功',
-          message: message,
-          primaryButton: {
-            value: '确定',
-            action: () => {
-              // 返回树洞列表页面，并触发刷新
-              this.pathStack.pop();
-
-              // 通知树洞页面刷新数据
-              setTimeout(() => {
-                // 这里可以通过AppStorage或其他方式通知树洞页面刷新
-                console.info('🌳 [TreeHolePostNavPage] 通知树洞页面刷新');
-              }, 100);
-            }
-          }
-        });
-      } else {
-        // 处理服务器返回的错误
-        const errorMessage = this.parseServerError(result.code, result.msg);
-        this.showErrorDialog(errorMessage);
-      }
-    } catch (error) {
-      console.error('🌳 [TreeHolePostNavPage] 发布失败:', error);
-
-      // 解析网络错误
-      const errorMessage = this.parseNetworkError(error);
-      this.showErrorDialog(errorMessage);
-    } finally {
-      this.isPublishing = false;
-    }
+    // TODO 发送发布请求
   }
 
   /**

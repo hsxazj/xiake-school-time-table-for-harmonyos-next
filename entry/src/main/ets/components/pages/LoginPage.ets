@@ -1,6 +1,5 @@
-import { LoginApiService } from '../../services/api/LoginApiService';
+
 import { LoginForm, LoginStatus } from '../../models/LoginModels';
-import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { JwxtCredentialsManager } from '../../services/jwxt/JwxtCredentialsManager';
 import { JwxtLoginService } from '../../services/jwxt/JwxtLoginService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -46,8 +45,6 @@ export struct LoginPageContent {
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   private promptAction = this.getUIContext().getPromptAction();
-  private loginService: LoginApiService = LoginApiService.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   // JWXT教务系统服务
   private jwxtCredentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
   private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();

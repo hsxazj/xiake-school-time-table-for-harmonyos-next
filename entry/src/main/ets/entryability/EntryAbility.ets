@@ -2,8 +2,6 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { AppConfigManager } from '../services/AppConfigManager';
-import { PreferencesUtil } from '../common/utils/PreferencesUtil';
-import { UserInfoManager } from '../common/utils/UserInfoManager';
 import { JwxtLoginService } from '../services/jwxt/JwxtLoginService';
 import { JwxtHttpClient } from '../services/jwxt/JwxtHttpClient';
 
@@ -11,7 +9,6 @@ const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();
   private jwxtHttpClient: JwxtHttpClient = JwxtHttpClient.getInstance();
 

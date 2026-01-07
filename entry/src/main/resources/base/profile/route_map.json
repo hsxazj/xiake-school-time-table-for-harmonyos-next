@@ -9,22 +9,6 @@
       }
     },
     {
-      "name": "ClassSelectNavPage",
-      "pageSourceFile": "src/main/ets/pages/ClassSelectNavPage.ets",
-      "buildFunction": "ClassSelectNavPageBuilder",
-      "data": {
-        "description": "this is ClassSelectNavPage"
-      }
-    },
-    {
-      "name": "WelcomeNavPage",
-      "pageSourceFile": "src/main/ets/pages/WelcomeNavPage.ets",
-      "buildFunction": "WelcomeNavPageBuilder",
-      "data": {
-        "description": "this is WelcomeNavPage"
-      }
-    },
-    {
       "name": "LoginNavPage",
       "pageSourceFile": "src/main/ets/components/pages/LoginPage.ets",
       "buildFunction": "LoginNavPageBuilder",
