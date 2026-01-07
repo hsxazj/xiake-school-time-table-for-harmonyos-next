@@ -2,6 +2,7 @@
 import { CourseInfo } from '../../models/CourseModels';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
+import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { FormService } from '../../services/FormService';
@@ -203,16 +204,11 @@ export struct HomePage {
   }
 
   private async loadTodayCourses(): Promise<void> {
-
-    // TODO 需要重写
-
     this.isLoading = true;
 
     try {
       // 等待配置管理器初始化
       await this.appConfigManager.initialize();
-
-      // 获取用户信息
 
       // 如果还没有缓存今日课程参数，则初始化
       if (!this.todayParams) {
@@ -220,22 +216,110 @@ export struct HomePage {
       }
 
       if (!this.todayParams) {
-        console.warn('无法获取今日课程参数');
+        hilog.warn(DOMAIN, TAG, '⚠️ [Today Course] 无法获取今日课程参数');
+        this.todayCourses = [];
         return;
       }
 
-      console.info(`🔍 [Today Course] 使用缓存参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
+      hilog.info(DOMAIN, TAG, `🔍 [Today Course] 使用参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
 
-      // const response = await this.courseApiService.getTodayCourseList(
-      //   userInfo.classId,
-      //   2025,
-      //   '3',
-      //   3,
-      //   '星期一'
-      // );
+      // 1. 从缓存获取整个学期的课程数据
+      const semester = this.todayParams.termCode === '3' ? 1 : 2;
+      const academicYear = this.todayParams.year.toString();
+
+      hilog.info(DOMAIN, TAG, `📦 [Today Course] 尝试从缓存加载: ${academicYear}学年第${semester}学期`);
+
+      const semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester);
+
+      if (!semesterCourses || semesterCourses.length === 0) {
+        hilog.warn(DOMAIN, TAG, '⚠️ [Today Course] 缓存中无学期课程数据');
+        this.todayCourses = [];
+        return;
+      }
+
+      hilog.info(DOMAIN, TAG, `✅ [Today Course] 从缓存获取到 ${semesterCourses.length} 门课程`);
+
+      // 2. 筛选今日课程
+      const currentWeek = this.todayParams.week;
+      const weekdayMap: Record<string, number> = {
+        '星期一': 1,
+        '星期二': 2,
+        '星期三': 3,
+        '星期四': 4,
+        '星期五': 5,
+        '星期六': 6,
+        '星期日': 7
+      };
+      const currentDayOfWeek = weekdayMap[this.todayParams.weekDay];
+
+      if (!currentDayOfWeek) {
+        hilog.warn(DOMAIN, TAG, `⚠️ [Today Course] 无效的星期: ${this.todayParams.weekDay}`);
+        this.todayCourses = [];
+        return;
+      }
+
+      hilog.info(DOMAIN, TAG, `🔍 [Today Course] 筛选条件: 第${currentWeek}周, ${this.todayParams.weekDay}(${currentDayOfWeek})`);
+
+      // 筛选符合条件的课程
+      const todayCourses = semesterCourses.filter(course => {
+        // 条件1: 周次匹配 - 课程的 weeks 数组中包含当前周
+        const isWeekMatch = course.weeks && course.weeks.includes(currentWeek);
+        // 条件2: 星期匹配 - 课程的 dayOfWeek 等于当前星期几
+        const isDayMatch = course.dayOfWeek === currentDayOfWeek;
+
+        return isWeekMatch && isDayMatch;
+      });
+
+      hilog.info(DOMAIN, TAG, `✅ [Today Course] 筛选到 ${todayCourses.length} 门今日课程`);
+
+      // 3. 转换为 CourseInfo 格式
+      const courseInfoList: CourseInfo[] = todayCourses.map((course): CourseInfo => {
+        // 转换节次数组为时间字符串数组
+        const courseTime = CourseTimeUtil.sessionsToTimeStrings(course.sessions);
+        // 格式化节次字符串
+        const section = CourseTimeUtil.formatSections(course.sessions);
+        // 格式化周次为字符串
+        const weeks = JSON.stringify(course.weeks);
+
+        const courseInfo: CourseInfo = {
+          courseId: parseInt(course.id) || 0,
+          courseName: course.name,
+          teacher: course.teacher,
+          classroom: course.classroom,
+          weekday: this.todayParams!.weekDay,
+          section: section,
+          weeks: weeks,
+          courseTime: courseTime,
+          campus: course.campus || ''
+        };
+        return courseInfo;
+      });
+
+      // 4. 按节次排序 (按第一节课的节次升序)
+      courseInfoList.sort((a, b) => {
+        const aFirstSession = a.section.match(/\d+/);
+        const bFirstSession = b.section.match(/\d+/);
+        const aNum = aFirstSession ? parseInt(aFirstSession[0]) : 0;
+        const bNum = bFirstSession ? parseInt(bFirstSession[0]) : 0;
+        return aNum - bNum;
+      });
+
+      // 5. 更新状态
+      this.todayCourses = courseInfoList;
+
+      hilog.info(DOMAIN, TAG, `🎉 [Today Course] 今日课程加载完成，共${this.todayCourses.length}门课程`);
+
+      // 打印详细课程信息用于调试
+      if (this.todayCourses.length > 0) {
+        this.todayCourses.forEach((course, index) => {
+          hilog.info(DOMAIN, TAG, `  课程${index + 1}: ${course.courseName} | ${course.section} | ${course.classroom} | ${course.teacher}`);
+        });
+      }
 
     } catch (error) {
-      console.error('加载今日课程失败:', error);
+      hilog.error(DOMAIN, TAG, '❌ [Today Course] 加载今日课程失败: %{public}s',
+        error instanceof Error ? error.message : String(error));
+      this.todayCourses = [];
     } finally {
       this.isLoading = false;
     }
