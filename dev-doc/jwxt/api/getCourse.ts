@@ -22,7 +22,6 @@ export async function getCourse(year: number, term: number): Promise<Course[]> {
 
   let data: any = await http.postForm<any>(url, form, { referer });
   if (!data || typeof data !== "object") {
-    await login();
     data = await http.get<any>(url, { referer });
   }
   if (!data || typeof data !== "object") {

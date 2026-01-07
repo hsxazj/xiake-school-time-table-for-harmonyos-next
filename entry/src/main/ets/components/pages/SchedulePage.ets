@@ -1,11 +1,13 @@
 import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
-import { CourseApiService, CourseInfo } from '../../services/api/CourseApiService';
+import { JwxtCourseService } from '../../services/api/JwxtCourseService';
+import { JwxtCourse } from '../../models/JwxtCourseModels';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { CacheManager } from '../../common/utils/CacheManager';
 import { ErrorUtil } from '../../common/utils/ErrorUtil';
+import { CourseParser } from '../../common/utils/CourseParser';
 import { curves, promptAction } from '@kit.ArkUI';
 
 // 周日期范围接口
@@ -76,7 +78,7 @@ export struct SchedulePage {
   // 新增课程数据相关状态
   @State private isLoadingCourses: boolean = false;
   private configService: ConfigApiService = ConfigApiService.getInstance();
-  private courseService: CourseApiService = CourseApiService.getInstance();
+  private jwxtCourseService: JwxtCourseService = JwxtCourseService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -100,8 +102,8 @@ export struct SchedulePage {
     classList: []
   };
   // 课程颜色映射
-  // 实际课程数据 - 移除模拟数据，使用接口数据
-  @State private courseList: CourseInfo[] = [];
+  // 实际课程数据 - 使用教务系统接口数据
+  @State private courseList: JwxtCourse[] = [];
   // 动画支持
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
@@ -113,9 +115,17 @@ export struct SchedulePage {
   @State private coursePopupStates: Map<string, boolean> = new Map();
   private promptAction = this.getUIContext().getPromptAction();
 
-  aboutToAppear(): void {
+  async aboutToAppear(): Promise<void> {
+    // 初始化 JwxtCourseService (必须在使用前初始化)
+    const context = this.getUIContext().getHostContext();
+    if (!context) {
+      console.error('📋 [Schedule] 获取Context失败，无法初始化服务');
+      return;
+    }
+    await this.jwxtCourseService.initialize(context);
+
     // 基于日期的初始化逻辑
-    this.initializeWithCurrentDate();
+    await this.initializeWithCurrentDate();
   }
 
   build() {
@@ -686,11 +696,11 @@ export struct SchedulePage {
   }
 
   /**
-   * 处理课程列表（使用接口数据转换为课表格式）
+   * 处理课程列表（使用教务系统接口数据转换为课表格式）
    */
   private processCourseList(): void {
-    // 将接口返回的CourseInfo[]转换为ScheduleCourse[]格式
-    const convertedCourses = this.convertCourseInfoToScheduleCourse(this.courseList);
+    // 将教务系统返回的 JwxtCourse[] 转换为 ScheduleCourse[] 格式
+    const convertedCourses: ScheduleCourseWithWeeks[] = this.convertJwxtCourseToScheduleCourse(this.courseList);
 
     // 过滤当前周的课程
     const weekCourses = convertedCourses.filter(course => {
@@ -718,21 +728,24 @@ export struct SchedulePage {
   }
 
   /**
-   * 将CourseInfo转换为ScheduleCourse格式
+   * 将JwxtCourse转换为ScheduleCourse格式
+   *
+   * JwxtCourse 已经是标准化格式，只需进行简单的字段映射
    */
-  private convertCourseInfoToScheduleCourse(courseList: CourseInfo[]): ScheduleCourseWithWeeks[] {
-    return courseList.map(course => {
+  private convertJwxtCourseToScheduleCourse(courseList: JwxtCourse[]): ScheduleCourseWithWeeks[] {
+    return courseList.map((course: JwxtCourse) => {
+      // JwxtCourse 的数据已经通过 CourseParser 解析，可以直接使用
       const scheduleCourse: ScheduleCourseWithWeeks = {
-        courseName: course.courseName,
+        courseName: course.name,
         classroom: [course.classroom], // 将字符串转换为数组
         teacher: [course.teacher], // 将字符串转换为数组
-        campus: course.campus || '', // 使用接口数据中的campus字段
-        courseTime: this.parseCourseTime(course.section),
-        weekday: this.parseWeekday(course.weekday),
-        section: this.parseSection(course.section),
-        courseId: [course.courseId.toString()], // 转换为字符串数组
-        weeks: course.weeks, // 保存原始周次信息用于过滤
-        originalCourseTime: course.courseTime // 保存原始时间信息
+        campus: course.campus || '', // 校区
+        courseTime: CourseParser.parseCourseTime(course.sessions), // 解析课程时间
+        weekday: course.dayOfWeek, // 星期 (已是数字1-7)
+        section: course.sessions, // 节次数组 (已解析)
+        courseId: [course.id], // 课程ID
+        weeks: JSON.stringify(course.weeks), // 将周次数组转换为JSON字符串格式 (兼容现有过滤逻辑)
+        originalCourseTime: [] // 教务系统接口不提供原始时间，使用空数组
       };
       return scheduleCourse;
     });
@@ -740,86 +753,16 @@ export struct SchedulePage {
 
   /**
    * 判断课程是否在当前周
+   *
+   * 使用 CourseParser 进行标准解析
    */
   private isCourseInCurrentWeek(course: ScheduleCourseWithWeeks, currentWeek: number): boolean {
     if (!course.weeks) {
-      return true;
-    } // 如果没有周次信息，默认显示
-
-    const weekRanges = this.parseWeekRange(course.weeks);
-    return weekRanges.includes(currentWeek);
-  }
-
-  /**
-   * 解析周次范围，适配接口格式 "[2,3,4,6,7,8,9,10,11]"
-   */
-  private parseWeekRange(weeksStr: string): number[] {
-    const weeks: number[] = [];
-
-    if (!weeksStr) {
-      return weeks;
+      return true; // 如果没有周次信息,默认显示
     }
 
-    try {
-      // 接口返回的格式是 "[2,3,4,6,7,8,9,10,11]"，需要解析为数组
-      if (weeksStr.startsWith('[') && weeksStr.endsWith(']')) {
-        const weekArray = JSON.parse(weeksStr) as number[];
-        return weekArray.sort((a, b) => a - b);
-      } else {
-        // 处理传统格式: "1-16", "1,3,5-7"等
-        const cleanWeeksStr = weeksStr.replace(/[单双周]/g, '');
-        const parts = cleanWeeksStr.split(',');
-
-        parts.forEach(part => {
-          if (part.includes('-')) {
-            const dashIndex = part.indexOf('-');
-            const start = parseInt(part.substring(0, dashIndex).trim());
-            const end = parseInt(part.substring(dashIndex + 1).trim());
-            for (let i = start; i <= end; i++) {
-              if (!weeks.includes(i)) {
-                weeks.push(i);
-              }
-            }
-          } else {
-            const week = parseInt(part.trim());
-            if (!isNaN(week) && !weeks.includes(week)) {
-              weeks.push(week);
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('解析周次范围失败:', error, weeksStr);
-    }
-
-    return weeks.sort((a, b) => a - b);
-  }
-
-  /**
-   * 解析课程时间为二维数组格式
-   */
-  private parseCourseTime(sectionStr: string): number[][] {
-    const sections = this.parseSection(sectionStr);
-    const result: number[][] = [];
-
-    // 将连续的节次分组
-    let currentGroup: number[] = [];
-    for (let i = 0; i < sections.length; i++) {
-      if (i === 0 || sections[i] === sections[i - 1] + 1) {
-        currentGroup.push(sections[i]);
-      } else {
-        if (currentGroup.length > 0) {
-          result.push([...currentGroup]);
-        }
-        currentGroup = [sections[i]];
-      }
-    }
-
-    if (currentGroup.length > 0) {
-      result.push(currentGroup);
-    }
-
-    return result;
+    // 使用 CourseParser 判断课程是否在当前周
+    return CourseParser.isCourseInWeek(course.weeks, currentWeek);
   }
 
   /**
@@ -859,58 +802,6 @@ export struct SchedulePage {
   }
 
   /**
-   * 解析周几字符串
-   */
-  private parseWeekday(weekdayStr: string): number {
-    const weekdayMap: Record<string, number> = {
-      '星期一': 1,
-      '星期二': 2,
-      '星期三': 3,
-      '星期四': 4,
-      '星期五': 5,
-      '星期六': 6,
-      '星期日': 7
-    };
-    return weekdayMap[weekdayStr] || 1;
-  }
-
-  /**
-   * 解析节次字符串，适配接口格式 "1-2节"
-   */
-  private parseSection(sectionStr: string): number[] {
-    if (!sectionStr) {
-      return [1];
-    } // 默认值
-
-    // 移除"节"字符，处理 "1-2节" 格式
-    const cleanSectionStr = sectionStr.replace(/节$/g, '');
-
-    if (cleanSectionStr.includes('-')) {
-      // "1-2" -> [1, 2]
-      // "1-6" -> [1, 2, 3, 4, 5, 6]
-      const parts = cleanSectionStr.split('-');
-      if (parts.length === 2) {
-        const start = parseInt(parts[0].trim());
-        const end = parseInt(parts[1].trim());
-        const sections: number[] = [];
-        for (let i = start; i <= end; i++) {
-          sections.push(i);
-        }
-        return sections;
-      }
-    } else if (cleanSectionStr.includes(',')) {
-      // "1,2" -> [1, 2]
-      return cleanSectionStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-    } else {
-      // "1" -> [1]
-      const section = parseInt(cleanSectionStr.trim());
-      return !isNaN(section) ? [section] : [1];
-    }
-
-    return [1]; // 默认值
-  }
-
-  /**
    * 基于当前日期初始化 - 找到最近的学期并计算当前周数
    */
   private async initializeWithCurrentDate(): Promise<void> {
@@ -946,7 +837,7 @@ export struct SchedulePage {
   }
 
   /**
-   * 加载课程数据
+   * 加载课程数据 (使用教务系统接口)
    */
   private async loadCourseData(): Promise<void> {
     if (!this.currentSemester) {
@@ -957,63 +848,45 @@ export struct SchedulePage {
     this.isLoadingCourses = true;
 
     try {
-      // 从首选项获取用户班级信息
-      const userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
-      console.info(`📚 [Course] 当前用户信息: 学院=${userInfo.collegeName}, 专业=${userInfo.majorName}, 班级=${userInfo.className}`);
+      console.info(`📚 [Course] 开始加载课程: ${this.currentSemester.academicYear}学年 第${this.currentSemester.semester}学期`);
 
-      const classId = userInfo.classId;
-
-      if (!classId) {
-        console.warn('📚 [Course] 用户未设置班级信息，无法获取课程数据');
-        console.warn('📚 [Course] 请在设置页面选择学院、专业和班级');
-        return;
-      }
-
-      // 构建请求参数 - 使用学期信息和用户班级ID
-      const params = this.courseService.buildCourseParams(
+      // 构建请求参数 - 只需要学年和学期
+      const params = this.jwxtCourseService.buildCourseParams(
         this.currentSemester.academicYear,
-        this.currentSemester.semester,
-        this.currentWeek, // 添加当前周数
-        classId,
-        undefined
+        this.currentSemester.semester
       );
 
       console.info(`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
 
-      // 获取课程列表
-      const courseResponse = await this.courseService.getCourseList(params);
+      // 获取课程列表 (直接返回 JwxtCourse[])
+      const courseList: JwxtCourse[] = await this.jwxtCourseService.getCourseList(params);
 
-      if (courseResponse.code === 200 && courseResponse.data) {
-        // 将接口数据赋值给 courseList 状态变量
-        this.courseList = courseResponse.data;
+      // 将接口数据赋值给 courseList 状态变量
+      this.courseList = courseList;
 
-        // 处理课程数据，生成课表网格
-        this.processWeekScheduleData();
+      // 处理课程数据，生成课表网格
+      this.processWeekScheduleData();
 
-        console.info(`📚 [Course] 成功加载${courseResponse.data.length}门课程`);
-
-        // 异步清理旧缓存 (保持最多20周,不阻塞UI)
-        CacheManager.cleanOldScheduleCaches().catch((err: Error) => {
-          console.warn(`⚠️ [Cache] 清理旧缓存失败: ${err.message}`);
-        });
-      } else {
-        console.warn(`📚 [Course] 课程数据加载失败: ${courseResponse.msg}`);
-        this.courseList = [];
-        // 即使没有数据也要初始化空的网格
-        this.processWeekScheduleData();
-      }
+      console.info(`📚 [Course] 成功加载${courseList.length}门课程`);
 
     } catch (error) {
       console.error('📚 [Course] 加载课程数据失败:', error);
 
-      // 判断是否为网络错误且无缓存
+      // 判断是否为网络错误
       if (ErrorUtil.isNetworkError(error)) {
         this.promptAction.showToast({
           message: '网络连接失败，请检查网络后重试',
           duration: 3000,
           bottom: '100vp'
         });
-        console.warn('📚 [Course] 网络错误且无缓存，已提示用户');
+        console.warn('📚 [Course] 网络错误，已提示用户');
+      } else {
+        // 其他错误
+        this.promptAction.showToast({
+          message: `加载课程失败: ${error}`,
+          duration: 3000,
+          bottom: '100vp'
+        });
       }
 
       this.courseList = [];
