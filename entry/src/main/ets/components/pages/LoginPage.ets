@@ -15,14 +15,17 @@ export function LoginNavPageBuilder() {
 @Component
 struct LoginNavPage {
   @Consume('NavStack') pathStack: NavPathStack;
+  @State private navigationParams: Record<string, Object> = {};
 
   build() {
     NavDestination() {
-      LoginPageContent()
+      LoginPageContent({ navigationParams: this.navigationParams })
     }
     .hideTitleBar(true)
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
+      // 获取路由参数
+      this.navigationParams = ctx.pathInfo.param as Record<string, Object>;
     })
   }
 }
@@ -44,6 +47,7 @@ export struct LoginPageContent {
   @State private showPassword: boolean = false;
   @State private pageOpacity: number = 0; // 页面初始透明度为0
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
+  @Prop private navigationParams: Record<string, Object> = {};
   private promptAction = this.getUIContext().getPromptAction();
   // JWXT教务系统服务
   private jwxtCredentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
@@ -326,15 +330,23 @@ export struct LoginPageContent {
       this.pageOpacity = 0;
       hilog.info(DOMAIN, 'LoginPage', '🎬 [Animation] 开始渐隐动画');
 
-      // 动画完成后关闭模态页面
+      // 动画完成后处理导航
       setTimeout(() => {
         // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
         AppStorage.setOrCreate('loginStatusChanged', Date.now());
         hilog.info(DOMAIN, 'LoginPage', '📢 [Notification] 发送登录状态变化通知');
 
-        // 关闭模态页面
-        this.pathStack.pop();
-        hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 关闭登录模态页面');
+        // 判断来源并导航
+        const from = this.navigationParams['from'] as string;
+        if (from === 'OpenPage') {
+          // 如果是从OpenPage来的，使用replace跳转到主页
+          hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 从OpenPage来的，跳转到主页');
+          this.pathStack.replacePathByName('MainTabNavPage', null);
+        } else {
+          // 如果是从其他地方来的（如MinePage），关闭模态页面返回上一页
+          hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 关闭登录模态页面返回上一页');
+          this.pathStack.pop();
+        }
       }, 500); // 减少延时，让MinePage能更早开始渐显
     }, 600); // 稍微减少等待时间，提升响应速度
   }

@@ -25,7 +25,6 @@
  * @since 2026-01-07
  */
 import { JwxtHttpClient } from './JwxtHttpClient';
-import { JwxtLogoutService } from './JwxtLogoutService';
 import { JwxtCredentialsManager } from './JwxtCredentialsManager';
 import { JwxtConstants } from './JwxtConstants';
 import { CookieManager } from './CookieManager';
@@ -56,13 +55,11 @@ interface JwxtPublicKey {
 export class JwxtLoginService {
   private static instance: JwxtLoginService;
   private httpClient: JwxtHttpClient;
-  private logoutService: JwxtLogoutService;
   private credentialsManager: JwxtCredentialsManager;
   private cookieManager: CookieManager;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
-    this.logoutService = JwxtLogoutService.getInstance();
     this.credentialsManager = JwxtCredentialsManager.getInstance();
     this.cookieManager = CookieManager.getInstance();
     hilog.info(DOMAIN, TAG, '✅ JwxtLoginService初始化完成');

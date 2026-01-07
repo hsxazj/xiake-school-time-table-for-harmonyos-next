@@ -2,6 +2,8 @@ import { AppConfigManager } from '../../services/AppConfigManager';
 import { common } from '@kit.AbilityKit';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
 import { CookieManager } from '../../services/jwxt/CookieManager';
+import { JwxtCredentialsManager } from '../../services/jwxt/JwxtCredentialsManager';
+import { CacheManager } from '../../common/utils/CacheManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN: number = 0x0004;
@@ -47,6 +49,7 @@ export struct MinePage {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   private cookieManager: CookieManager = CookieManager.getInstance();
+  private credentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
 
   aboutToAppear(): void {
     this.checkLoginStatus();
@@ -514,15 +517,59 @@ export struct MinePage {
    * 处理退出登录
    */
   private async handleLogout(): Promise<void> {
-    // TODO 重写优先级高
+    try {
+      this.isLoggingOut = true;
+      hilog.info(DOMAIN, TAG, '🚪 [Logout] 开始退出登录...');
+
+      // 获取上下文
+      const context = this.getUIContext().getHostContext();
+      if (!context) {
+        hilog.error(DOMAIN, TAG, '❌ [Logout] 无法获取有效的context');
+        this.showToast('退出失败,请重试');
+        return;
+      }
+
+      // 1. 清除存储的账号密码
+      hilog.info(DOMAIN, TAG, '🔑 [Logout] 清除凭证...');
+      this.credentialsManager.clearCredentials(context);
+
+      // 2. 清除所有Cookie
+      hilog.info(DOMAIN, TAG, '🍪 [Logout] 清除Cookie...');
+      await this.cookieManager.clearAllCookies();
+
+      hilog.info(DOMAIN, TAG, '✅ [Logout] 退出登录成功');
+      this.showToast('已退出登录');
+
+      // 4. 延迟跳转到登录页面
+      setTimeout(() => {
+        hilog.info(DOMAIN, TAG, '🔙 [Logout] 跳转到登录页面');
+        this.pathStack.replacePathByName('LoginNavPage', null);
+      }, 500);
+
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '❌ [Logout] 退出登录失败: %{public}s',
+        error instanceof Error ? error.message : String(error));
+      this.showToast('退出失败,请重试');
+    } finally {
+      this.isLoggingOut = false;
+    }
   }
 
   /**
    * 显示Toast提示
    */
   private showToast(message: string): void {
-    // 使用系统Toast显示提示信息
-    // 注意：这里使用console.info作为简单实现，实际项目中可以使用更完整的Toast组件
-    console.info(`[Toast] ${message}`);
+    try {
+      this.getUIContext().getPromptAction().showToast({
+        message: message,
+        duration: 2000,
+        bottom: '100vp'
+      });
+    } catch (error) {
+      // 如果Toast显示失败,至少输出日志
+      hilog.error(DOMAIN, TAG, '❌ [Toast] 显示Toast失败: %{public}s',
+        error instanceof Error ? error.message : String(error));
+      console.info(`[Toast] ${message}`);
+    }
   }
 }

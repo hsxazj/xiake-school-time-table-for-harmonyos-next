@@ -1,4 +1,5 @@
 import { AppConfigManager } from '../services/AppConfigManager';
+import { JwxtCredentialsManager } from '../services/jwxt/JwxtCredentialsManager';
 
 
 @Entry
@@ -8,6 +9,7 @@ struct OpenPage {
   @State message: string = '欢迎使用霞客课表';
   @State initMessage: string = '正在加载...';
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private credentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
 
   aboutToAppear(): void {
     this.waitForInitAndNavigate();
@@ -59,20 +61,31 @@ struct OpenPage {
    */
   private async waitForInitAndNavigate(): Promise<void> {
     try {
+      // 获取应用上下文
+      const context = getContext(this);
 
       // 短暂延迟后跳转
       setTimeout(() => {
-        // TODO 去登陆页
-          // 已有完整信息，直接跳转到主页Tab页面
+        // 检查是否有存储的账号和密码
+        const hasCredentials = this.credentialsManager.hasCredentials(context);
+
+        if (!hasCredentials) {
+          // 没有存储凭证，跳转到登录页
+          console.info('[OpenPage] 未找到存储的账号密码，跳转到登录页');
+          this.pathStack.replacePathByName('LoginNavPage', { from: 'OpenPage' });
+        } else {
+          // 已有凭证，直接跳转到主页Tab页面
+          console.info('[OpenPage] 已找到存储的账号密码，跳转到主页');
           this.pathStack.replacePathByName('MainTabNavPage', null);
+        }
       }, 500);
 
     } catch (error) {
       console.error('Index页面初始化失败:', error);
       this.initMessage = '初始化失败，请重试';
-      // 即使初始化失败也跳转，让用户能正常使用
+      // 即使初始化失败也跳转到登录页，让用户重新登录
       setTimeout(() => {
-        this.pathStack.replacePathByName('ClassSelectNavPage', null);
+        this.pathStack.replacePathByName('LoginNavPage', null);
       }, 2000);
     }
   }

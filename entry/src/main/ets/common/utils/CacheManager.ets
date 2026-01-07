@@ -1,4 +1,5 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { preferences } from '@kit.ArkData';
 import { PreferencesUtil } from './PreferencesUtil';
 import { ConfigApiResponseData } from '../../models/ConfigModels';
 import { CourseInfo } from '../../models/CourseModels';
