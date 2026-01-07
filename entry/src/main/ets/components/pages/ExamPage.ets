@@ -100,10 +100,10 @@ export struct ExamPage {
               }
             })
           }
-          .borderRadius(24)
           .width('100%')
           .layoutWeight(1)
           .scrollBar(BarState.Off)
+          .padding({ top: 4 })
         } else {
           // 无考试数据
           Column() {
@@ -177,10 +177,6 @@ export struct ExamPage {
       Column({ space: 8 }) {
         // 考试时间
         Row() {
-          Text('🕐')
-            .fontSize(16)
-            .width(30)
-
           Text(examInfo.time || '时间待定')
             .fontSize(15)
             .fontColor('#666666')
@@ -190,10 +186,6 @@ export struct ExamPage {
 
         // 考场信息
         Row() {
-          Text('📍')
-            .fontSize(16)
-            .width(30)
-
           Text(examInfo.classroom || '考场待定')
             .fontSize(15)
             .fontColor('#666666')
@@ -203,9 +195,6 @@ export struct ExamPage {
 
         // 座位号
         Row() {
-          Text('💺')
-            .fontSize(16)
-            .width(30)
 
           Text(`座位号: ${examInfo.seat || '待定'}`)
             .fontSize(15)
@@ -219,7 +208,7 @@ export struct ExamPage {
     }
     .width('100%')
     .backgroundColor('#F8F9FA')
-    .borderRadius(24)
+    .borderRadius(16)
     .border({
       width: 2,
       color: $r('app.color.schedule_primary_color'),
