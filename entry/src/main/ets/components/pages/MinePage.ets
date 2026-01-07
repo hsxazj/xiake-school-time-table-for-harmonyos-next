@@ -4,6 +4,12 @@ import { SimpleUserInfo } from '../../models/UserModels';
 import { API_CONFIG } from '../../common/constants/AppConstants';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { common } from '@kit.AbilityKit';
+import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
+import { CookieManager } from '../../services/jwxt/CookieManager';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+const DOMAIN: number = 0x0004;
+const TAG = 'MinePage';
 
 // 用户信息接口
 interface UserInfo {
@@ -40,13 +46,15 @@ export struct MinePage {
   @State private pageTranslateY: number = 30; // 页面初始向下偏移30px
   @State private isLoggingOut: boolean = false; // 是否正在退出登录
   @State private isLoggedIn: boolean = false; // 登录状态
+  @State private isCheckingLogin: boolean = true; // 是否正在检查登录状态
   @State private treeHoleEnabled: boolean = true; // 树洞功能状态
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private loginService: LoginApiService = LoginApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
+  private cookieManager: CookieManager = CookieManager.getInstance();
 
   aboutToAppear(): void {
-    this.loadUserInfo();
     this.checkLoginStatus();
     this.loadTreeHoleSettings();
     // 启动渐显动画
@@ -79,18 +87,41 @@ export struct MinePage {
           // 用户信息
           Column() {
             // 显示用户真实姓名（如果有）或用户名
-            Text(this.userInfo.realName || this.userInfo.username)
-              .fontSize(20)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
-              .margin({ bottom: 4 })
-
-            // 显示学号（如果已登录）
-            if (this.isLoggedIn && this.userInfo.studentId) {
-              Text(`学号：${this.userInfo.studentId}`)
-                .fontSize(14)
-                .fontColor('#666666')
+            if (this.isCheckingLogin) {
+              Text('正在验证登录状态...')
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#999999')
                 .margin({ bottom: 4 })
+            } else {
+              Text(this.userInfo.realName || this.userInfo.username)
+                .fontSize(20)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#333333')
+                .margin({ bottom: 4 })
+
+              // 显示学号（如果已登录）
+              if (this.isLoggedIn && this.userInfo.studentId) {
+                Text(`学号：${this.userInfo.studentId}`)
+                  .fontSize(14)
+                  .fontColor('#666666')
+                  .margin({ bottom: 4 })
+              }
+
+              // 显示专业和班级（如果已登录）
+              if (this.isLoggedIn && this.userInfo.major && this.userInfo.className) {
+                Text(`${this.userInfo.major} ${this.userInfo.className}`)
+                  .fontSize(14)
+                  .fontColor('#666666')
+                  .margin({ bottom: 2 })
+              }
+
+              // 显示学院（如果已登录）
+              if (this.isLoggedIn && this.userInfo.college) {
+                Text(this.userInfo.college)
+                  .fontSize(12)
+                  .fontColor('#999999')
+              }
             }
           }
           .alignItems(HorizontalAlign.Start)
@@ -113,12 +144,12 @@ export struct MinePage {
       })
       .margin({ top: 50, bottom: 20 })
 
-      // 功能设置列表 - 树洞开关
-      Column() {
-        this.MenuSection('功能设置', this.getFunctionItems())
-      }
-      .width('90%')
-      .margin({ bottom: 20 })
+      // // 功能设置列表 - 树洞开关
+      // Column() {
+      //   this.MenuSection('功能设置', this.getFunctionItems())
+      // }
+      // .width('90%')
+      // .margin({ bottom: 20 })
 
       // // 功能列表 - 只保留问题反馈和关于我们
       // Column() {
@@ -139,12 +170,12 @@ export struct MinePage {
           .borderWidth(1)
           .borderColor('#FF6B6B')
           .borderRadius(8)
-          .enabled(!this.isLoggingOut)
+          .enabled(!this.isLoggingOut && !this.isCheckingLogin)
           .margin({ bottom: 20 })
           .onClick(() => {
             this.showLogoutConfirmDialog();
           })
-      } else {
+      } else if (!this.isCheckingLogin) {
         Button('去登录')
           .width('90%')
           .height(44)
@@ -266,15 +297,43 @@ export struct MinePage {
   }
 
   /**
-   * 检查登录状态
+   * 检查登录状态（基于Cookie缓存机制）
+   * 通过尝试获取学生信息来验证登录状态
    */
-  private checkLoginStatus(): void {
-    // 使用UserInfoManager检查登录状态
-    this.isLoggedIn = this.userInfoManager.isLoggedInSync(this.getUIContext().getHostContext());
-    console.info(`[MinePage] 登录状态检查: ${this.isLoggedIn ? '已登录' : '未登录'}`);
+  private async checkLoginStatus(): Promise<void> {
+    try {
+      this.isCheckingLogin = true;
+      hilog.info(DOMAIN, TAG, '🔍 [MinePage] 开始检查登录状态（基于Cookie）...');
 
-    // 如果登录状态变化，重新加载用户信息
-    this.loadUserInfo();
+      // 尝试获取学生信息（会自动使用缓存的Cookie）
+      const studentInfo = await this.jwxtGetInfoService.getInfo();
+
+      // 如果成功获取，说明登录有效
+      this.isLoggedIn = true;
+      hilog.info(DOMAIN, TAG, '✅ [MinePage] 登录状态有效，获取到学生信息: %{public}s', studentInfo.name);
+
+      // 更新用户信息显示
+      this.userInfo.username = studentInfo.student_id;
+      this.userInfo.realName = studentInfo.name;
+      this.userInfo.studentId = studentInfo.student_id;
+      this.userInfo.college = studentInfo.college || '学院信息未设置';
+      this.userInfo.major = studentInfo.major || '专业信息未设置';
+      this.userInfo.className = studentInfo.class_name || '班级信息未设置';
+
+      hilog.info(DOMAIN, TAG, '📋 [MinePage] 用户信息已更新: %{public}s - %{public}s %{public}s',
+        this.userInfo.realName, this.userInfo.major, this.userInfo.className);
+
+    } catch (error) {
+      // 获取失败，说明未登录或登录已过期
+      this.isLoggedIn = false;
+      hilog.warn(DOMAIN, TAG, '⚠️ [MinePage] 登录状态无效或已过期: %{public}s',
+        error instanceof Error ? error.message : String(error));
+
+      // 重置为未登录状态
+      this.resetUserInfoToDefault();
+    } finally {
+      this.isCheckingLogin = false;
+    }
   }
 
   /**
@@ -289,63 +348,6 @@ export struct MinePage {
     }, 100);
   }
 
-  private loadUserInfo(): void {
-    const context = this.getUIContext().getHostContext();
-
-    if (this.isLoggedIn) {
-      // 加载登录用户信息
-      const currentUser: SimpleUserInfo | null = this.userInfoManager.getCurrentUserInfo(context);
-      if (currentUser) {
-        this.userInfo.username = currentUser.userName || '未知用户';
-        this.userInfo.realName = currentUser.realName || '';
-        this.userInfo.studentId = currentUser.userName || ''; // 学号通常是用户名
-
-        // 如果有头像URL，使用网络图片，否则使用默认头像
-        if (currentUser.avatar && currentUser.avatar.trim() !== '') {
-          this.userInfo.avatar = `${API_CONFIG.BASE_URL}${currentUser.avatar}`;
-        } else {
-          this.userInfo.avatar = $r('app.media.defaultAvatar');
-        }
-
-        console.info(`[MinePage] 加载登录用户信息: ${currentUser.realName} (${currentUser.userName})`);
-      } else {
-        console.warn('[MinePage] 登录状态为true但未找到用户信息');
-        this.resetUserInfoToDefault();
-      }
-    } else {
-      // 未登录状态，重置为默认信息
-      this.resetUserInfoToDefault();
-    }
-
-    // 加载学籍信息（无论是否登录都尝试加载）
-    const schoolInfo = this.userInfoManager.getUserInfo(context);
-    console.info('[MinePage] 获取到的学籍信息:', JSON.stringify(schoolInfo));
-
-    // 更新学院、专业、班级信息
-    if (schoolInfo.collegeName) {
-      this.userInfo.college = schoolInfo.collegeName;
-    } else {
-      this.userInfo.college = this.isLoggedIn ? '学院信息未设置' : '请先登录';
-    }
-
-    if (schoolInfo.majorName) {
-      this.userInfo.major = schoolInfo.majorName;
-    } else {
-      this.userInfo.major = this.isLoggedIn ? '专业信息未设置' : '请先登录';
-    }
-
-    if (schoolInfo.className) {
-      this.userInfo.className = schoolInfo.className;
-    } else {
-      this.userInfo.className = this.isLoggedIn ? '班级信息未设置' : '请先登录';
-    }
-
-    // 如果用户已登录但学籍信息不完整，提示用户完善
-    if (this.isLoggedIn && (!schoolInfo.collegeName || !schoolInfo.majorName || !schoolInfo.className)) {
-      console.info('[MinePage] 用户已登录但学籍信息不完整，建议用户完善信息');
-    }
-  }
-
   /**
    * 重置用户信息为默认状态
    */
@@ -353,6 +355,9 @@ export struct MinePage {
     this.userInfo.username = '未登录';
     this.userInfo.realName = '';
     this.userInfo.studentId = '';
+    this.userInfo.college = '请先登录';
+    this.userInfo.major = '请先登录';
+    this.userInfo.className = '请先登录';
     this.userInfo.avatar = $r('app.media.defaultAvatar');
   }
 
@@ -517,10 +522,14 @@ export struct MinePage {
   private async handleLogout(): Promise<void> {
     try {
       this.isLoggingOut = true;
-      console.info('[MinePage] 🔄 开始退出登录...');
+      hilog.info(DOMAIN, TAG, '🔄 [Logout] 开始退出登录...');
 
       // 获取context用于清除首选项
       const context = this.getUIContext().getHostContext();
+
+      // 清除Cookie缓存（重要！）
+      await this.cookieManager.clearAllCookies();
+      hilog.info(DOMAIN, TAG, '✅ [Logout] Cookie缓存已清除');
 
       // 使用UserInfoManager清除登录信息
       this.userInfoManager.clearAllInfo(context);
@@ -528,23 +537,23 @@ export struct MinePage {
       // 清除AppStorage中的token
       AppStorage.setOrCreate('token', '');
 
-      console.info('[MinePage] ✅ 退出登录成功');
+      hilog.info(DOMAIN, TAG, '✅ [Logout] 退出登录成功');
 
       // 更新本地登录状态
       this.isLoggedIn = false;
 
-      // 重新加载用户信息（显示未登录状态）
-      this.loadUserInfo();
+      // 重置用户信息（显示未登录状态）
+      this.resetUserInfoToDefault();
 
       // 通知登录状态变化
       AppStorage.setOrCreate('loginStatusChanged', Date.now());
-      console.info('[MinePage] 📢 已发送登录状态变化通知');
+      hilog.info(DOMAIN, TAG, '📢 [Logout] 已发送登录状态变化通知');
 
       // 显示成功提示
       this.showToast('已退出登录');
 
     } catch (error) {
-      console.error('[MinePage] ❌ 退出登录失败:', JSON.stringify(error));
+      hilog.error(DOMAIN, TAG, '❌ [Logout] 退出登录失败: %{public}s', JSON.stringify(error));
       this.showToast('退出登录失败，请重试');
     } finally {
       this.isLoggingOut = false;

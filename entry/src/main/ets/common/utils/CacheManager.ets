@@ -3,6 +3,8 @@ import { PreferencesUtil } from './PreferencesUtil';
 import { ConfigApiResponseData } from '../../models/ConfigModels';
 import { CourseInfo } from '../../models/CourseModels';
 import { JwxtCourse } from '../../models/JwxtCourseModels';
+import { ExamInfo } from '../../models/ExamModels';
+import { GradeInfo } from '../../services/jwxt/JwxtGetGradeService';
 
 const DOMAIN: number = 0x0001;
 const TAG: string = 'CacheManager';
@@ -10,25 +12,41 @@ const TAG: string = 'CacheManager';
 // 缓存key常量
 const CACHE_KEY_PREFIX_SCHEDULE = 'cache_schedule_';
 const CACHE_KEY_CONFIG = 'cache_config';
-const CACHE_KEY_WEEKS_LIST = 'cache_weeks_list';
-const CACHE_KEY_PREFIX_SEMESTER_COURSES = 'cache_semester_courses_'; // 新增：学期课程缓存
+const CACHE_KEY_PREFIX_SEMESTER_COURSES = 'cache_semester_courses_'; // 学期课程缓存
+const CACHE_KEY_PREFIX_EXAM = 'cache_exam_'; // 考试信息缓存
+const CACHE_KEY_PREFIX_GRADE = 'cache_grade_'; // 成绩信息缓存
 
-// 缓存容量限制
-const MAX_CACHED_WEEKS = 20;
-
-// 定义缓存数据结构的接口
+// 周课表缓存数据结构
 interface CachedScheduleData {
   data: CourseInfo[];
   cachedAt: number;
   version: string;
 }
 
-// 新增：学期课程缓存数据结构
+// 学期课程缓存数据结构
 interface CachedSemesterCoursesData {
   data: JwxtCourse[];
   cachedAt: number;
   version: string;
   academicYear: string;  // 学年，如 "2024"
+  semester: number;      // 学期，1 或 2
+}
+
+// 考试信息缓存数据结构
+interface CachedExamData {
+  data: ExamInfo[];
+  cachedAt: number;
+  version: string;
+  academicYear: number;  // 学年，如 2024
+  semester: number;      // 学期，1 或 2
+}
+
+// 成绩信息缓存数据结构
+interface CachedGradeData {
+  data: GradeInfo[];
+  cachedAt: number;
+  version: string;
+  academicYear: number;  // 学年，如 2024
   semester: number;      // 学期，1 或 2
 }
 
@@ -49,60 +67,14 @@ function buildScheduleCacheKey(year: string, term: string, week: number): string
   return `${CACHE_KEY_PREFIX_SCHEDULE}${year}_${term}_${week}`;
 }
 
-// 辅助函数: 构建周次标识符
-function buildWeekIdentifier(year: string, term: string, week: number): string {
-  return `${year}_${term}_${week}`;
-}
-
-// 辅助函数: 获取已缓存的周次列表
-async function getWeeksList(): Promise<string[]> {
-  try {
-    const context = getContext();
-    const listValue = PreferencesUtil.getInstance().getValue(context, CACHE_KEY_WEEKS_LIST, '') as string;
-
-    if (!listValue) {
-      return [];
-    }
-
-    return JSON.parse(listValue) as string[];
-  } catch (error) {
-    hilog.error(DOMAIN, TAG, `❌ 读取周次列表失败: ${JSON.stringify(error)}`);
-    return [];
-  }
-}
-
-// 辅助函数: 将周次添加到已缓存列表
-async function addWeekToList(year: string, term: string, week: number): Promise<void> {
-  try {
-    const weekIdentifier = buildWeekIdentifier(year, term, week);
-    const weeksList = await getWeeksList();
-
-    // 如果已存在,先删除旧的(移到最后)
-    const index = weeksList.indexOf(weekIdentifier);
-    if (index !== -1) {
-      weeksList.splice(index, 1);
-    }
-
-    // 添加到列表末尾(最新的)
-    weeksList.push(weekIdentifier);
-
-    // 保存更新后的列表
-    const context = getContext();
-    const listValue = JSON.stringify(weeksList);
-    PreferencesUtil.getInstance().putValue(context, CACHE_KEY_WEEKS_LIST, listValue, true);
-  } catch (error) {
-    hilog.error(DOMAIN, TAG, `❌ 更新周次列表失败: ${JSON.stringify(error)}`);
-  }
-}
-
 /**
  * 缓存管理器
- * 职责: 统一管理课表和配置的缓存操作
+ * 职责: 统一管理应用缓存操作
  */
 export class CacheManager {
 
   /**
-   * 保存课表缓存
+   * 保存课表缓存（按需缓存，用于离线降级）
    * @param year 学年 (如 "2024")
    * @param term 学期代号 ("3"=第一学期, "12"=第二学期)
    * @param week 周次
@@ -126,9 +98,6 @@ export class CacheManager {
       const context = getContext();
       PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
 
-      // 将该周添加到已缓存列表
-      await addWeekToList(year, term, week);
-
       hilog.info(DOMAIN, TAG, `✅ 缓存课表成功: ${cacheKey}`);
     } catch (error) {
       hilog.error(DOMAIN, TAG, `❌ 缓存课表失败: ${JSON.stringify(error)}`);
@@ -137,7 +106,7 @@ export class CacheManager {
   }
 
   /**
-   * 获取课表缓存
+   * 获取课表缓存（用于离线降级）
    * @param year 学年
    * @param term 学期代号
    * @param week 周次
@@ -249,95 +218,6 @@ export class CacheManager {
   }
 
   /**
-   * 预加载课表 (当周±1周)
-   * @param year 当前学年
-   * @param term 当前学期
-   * @param currentWeek 当前周次
-   * @param fetchScheduleFn 获取课表的函数
-   */
-  public static async preloadSchedules(
-    year: string,
-    term: string,
-    currentWeek: number,
-    fetchScheduleFn: (year: string, term: string, week: number) => Promise<CourseInfo[]>
-  ): Promise<void> {
-    try {
-      hilog.info(DOMAIN, TAG, `🔄 开始预加载课表: ${year}学年 学期${term} 第${currentWeek}周 ±1周`);
-
-      const weeksToLoad = [currentWeek - 1, currentWeek, currentWeek + 1];
-
-      // 并行加载三周课表
-      const promises = weeksToLoad.map(async (week) => {
-        if (week < 1) {
-          hilog.warn(DOMAIN, TAG, `⚠️ 周次${week}无效,跳过`);
-          return;
-        }
-
-        try {
-          // 先检查缓存是否存在
-          const cached = await CacheManager.getScheduleCache(year, term, week);
-          if (cached) {
-            hilog.info(DOMAIN, TAG, `✓ 第${week}周已有缓存,跳过预加载`);
-            return;
-          }
-
-          // 获取并缓存数据
-          const data = await fetchScheduleFn(year, term, week);
-          await CacheManager.saveScheduleCache(year, term, week, data);
-          hilog.info(DOMAIN, TAG, `✓ 预加载第${week}周成功`);
-        } catch (error) {
-          hilog.warn(DOMAIN, TAG, `⚠️ 预加载第${week}周失败: ${JSON.stringify(error)}`);
-          // 继续处理其他周
-        }
-      });
-
-      await Promise.all(promises);
-      hilog.info(DOMAIN, TAG, `✅ 预加载完成`);
-    } catch (error) {
-      hilog.error(DOMAIN, TAG, `❌ 预加载失败: ${JSON.stringify(error)}`);
-      // 错误静默处理
-    }
-  }
-
-  /**
-   * 清理旧的课表缓存 (LRU淘汰)
-   * 保留最多 MAX_CACHED_WEEKS 周的缓存
-   */
-  public static async cleanOldScheduleCaches(): Promise<void> {
-    try {
-      const weeksList = await getWeeksList();
-
-      if (weeksList.length <= MAX_CACHED_WEEKS) {
-        hilog.info(DOMAIN, TAG, `当前缓存${weeksList.length}周,无需清理`);
-        return;
-      }
-
-      // 计算需要删除的数量
-      const deleteCount = weeksList.length - MAX_CACHED_WEEKS;
-      const weeksToDelete = weeksList.slice(0, deleteCount);
-
-      hilog.info(DOMAIN, TAG, `🗑️ 开始清理旧缓存: 删除${deleteCount}周`);
-
-      const context = getContext();
-      weeksToDelete.forEach((weekKey: string) => {
-        const cacheKey = `${CACHE_KEY_PREFIX_SCHEDULE}${weekKey}`;
-        PreferencesUtil.getInstance().removeValue(context, cacheKey);
-        hilog.info(DOMAIN, TAG, `🗑️ 已删除: ${cacheKey}`);
-      });
-
-      // 更新列表
-      const newList = weeksList.slice(deleteCount);
-      const newListValue = JSON.stringify(newList);
-      PreferencesUtil.getInstance().putValue(context, CACHE_KEY_WEEKS_LIST, newListValue, true);
-
-      hilog.info(DOMAIN, TAG, `✅ 清理完成,剩余${newList.length}周缓存`);
-    } catch (error) {
-      hilog.error(DOMAIN, TAG, `❌ 清理缓存失败: ${JSON.stringify(error)}`);
-      // 错误静默处理
-    }
-  }
-
-  /**
    * 保存学期课程缓存（整个学期的所有课程）
    * @param academicYear 学年，如 "2024"
    * @param semester 学期，1 或 2
@@ -395,6 +275,130 @@ export class CacheManager {
       return cached.data;
     } catch (error) {
       hilog.error(DOMAIN, TAG, `❌ 读取学期课程缓存失败: ${JSON.stringify(error)}`);
+      return null;
+    }
+  }
+
+  /**
+   * 保存考试信息缓存
+   * @param academicYear 学年，如 2024
+   * @param semester 学期，1 或 2
+   * @param examList 考试信息列表
+   */
+  public static async saveExamCache(
+    academicYear: number,
+    semester: number,
+    examList: ExamInfo[]
+  ): Promise<void> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_EXAM}${academicYear}_${semester}`;
+      const cacheData: CachedExamData = {
+        data: examList,
+        cachedAt: Date.now(),
+        version: '1.0',
+        academicYear: academicYear,
+        semester: semester
+      };
+      const cacheValue = JSON.stringify(cacheData);
+
+      const context = getContext();
+      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+
+      hilog.info(DOMAIN, TAG, `✅ 缓存考试信息成功: ${academicYear}学年第${semester}学期, 共${examList.length}条考试信息`);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 缓存考试信息失败: ${JSON.stringify(error)}`);
+      // 错误静默处理,不抛出
+    }
+  }
+
+  /**
+   * 获取考试信息缓存
+   * @param academicYear 学年，如 2024
+   * @param semester 学期，1 或 2
+   * @returns 考试信息列表，如果不存在则返回null
+   */
+  public static async getExamCache(
+    academicYear: number,
+    semester: number
+  ): Promise<ExamInfo[] | null> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_EXAM}${academicYear}_${semester}`;
+      const context = getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+
+      if (!cacheValue) {
+        hilog.info(DOMAIN, TAG, `📭 考试信息缓存不存在: ${academicYear}学年第${semester}学期`);
+        return null;
+      }
+
+      const cached: CachedExamData = JSON.parse(cacheValue);
+      hilog.info(DOMAIN, TAG, `📦 读取考试信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条考试信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+
+      return cached.data;
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 读取考试信息缓存失败: ${JSON.stringify(error)}`);
+      return null;
+    }
+  }
+
+  /**
+   * 保存成绩信息缓存
+   * @param academicYear 学年，如 2024
+   * @param semester 学期，1 或 2
+   * @param gradeList 成绩信息列表
+   */
+  public static async saveGradeCache(
+    academicYear: number,
+    semester: number,
+    gradeList: GradeInfo[]
+  ): Promise<void> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_GRADE}${academicYear}_${semester}`;
+      const cacheData: CachedGradeData = {
+        data: gradeList,
+        cachedAt: Date.now(),
+        version: '1.0',
+        academicYear: academicYear,
+        semester: semester
+      };
+      const cacheValue = JSON.stringify(cacheData);
+
+      const context = getContext();
+      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+
+      hilog.info(DOMAIN, TAG, `✅ 缓存成绩信息成功: ${academicYear}学年第${semester}学期, 共${gradeList.length}条成绩信息`);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 缓存成绩信息失败: ${JSON.stringify(error)}`);
+      // 错误静默处理,不抛出
+    }
+  }
+
+  /**
+   * 获取成绩信息缓存
+   * @param academicYear 学年，如 2024
+   * @param semester 学期，1 或 2
+   * @returns 成绩信息列表，如果不存在则返回null
+   */
+  public static async getGradeCache(
+    academicYear: number,
+    semester: number
+  ): Promise<GradeInfo[] | null> {
+    try {
+      const cacheKey = `${CACHE_KEY_PREFIX_GRADE}${academicYear}_${semester}`;
+      const context = getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+
+      if (!cacheValue) {
+        hilog.info(DOMAIN, TAG, `📭 成绩信息缓存不存在: ${academicYear}学年第${semester}学期`);
+        return null;
+      }
+
+      const cached: CachedGradeData = JSON.parse(cacheValue);
+      hilog.info(DOMAIN, TAG, `📦 读取成绩信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条成绩信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+
+      return cached.data;
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, `❌ 读取成绩信息缓存失败: ${JSON.stringify(error)}`);
       return null;
     }
   }

@@ -26,6 +26,7 @@ export struct HomePage {
   @State private userInfo: UserSchoolInfo | null = null;
   @State private todayCourses: CourseInfo[] = [];
   @State private isLoading: boolean = false;
+  @State private studentName: string = '同学'; // 学生姓名
   private userInfoManager: UserInfoManager = UserInfoManager.getInstance();
   private courseApiService: CourseApiService = CourseApiService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
@@ -44,6 +45,7 @@ export struct HomePage {
   aboutToAppear(): void {
     this.loadUserInfo();
     this.loadTodayCourses();
+    this.loadStudentName();
   }
 
   onPageShow(): void {
@@ -58,38 +60,11 @@ export struct HomePage {
     Column() {
       Row() {
         Column() {
-          Text(`你好，同学`)
+          Text(`你好,${this.studentName}`)
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
-            .margin({ bottom: 20 }) // 从4增加到8
-
-          // 显示学院+班级信息
-          if (this.userInfo) {
-            Row() {
-              Text(`${this.userInfo.collegeName} ${this.userInfo.className}`)
-                .fontSize(16)
-                .fontColor('#666666')
-
-              Text('切换')
-                .fontSize(16)
-                .fontColor($r('app.color.schedule_primary_color'))
-                .margin({ left: 8 })
-            }
-            .justifyContent(FlexAlign.SpaceBetween)
-            .width('100%')
-          } else {
-            Row() {
-              Text('学院信息加载中...')
-                .fontSize(14)
-                .fontColor('#666666')
-
-              Text('切换')
-                .fontSize(12)
-                .fontColor($r('app.color.schedule_primary_color'))
-                .margin({ left: 8 })
-            }
-          }
+            .margin({ bottom: 8 })
         }
         .alignItems(HorizontalAlign.Start)
         .padding({
@@ -99,40 +74,6 @@ export struct HomePage {
           right: 4
         })
         .borderRadius(8)
-        .onClick(async () => {
-          // 临时改为测试获取个人信息（应用启动时已自动登录）
-          try {
-            console.info('🔍 [HomePage] 开始测试获取个人信息...');
-
-            // 直接获取个人信息（使用应用启动时保存的Cookie）
-            hilog.info(DOMAIN, TAG, '📝 [HomePage] 开始获取个人信息...');
-            const studentInfo = await this.jwxtGetInfoService.getInfo();
-            hilog.info(DOMAIN, TAG, '✅ [HomePage] 个人信息获取成功');
-
-            // 打印完整信息
-            hilog.info(DOMAIN, TAG, '📋 ========== 学生个人信息 ==========');
-            hilog.info(DOMAIN, TAG, '📋 姓名: %{public}s', studentInfo.name);
-            hilog.info(DOMAIN, TAG, '📋 学号: %{public}s', studentInfo.student_id);
-            hilog.info(DOMAIN, TAG, '📋 班级: %{public}s', studentInfo.class_name);
-            hilog.info(DOMAIN, TAG, '📋 学院: %{public}s', studentInfo.college);
-            hilog.info(DOMAIN, TAG, '📋 专业: %{public}s', studentInfo.major);
-            hilog.info(DOMAIN, TAG, '📋 年级: %{public}s', studentInfo.grade);
-            hilog.info(DOMAIN, TAG, '📋 性别: %{public}s', studentInfo.gender);
-            hilog.info(DOMAIN, TAG, '📋 生日: %{public}s', studentInfo.birthday);
-            hilog.info(DOMAIN, TAG, '📋 入学日期: %{public}s', studentInfo.enrollment_date);
-            hilog.info(DOMAIN, TAG, '📋 手机: %{public}s', studentInfo.phone);
-            hilog.info(DOMAIN, TAG, '📋 邮箱: %{public}s', studentInfo.email);
-            hilog.info(DOMAIN, TAG, '📋 QQ: %{public}s', studentInfo.qq);
-            hilog.info(DOMAIN, TAG, '📋 =====================================');
-
-          } catch (error) {
-            hilog.error(DOMAIN, TAG, '❌ [HomePage] 获取个人信息失败:', JSON.stringify(error));
-            hilog.error(DOMAIN, TAG, '❌ [HomePage] 错误详情:', error instanceof Error ? error.message : String(error));
-          }
-
-          // 原来的跳转逻辑注释掉
-          // this.pathStack.pushPathByName('ClassSelectNavPage', null);
-        })
 
         Blank()
       }
@@ -362,5 +303,21 @@ export struct HomePage {
 
   private loadUserInfo(): void {
     this.userInfo = this.userInfoManager.getUserInfo(this.getUIContext().getHostContext());
+  }
+
+  /**
+   * 加载学生姓名
+   */
+  private async loadStudentName(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, TAG, '📝 [HomePage] 开始加载学生姓名...');
+      const studentInfo = await this.jwxtGetInfoService.getInfo();
+      this.studentName = studentInfo.name;
+      hilog.info(DOMAIN, TAG, '✅ [HomePage] 学生姓名加载成功: %{public}s', this.studentName);
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '❌ [HomePage] 加载学生姓名失败: %{public}s',
+        error instanceof Error ? error.message : String(error));
+      // 保持默认值"同学"
+    }
   }
 }

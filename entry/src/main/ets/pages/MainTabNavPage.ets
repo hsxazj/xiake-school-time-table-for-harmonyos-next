@@ -60,19 +60,25 @@ struct MainTabNavPage {
         }
         .tabBar(this.TabBuilder('考试', 2, $r('app.media.exam'), $r('app.media.examActive')))
 
-        // 树洞 Tab - 根据设置动态显示
-        if (this.treeHoleEnabled) {
-          TabContent() {
-            TreeHolePage()
-          }
-          .tabBar(this.TabBuilder('树洞', 3, $r('app.media.treehole'), $r("app.media.treehole_active")))
-        }
+        // // 树洞 Tab - 根据设置动态显示
+        // if (this.treeHoleEnabled) {
+        //   TabContent() {
+        //     TreeHolePage()
+        //   }
+        //   .tabBar(this.TabBuilder('树洞', 3, $r('app.media.treehole'), $r("app.media.treehole_active")))
+        // }
+
+        // // 我的 Tab - 始终显示，索引需要根据树洞是否显示动态调整
+        // TabContent() {
+        //   MinePage()
+        // }
+        // .tabBar(this.TabBuilder('我的', this.treeHoleEnabled ? 4 : 3, $r('app.media.me'), $r("app.media.meActive")))
 
         // 我的 Tab - 始终显示，索引需要根据树洞是否显示动态调整
         TabContent() {
           MinePage()
         }
-        .tabBar(this.TabBuilder('我的', this.treeHoleEnabled ? 4 : 3, $r('app.media.me'), $r("app.media.meActive")))
+        .tabBar(this.TabBuilder('我的', 3, $r('app.media.me'), $r("app.media.meActive")))
       }
       .width('100%')
       .height('100%')

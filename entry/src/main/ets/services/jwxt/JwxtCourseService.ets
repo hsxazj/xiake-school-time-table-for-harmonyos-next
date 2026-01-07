@@ -9,7 +9,7 @@
  * @date 2026-01-07
  */
 
-import { JwxtHttpClient } from '../jwxt/JwxtHttpClient';
+import { JwxtHttpClient } from './JwxtHttpClient';
 import { JwxtCourseParams, JwxtCourseRawData, JwxtCourseResponse, JwxtCourse } from '../../models/JwxtCourseModels';
 import { CourseParser } from '../../common/utils/CourseParser';
 import { hilog } from '@kit.PerformanceAnalysisKit';

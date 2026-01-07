@@ -2,6 +2,7 @@ import { ExamInfo } from '../../models/ExamModels';
 import { JwxtGetExamService } from '../../services/jwxt/JwxtGetExamService';
 import { JwxtGetGradeService, GradeInfo } from '../../services/jwxt/JwxtGetGradeService';
 import { AppConfigManager } from '../../services/AppConfigManager';
+import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
@@ -13,6 +14,7 @@ export struct ExamPage {
   @Consume('NavStack') pathStack: NavPathStack;
   @State private examList: ExamInfo[] = [];
   @State private isLoading: boolean = false;
+  @State private isRefreshing: boolean = false;
   @State private errorMessage: string = '';
   private jwxtGetExamService: JwxtGetExamService = JwxtGetExamService.getInstance();
   private jwxtGetGradeService: JwxtGetGradeService = JwxtGetGradeService.getInstance();
@@ -46,99 +48,105 @@ export struct ExamPage {
         bottom: 20
       })
 
-      // 考试列表区域
-      Column() {
+      // 考试列表区域 - 使用Refresh组件支持下拉刷新
+      Refresh({ refreshing: $$this.isRefreshing }) {
+        Column() {
+          // 考试列表内容
+          if (this.isLoading) {
+            // 加载中状态
+            Column() {
+              LoadingProgress()
+                .width(50)
+                .height(50)
+                .color($r('app.color.schedule_primary_color'))
+                .margin({ bottom: 10 })
 
-        // 考试列表内容
-        if (this.isLoading) {
-          // 加载中状态
-          Column() {
-            LoadingProgress()
-              .width(50)
-              .height(50)
-              .color($r('app.color.schedule_primary_color'))
-              .margin({ bottom: 10 })
+              Text('加载中...')
+                .fontSize(16)
+                .fontColor('#999999')
+            }
+            .width('100%')
+            .height(300)
+            .justifyContent(FlexAlign.Center)
+          } else if (this.errorMessage) {
+            // 错误状态
+            Column() {
+              Text('❌')
+                .fontSize(40)
+                .margin({ bottom: 10 })
 
-            Text('加载中...')
-              .fontSize(16)
-              .fontColor('#999999')
-          }
-          .width('100%')
-          .height(300)
-          .justifyContent(FlexAlign.Center)
-        } else if (this.errorMessage) {
-          // 错误状态
-          Column() {
-            Text('❌')
-              .fontSize(40)
-              .margin({ bottom: 10 })
+              Text(this.errorMessage)
+                .fontSize(16)
+                .fontColor('#FF6B6B')
+                .textAlign(TextAlign.Center)
+                .margin({ bottom: 20 })
 
-            Text(this.errorMessage)
-              .fontSize(16)
-              .fontColor('#FF6B6B')
-              .textAlign(TextAlign.Center)
-              .margin({ bottom: 20 })
-
-            Button('重试')
-              .fontSize(14)
-              .fontColor(Color.White)
-              .backgroundColor($r('app.color.schedule_primary_color'))
-              .borderRadius(20)
-              .padding({ left: 20, right: 20, top: 8, bottom: 8 })
-              .onClick(() => {
-                this.errorMessage = '';
-                this.loadExamList();
+              Button('重试')
+                .fontSize(14)
+                .fontColor(Color.White)
+                .backgroundColor($r('app.color.schedule_primary_color'))
+                .borderRadius(20)
+                .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+                .onClick(() => {
+                  this.errorMessage = '';
+                  this.loadExamList();
+                })
+            }
+            .width('100%')
+            .height(300)
+            .justifyContent(FlexAlign.Center)
+          } else if (this.examList.length > 0) {
+            // 有考试数据
+            List() {
+              ForEach(this.examList, (exam: ExamInfo, index: number) => {
+                ListItem() {
+                  this.ExamCard(exam, index + 1)
+                }
               })
-          }
-          .width('100%')
-          .height(300)
-          .justifyContent(FlexAlign.Center)
-        } else if (this.examList.length > 0) {
-          // 有考试数据
-          List() {
-            ForEach(this.examList, (exam: ExamInfo, index: number) => {
-              ListItem() {
-                this.ExamCard(exam, index + 1)
-              }
-            })
-          }
-          .width('100%')
-          .layoutWeight(1)
-          .scrollBar(BarState.Off)
-          .padding({ top: 4 })
-        } else {
-          // 无考试数据
-          Column() {
-            Text('📝')
-              .fontSize(60)
-              .margin({ bottom: 10 })
+            }
+            .width('100%')
+            .layoutWeight(1)
+            .scrollBar(BarState.Off)
+            .padding({ top: 4 })
+          } else {
+            // 无考试数据
+            Column() {
+              Text('📝')
+                .fontSize(60)
+                .margin({ bottom: 10 })
 
-            Text('暂无考试安排')
-              .fontSize(16)
-              .fontColor('#999999')
-              .margin({ bottom: 5 })
+              Text('暂无考试安排')
+                .fontSize(16)
+                .fontColor('#999999')
+                .margin({ bottom: 5 })
 
-            Text('当前学期还没有考试信息')
-              .fontSize(14)
-              .fontColor('#BBBBBB')
+              Text('当前学期还没有考试信息')
+                .fontSize(14)
+                .fontColor('#BBBBBB')
+            }
+            .width('100%')
+            .height(300)
+            .justifyContent(FlexAlign.Center)
           }
-          .width('100%')
-          .height(300)
-          .justifyContent(FlexAlign.Center)
         }
+        .width('100%')
+        .padding(20)
+        .backgroundColor(Color.White)
+        .borderRadius(24)
+        .shadow({
+          radius: 10,
+          color: '#80000000', // 半透明黑
+          offsetX: 0,
+          offsetY: 4
+        })
+        .margin({ bottom: 20 })
+        .layoutWeight(1)
       }
       .width('100%')
-      .padding(20)
-      .backgroundColor(Color.White)
-      .borderRadius(24)
-      .shadow({
-        radius: 10,
-        color: '#80000000',
-        offsetX: 0,
-        offsetY: 4
-      })
-      .margin({ bottom: 20 })
       .layoutWeight(1)
+      .onRefreshing(() => {
+        this.handleRefresh();
+      })
 
       Blank()
     }
@@ -153,12 +161,6 @@ export struct ExamPage {
     Column() {
       // 序号和课程名称
       Row() {
-        Text(`${index}`)
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.schedule_primary_color'))
-          .width(40)
-          .textAlign(TextAlign.Center)
 
         Column() {
           Text(examInfo.name || '未知课程')
@@ -281,12 +283,15 @@ export struct ExamPage {
   }
 
   /**
-   * 加载考试列表
+   * 加载考试列表（使用缓存优先策略）
+   *
+   * 策略：
+   * 1. 优先从缓存加载并立即渲染（关闭loading）
+   * 2. 后台异步请求API更新数据
+   * 3. API成功后静默覆盖数据和缓存
+   * 4. API失败且有缓存时显示提示
    */
   private async loadExamList(): Promise<void> {
-    this.isLoading = true;
-    this.errorMessage = '';
-
     try {
       hilog.info(DOMAIN, TAG, '📝 [ExamPage] 开始加载考试列表...');
 
@@ -298,6 +303,7 @@ export struct ExamPage {
       if (!currentStatus || !currentStatus.currentSemester) {
         hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 无法获取当前学期信息');
         this.errorMessage = '无法获取学期信息，请稍后重试';
+        this.isLoading = false;
         return;
       }
 
@@ -306,6 +312,32 @@ export struct ExamPage {
 
       hilog.info(DOMAIN, TAG, '📅 [ExamPage] 当前学期: year=%{public}d, term=%{public}d',
         academicYear, semester);
+
+      // 步骤1: 尝试从缓存加载
+      hilog.info(DOMAIN, TAG, '📚 [ExamPage] 优先从缓存加载考试和成绩信息');
+      const cachedExamList = await CacheManager.getExamCache(academicYear, semester);
+      const cachedGradeList = await CacheManager.getGradeCache(academicYear, semester);
+
+      if (cachedExamList && cachedExamList.length > 0) {
+        // 有缓存，立即使用缓存数据渲染
+        hilog.info(DOMAIN, TAG, `📚 [ExamPage] 使用缓存数据: ${cachedExamList.length}条考试信息`);
+
+        // 如果也有成绩缓存，将成绩匹配到考试中
+        if (cachedGradeList && cachedGradeList.length > 0) {
+          this.examList = this.mergeExamWithGrades(cachedExamList, cachedGradeList);
+        } else {
+          this.examList = cachedExamList;
+        }
+
+        // 立即关闭loading，显示缓存数据
+        this.isLoading = false;
+      } else {
+        hilog.info(DOMAIN, TAG, `📚 [ExamPage] 无缓存数据，等待API请求`);
+        this.isLoading = true;
+      }
+
+      // 步骤2: 后台异步请求API更新（无论缓存是否存在都请求）
+      hilog.info(DOMAIN, TAG, '📚 [ExamPage] 后台请求API更新数据');
 
       // 并行调用服务获取考试信息和成绩信息
       const results = await Promise.all([
@@ -316,50 +348,133 @@ export struct ExamPage {
       const examList = results[0];
       const gradeList = results[1];
 
-      hilog.info(DOMAIN, TAG, '✅ [ExamPage] 考试列表加载成功，共 %{public}d 条记录', examList.length);
-      hilog.info(DOMAIN, TAG, '✅ [ExamPage] 成绩列表加载成功，共 %{public}d 条记录', gradeList.length);
+      hilog.info(DOMAIN, TAG, '✅ [ExamPage] API请求成功，更新数据: %{public}d条考试, %{public}d条成绩',
+        examList.length, gradeList.length);
 
-      // 将成绩信息匹配到考试信息中（通过课程名称匹配）
-      const examListWithGrades = examList.map((exam: ExamInfo) => {
-        // 查找对应的成绩
-        const matchedGrade = gradeList.find((grade: GradeInfo) => grade.name === exam.name);
+      // 步骤3: API成功，覆盖旧数据和缓存
+      // 保存到缓存
+      await CacheManager.saveExamCache(academicYear, semester, examList);
+      await CacheManager.saveGradeCache(academicYear, semester, gradeList);
 
-        if (matchedGrade) {
-          hilog.info(DOMAIN, TAG, '🎯 [ExamPage] 课程 "%{public}s" 匹配到成绩: %{public}s',
-            exam.name, matchedGrade.score);
-          // 返回包含成绩的考试信息（手动复制属性，不使用展开运算符）
-          const examWithScore: ExamInfo = {
-            id: exam.id,
-            name: exam.name,
-            time: exam.time,
-            classroom: exam.classroom,
-            seat: exam.seat,
-            score: matchedGrade.score
-          };
-          return examWithScore;
-        } else {
-          hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 课程 "%{public}s" 未找到对应成绩', exam.name);
-          // 返回不包含成绩的考试信息
-          return exam;
-        }
-      });
-
-      this.examList = examListWithGrades;
+      // 将成绩信息匹配到考试信息中
+      this.examList = this.mergeExamWithGrades(examList, gradeList);
 
       hilog.info(DOMAIN, TAG, '🎉 [ExamPage] 考试列表处理完成，共 %{public}d 条记录，其中 %{public}d 条有成绩',
-        examListWithGrades.length,
-        examListWithGrades.filter((exam: ExamInfo) => exam.score !== undefined).length);
+        this.examList.length,
+        this.examList.filter((exam: ExamInfo) => exam.score !== undefined).length);
+
+      this.isLoading = false;
 
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [ExamPage] 加载考试列表失败: %{public}s', JSON.stringify(error));
 
-      if (error instanceof Error) {
-        this.errorMessage = error.message;
+      // 请求失败，根据是否有缓存数据显示不同提示
+      if (this.examList.length > 0) {
+        // 有缓存数据，提示使用本地缓存（不设置 errorMessage，继续显示缓存数据）
+        hilog.warn(DOMAIN, TAG, '📚 [ExamPage] 请求失败，继续使用缓存数据');
+        const promptAction = this.getUIContext().getPromptAction();
+        promptAction.showToast({
+          message: '请求教务系统失败，使用本地缓存',
+          duration: 3000,
+          bottom: '100vp'
+        });
       } else {
-        this.errorMessage = '加载考试信息失败，请稍后重试';
+        // 无缓存数据，显示错误信息
+        if (error instanceof Error) {
+          this.errorMessage = error.message;
+        } else {
+          this.errorMessage = '加载考试信息失败，请稍后重试';
+        }
       }
-    } finally {
+
       this.isLoading = false;
+      this.isRefreshing = false;
     }
+  }
+
+  /**
+   * 处理下拉刷新 - 直接触发API请求，跳过缓存
+   */
+  private async handleRefresh(): Promise<void> {
+    try {
+      this.isRefreshing = true;
+      hilog.info(DOMAIN, TAG, '🔄 [ExamPage] 下拉刷新：直接请求API更新数据');
+
+      // 获取当前学期状态
+      await this.appConfigManager.initialize();
+      const currentStatus = this.appConfigManager.getCurrentStatus();
+
+      if (!currentStatus || !currentStatus.currentSemester) {
+        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 无法获取当前学期信息');
+        return;
+      }
+
+      const academicYear = parseInt(currentStatus.currentSemester.academicYear);
+      const semester = currentStatus.currentSemester.semester;
+
+      // 直接并行调用API获取最新数据
+      const results = await Promise.all([
+        this.jwxtGetExamService.getExam(academicYear, semester),
+        this.jwxtGetGradeService.getGrade(academicYear, semester)
+      ]);
+
+      const examList = results[0];
+      const gradeList = results[1];
+
+      hilog.info(DOMAIN, TAG, '✅ [ExamPage] 刷新成功：%{public}d条考试, %{public}d条成绩',
+        examList.length, gradeList.length);
+
+      // 更新缓存
+      await CacheManager.saveExamCache(academicYear, semester, examList);
+      await CacheManager.saveGradeCache(academicYear, semester, gradeList);
+
+      // 更新界面数据
+      this.examList = this.mergeExamWithGrades(examList, gradeList);
+
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '❌ [ExamPage] 刷新失败: %{public}s', JSON.stringify(error));
+
+      // 显示错误提示
+      const promptAction = this.getUIContext().getPromptAction();
+      promptAction.showToast({
+        message: '刷新失败，请稍后重试',
+        duration: 2000,
+        bottom: '100vp'
+      });
+    } finally {
+      this.isRefreshing = false;
+    }
+  }
+
+  /**
+   * 将成绩信息匹配到考试信息中
+   * @param examList 考试信息列表
+   * @param gradeList 成绩信息列表
+   * @returns 合并后的考试信息列表
+   */
+  private mergeExamWithGrades(examList: ExamInfo[], gradeList: GradeInfo[]): ExamInfo[] {
+    return examList.map((exam: ExamInfo) => {
+      // 查找对应的成绩
+      const matchedGrade = gradeList.find((grade: GradeInfo) => grade.name === exam.name);
+
+      if (matchedGrade) {
+        hilog.info(DOMAIN, TAG, '🎯 [ExamPage] 课程 "%{public}s" 匹配到成绩: %{public}s',
+          exam.name, matchedGrade.score);
+        // 返回包含成绩的考试信息（手动复制属性，不使用展开运算符）
+        const examWithScore: ExamInfo = {
+          id: exam.id,
+          name: exam.name,
+          time: exam.time,
+          classroom: exam.classroom,
+          seat: exam.seat,
+          score: matchedGrade.score
+        };
+        return examWithScore;
+      } else {
+        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 课程 "%{public}s" 未找到对应成绩', exam.name);
+        // 返回不包含成绩的考试信息
+        return exam;
+      }
+    });
   }
 }

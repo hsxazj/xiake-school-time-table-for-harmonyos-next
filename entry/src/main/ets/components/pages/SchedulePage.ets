@@ -1,5 +1,5 @@
 import { ConfigApiService, CurrentSemesterStatus, SemesterInfo } from '../../services/api/ConfigApiService';
-import { JwxtCourseService } from '../../services/api/JwxtCourseService';
+import { JwxtCourseService } from '../../services/jwxt/JwxtCourseService';
 import { JwxtCourse } from '../../models/JwxtCourseModels';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { UserInfoManager } from '../../common/utils/UserInfoManager';
@@ -893,23 +893,19 @@ export struct SchedulePage {
     } catch (error) {
       console.error('📚 [Course] 加载课程数据失败:', error);
 
-      // 判断是否为网络错误
-      if (ErrorUtil.isNetworkError(error)) {
-        // 网络错误且有缓存数据，静默处理
-        if (this.courseList.length > 0) {
-          console.warn('📚 [Course] 网络错误，继续使用缓存数据');
-        } else {
-          // 无缓存数据，提示用户
-          this.promptAction.showToast({
-            message: '网络连接失败，请检查网络后重试',
-            duration: 3000,
-            bottom: '100vp'
-          });
-        }
-      } else {
-        // 其他错误
+      // 请求失败，根据是否有缓存数据显示不同提示
+      if (this.courseList.length > 0) {
+        // 有缓存数据，提示使用本地缓存
+        console.warn('📚 [Course] 请求失败，继续使用缓存数据');
         this.promptAction.showToast({
-          message: `加载课程失败: ${error}`,
+          message: '请求教务系统失败，使用本地缓存',
+          duration: 3000,
+          bottom: '100vp'
+        });
+      } else {
+        // 无缓存数据，提示用户
+        this.promptAction.showToast({
+          message: '网络连接失败，请检查网络后重试',
           duration: 3000,
           bottom: '100vp'
         });
