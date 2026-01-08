@@ -233,6 +233,12 @@ export struct HomePage {
         });
       }
 
+      // 同步数据到卡片
+      const context = getContext(this);
+      const formService = FormService.getInstance();
+      formService.updateAllActiveWidgetsWithData(context, this.todayCourses);
+      hilog.info(DOMAIN, TAG, '📱 [Today Course] 已同步数据到卡片');
+
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [Today Course] 加载今日课程失败: %{public}s',
         error instanceof Error ? error.message : String(error));
