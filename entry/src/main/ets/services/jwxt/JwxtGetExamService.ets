@@ -68,9 +68,7 @@ export class JwxtGetExamService {
     try {
       hilog.info(DOMAIN, TAG, '📝 [GetExam] 开始获取考试信息... year=%{public}d, term=%{public}d', year, term);
 
-      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
-      const jwxtHost = 'jwxtwx.fjut.edu.cn';
-      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+      const existingCookie = await this.cookieManager.getCookie();
 
       if (!existingCookie) {
         hilog.error(DOMAIN, TAG, '❌ Cookie 不存在，请先登录教务系统');

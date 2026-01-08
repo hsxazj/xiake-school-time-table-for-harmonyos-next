@@ -207,7 +207,7 @@ export class JwxtHttpClient {
 
         if (host) {
           // 从CookieManager获取Cookie
-          const cookieStr = await this.cookieManager.getCookie(host);
+          const cookieStr = await this.cookieManager.getCookie();
 
           if (cookieStr) {
             // 添加到请求头

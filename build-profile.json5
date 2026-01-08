@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B0A00D21DA2D455B1AFA7CEBE36AA32C4B462A3192A19E70AD10F8C85B51E9BEC2577B724CF4075",
-          "profile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p7b",
+          "storeFile": "E:/kb_signfile/xiakekb.p12",
+          "storePassword": "0000001AD462AE086AA1533F6CDDC8E3B96279AD0702FA34A3A73788646861320D7391F89F588EE42088",
+          "keyAlias": "kb",
+          "keyPassword": "0000001ADDFF88380402EF1F75CFEADE592805B2EA538417A4D01AA7E0F935D71C29CABCE776E092DB15",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p12",
-          "storePassword": "0000001B30D685219390FF333ED358CD68E22C929F9C4433B7B292C0309A015B32B0E6954F92ED3D6D0D4B"
+          "profile": "E:/kb_signfile/xiake-kbRelease.p7b",
+          "certpath": "E:/kb_signfile/xiake-kb.cer"
         }
       }
     ],

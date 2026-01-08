@@ -84,8 +84,8 @@ export class CookieManager {
             const value = pair.substring(eqIndex + 1);
             // 跳过 Path、Domain、Expires 等属性
             if (name !== 'Path' && name !== 'Domain' && name !== 'Expires' &&
-                name !== 'Max-Age' && name !== 'HttpOnly' && name !== 'Secure' &&
-                name !== 'SameSite') {
+              name !== 'Max-Age' && name !== 'HttpOnly' && name !== 'Secure' &&
+              name !== 'SameSite') {
               existingCookies.set(name, value);
             }
           }
@@ -104,7 +104,8 @@ export class CookieManager {
         }
 
         // 检查是否是删除Cookie的标记
-        const isDeleting = setCookie.includes('Max-Age=0') || setCookie.includes('Expires=') && new Date(setCookie.split('Expires=')[1]?.split(';')[0]) < new Date();
+        const isDeleting = setCookie.includes('Max-Age=0') ||
+          setCookie.includes('Expires=') && new Date(setCookie.split('Expires=')[1]?.split(';')[0]) < new Date();
 
         const eqIndex = cookiePair.indexOf('=');
         const name = cookiePair.substring(0, eqIndex);
@@ -146,7 +147,8 @@ export class CookieManager {
    * @param host 域名
    * @returns Cookie字符串（格式：key1=value1; key2=value2）或空字符串
    */
-  public async getCookie(host: string): Promise<string> {
+  public async getCookie(): Promise<string> {
+    const host = 'jwxtwx.fjut.edu.cn'
     const cookieStr = this.cookieStore.get(host) || '';
 
     if (!cookieStr) {

@@ -13,19 +13,19 @@
  */
 export interface ExamInfo {
   /** 考试编号 */
-  id: string;
+  id?: string;
 
   /** 课程名称 */
   name: string;
 
   /** 考试时间 */
-  time: string;
+  time?: string;
 
   /** 考场 */
-  classroom: string;
+  classroom?: string;
 
   /** 座位号 */
-  seat: string;
+  seat?: string;
 
   /** 考试成绩（可选，从成绩接口获取） */
   score?: string;

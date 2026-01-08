@@ -107,9 +107,7 @@ export class JwxtGetGradeService {
     try {
       hilog.info(DOMAIN, TAG, '📝 [GetGrade] 开始获取成绩信息... year=%{public}d, term=%{public}d', year, term);
 
-      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
-      const jwxtHost = 'jwxtwx.fjut.edu.cn';
-      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+      const existingCookie = await this.cookieManager.getCookie();
 
       if (!existingCookie) {
         hilog.error(DOMAIN, TAG, '❌ Cookie 不存在，请先登录教务系统');
@@ -177,11 +175,11 @@ export class JwxtGetGradeService {
 
       hilog.info(DOMAIN, TAG, '🎉 [GetGrade] 成绩信息获取成功，共 %{public}d 条记录', gradeList.length);
 
-      // 打印每条成绩信息
-      gradeList.forEach((grade: GradeInfo, index: number) => {
-        hilog.info(DOMAIN, TAG, '📝 [Grade %{public}d] %{public}s | 成绩: %{public}s | 绩点: %{public}s | 学分: %{public}s',
-          index + 1, grade.name, grade.score, grade.gradePoint, grade.credits);
-      });
+      // // 打印每条成绩信息
+      // gradeList.forEach((grade: GradeInfo, index: number) => {
+      //   hilog.info(DOMAIN, TAG, '📝 [Grade %{public}d] %{public}s | 成绩: %{public}s | 绩点: %{public}s | 学分: %{public}s',
+      //     index + 1, grade.name, grade.score, grade.gradePoint, grade.credits);
+      // });
 
       return gradeList;
     } catch (error) {

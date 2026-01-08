@@ -725,6 +725,7 @@ export struct ExamPage {
    * @returns 合并后的考试信息列表
    */
   private mergeExamWithGrades(examList: ExamInfo[], gradeList: GradeInfo[]): ExamInfo[] {
+    // TODO 应该把没有考试的成绩也显示
     return examList.map((exam: ExamInfo) => {
       // 查找对应的成绩
       const matchedGrade = gradeList.find((grade: GradeInfo) => grade.name === exam.name);

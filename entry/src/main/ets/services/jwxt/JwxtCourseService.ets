@@ -69,9 +69,7 @@ export class JwxtCourseService {
     try {
       hilog.info(DOMAIN, TAG, `获取课程: ${params.year}学年 第${params.term}学期`);
 
-      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
-      const jwxtHost = 'jwxtwx.fjut.edu.cn';
-      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+      const existingCookie = await this.cookieManager.getCookie();
 
       if (!existingCookie) {
         hilog.error(DOMAIN, TAG, '❌ Cookie 不存在，请先登录教务系统');
