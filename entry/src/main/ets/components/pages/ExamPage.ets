@@ -2,6 +2,7 @@ import { ExamInfo } from '../../models/ExamModels';
 import { JwxtGetExamService } from '../../services/jwxt/JwxtGetExamService';
 import { JwxtGetGradeService, GradeInfo } from '../../services/jwxt/JwxtGetGradeService';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
+import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
@@ -21,6 +22,7 @@ export struct ExamPage {
   private jwxtGetExamService: JwxtGetExamService = JwxtGetExamService.getInstance();
   private jwxtGetGradeService: JwxtGetGradeService = JwxtGetGradeService.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
+  private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private configService: ConfigApiService = ConfigApiService.getInstance();
 
@@ -50,12 +52,35 @@ export struct ExamPage {
 
   /**
    * 加载学生信息(获取入学年份用于年级限制)
+   * 优先从 StudentInfoManager 获取,如果没有则调用 API 获取并保存
    */
   private async loadStudentInfo(): Promise<void> {
     try {
       hilog.info(DOMAIN, TAG, '📋 [ExamPage] 开始获取学生信息...');
-      this.studentInfo = await this.jwxtGetInfoService.getInfo();
+      const context = getContext(this);
 
+      // 1. 先尝试从内存获取
+      let studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+
+      // 2. 如果内存中没有,尝试从首选项加载到内存
+      if (!studentInfo) {
+        hilog.info(DOMAIN, TAG, '💾 [ExamPage] 内存中无学生信息,尝试从首选项加载...');
+        const loaded = await this.studentInfoManager.loadStudentInfoToMemory(context);
+        if (loaded) {
+          studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+        }
+      }
+
+      // 3. 如果首选项中也没有,调用 API 获取并保存
+      if (!studentInfo) {
+        hilog.info(DOMAIN, TAG, '🌐 [ExamPage] 首选项中无学生信息,调用 API 获取...');
+        studentInfo = await this.jwxtGetInfoService.getInfo(context);
+        // 保存到 StudentInfoManager
+        this.studentInfoManager.saveStudentInfo(context, studentInfo);
+      }
+
+      // 4. 更新状态
+      this.studentInfo = studentInfo;
       if (this.studentInfo && this.studentInfo.grade) {
         // 将 grade 字符串转换为数字 (如 "2024" -> 2024)
         this.userGrade = parseInt(this.studentInfo.grade);

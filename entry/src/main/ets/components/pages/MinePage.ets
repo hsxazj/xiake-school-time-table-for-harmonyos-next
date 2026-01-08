@@ -99,7 +99,7 @@ export struct MinePage {
 
               // 显示学号（如果已登录）
               if (this.isLoggedIn && this.userInfo.studentId) {
-                Text(`学号：${this.userInfo.studentId}`)
+                Text(`学号:${this.userInfo.studentId}`)
                   .fontSize(14)
                   .fontColor('#666666')
                   .margin({ bottom: 4 })
@@ -294,39 +294,68 @@ export struct MinePage {
   }
 
   /**
-   * 检查登录状态（基于Cookie缓存机制）
-   * 通过尝试获取学生信息来验证登录状态
+   * 检查登录状态(基于凭证)
+   * 只要有凭证就视为已登录,不需要验证token有效性
    */
   private async checkLoginStatus(): Promise<void> {
     try {
       this.isCheckingLogin = true;
-      hilog.info(DOMAIN, TAG, '🔍 [MinePage] 开始检查登录状态（基于Cookie）...');
+      hilog.info(DOMAIN, TAG, '🔍 [MinePage] 开始检查登录状态(基于凭证)...');
 
-      // 尝试获取学生信息（会自动使用缓存的Cookie）
-      const studentInfo = await this.jwxtGetInfoService.getInfo();
+      const context = getContext(this);
 
-      // 如果成功获取，说明登录有效
-      this.isLoggedIn = true;
-      hilog.info(DOMAIN, TAG, '✅ [MinePage] 登录状态有效，获取到学生信息: %{public}s', studentInfo.name);
+      // 只检查是否有凭证(账号密码)
+      const hasCredentials = this.credentialsManager.hasCredentials(context);
 
-      // 更新用户信息显示
-      this.userInfo.username = studentInfo.student_id;
-      this.userInfo.realName = studentInfo.name;
-      this.userInfo.studentId = studentInfo.student_id;
-      this.userInfo.college = studentInfo.college || '学院信息未设置';
-      this.userInfo.major = studentInfo.major || '专业信息未设置';
-      this.userInfo.className = studentInfo.class_name || '班级信息未设置';
+      if (hasCredentials) {
+        // 有凭证就视为已登录
+        this.isLoggedIn = true;
+        hilog.info(DOMAIN, TAG, '✅ [MinePage] 检测到有效凭证,已登录');
 
-      hilog.info(DOMAIN, TAG, '📋 [MinePage] 用户信息已更新: %{public}s - %{public}s %{public}s',
-        this.userInfo.realName, this.userInfo.major, this.userInfo.className);
+        // 尝试获取学生信息来更新显示(即使失败也不影响登录状态)
+        try {
+          const studentInfo = await this.jwxtGetInfoService.getInfo(context);
 
+          // 更新用户信息显示
+          this.userInfo.username = studentInfo.student_id;
+          this.userInfo.realName = studentInfo.name;
+          this.userInfo.studentId = studentInfo.student_id;
+          this.userInfo.college = studentInfo.college || '学院信息未设置';
+          this.userInfo.major = studentInfo.major || '专业信息未设置';
+          this.userInfo.className = studentInfo.class_name || '班级信息未设置';
+
+          hilog.info(DOMAIN, TAG, '📋 [MinePage] 用户信息已更新: %{public}s - %{public}s %{public}s',
+            this.userInfo.realName, this.userInfo.major, this.userInfo.className);
+        } catch (error) {
+          // 获取用户信息失败,但不影响登录状态
+          hilog.warn(DOMAIN, TAG, '⚠️ [MinePage] 获取用户信息失败(但保持登录状态): %{public}s',
+            error instanceof Error ? error.message : String(error));
+
+          // 从凭证管理器获取学号作为基本显示
+          const credentials = this.credentialsManager.getCredentials(context);
+          if (credentials) {
+            this.userInfo.username = credentials.sid;
+            this.userInfo.realName = credentials.sid;
+            this.userInfo.studentId = credentials.sid;
+          } else {
+            this.userInfo.username = '已登录';
+            this.userInfo.realName = '点击重试';
+          }
+          this.userInfo.college = '获取信息失败';
+          this.userInfo.major = '请检查网络';
+          this.userInfo.className = '';
+        }
+      } else {
+        // 无凭证,视为未登录
+        this.isLoggedIn = false;
+        hilog.info(DOMAIN, TAG, '❌ [MinePage] 未检测到凭证,未登录');
+        this.resetUserInfoToDefault();
+      }
     } catch (error) {
-      // 获取失败，说明未登录或登录已过期
+      // 检查过程出错,默认为未登录
       this.isLoggedIn = false;
-      hilog.warn(DOMAIN, TAG, '⚠️ [MinePage] 登录状态无效或已过期: %{public}s',
+      hilog.error(DOMAIN, TAG, '❌ [MinePage] 检查登录状态出错: %{public}s',
         error instanceof Error ? error.message : String(error));
-
-      // 重置为未登录状态
       this.resetUserInfoToDefault();
     } finally {
       this.isCheckingLogin = false;

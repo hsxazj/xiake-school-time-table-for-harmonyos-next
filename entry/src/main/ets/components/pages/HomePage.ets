@@ -7,6 +7,7 @@ import { curves } from '@kit.ArkUI';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { FormService } from '../../services/FormService';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
+import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const DOMAIN: number = 0x0003;
@@ -20,6 +21,7 @@ export struct HomePage {
   @State private isLoading: boolean = false;
   @State private studentName: string = '同学'; // 学生姓名
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
+  private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   // 今日课程参数缓存
   private todayParams: TodayParams | null = null;
@@ -261,11 +263,34 @@ export struct HomePage {
 
   /**
    * 加载学生姓名
+   * 优先从 StudentInfoManager 获取,如果没有则调用 API 获取并保存
    */
   private async loadStudentName(): Promise<void> {
     try {
       hilog.info(DOMAIN, TAG, '📝 [HomePage] 开始加载学生姓名...');
-      const studentInfo = await this.jwxtGetInfoService.getInfo();
+      const context = getContext(this);
+
+      // 1. 先尝试从内存获取
+      let studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+
+      // 2. 如果内存中没有,尝试从首选项加载到内存
+      if (!studentInfo) {
+        hilog.info(DOMAIN, TAG, '💾 [HomePage] 内存中无学生信息,尝试从首选项加载...');
+        const loaded = await this.studentInfoManager.loadStudentInfoToMemory(context);
+        if (loaded) {
+          studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+        }
+      }
+
+      // 3. 如果首选项中也没有,调用 API 获取并保存
+      if (!studentInfo) {
+        hilog.info(DOMAIN, TAG, '🌐 [HomePage] 首选项中无学生信息,调用 API 获取...');
+        studentInfo = await this.jwxtGetInfoService.getInfo(context);
+        // 保存到 StudentInfoManager
+        this.studentInfoManager.saveStudentInfo(context, studentInfo);
+      }
+
+      // 4. 更新 UI
       this.studentName = studentInfo.name;
       hilog.info(DOMAIN, TAG, '✅ [HomePage] 学生姓名加载成功: %{public}s', this.studentName);
     } catch (error) {

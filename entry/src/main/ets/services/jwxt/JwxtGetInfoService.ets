@@ -19,6 +19,8 @@ import { JwxtHttpClient } from './JwxtHttpClient';
 import { JwxtConstants } from './JwxtConstants';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { url } from '@kit.ArkTS';
+import { StudentInfoManager } from '../StudentInfoManager';
+import { CookieManager } from './CookieManager';
 
 const DOMAIN: number = 0x3005; // JWXT GetInfo domain
 const TAG: string = 'JwxtGetInfoService';
@@ -89,11 +91,15 @@ interface JwxtInfoResponse {
 export class JwxtGetInfoService {
   private static instance: JwxtGetInfoService;
   private httpClient: JwxtHttpClient;
+  private studentInfoManager: StudentInfoManager;
+  private cookieManager: CookieManager;
   // 内存缓存(应用关闭后自动清除,无需时间限制)
   private cachedStudentInfo: StudentInfo | null = null;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
+    this.studentInfoManager = StudentInfoManager.getInstance();
+    this.cookieManager = CookieManager.getInstance();
     hilog.info(DOMAIN, TAG, '✅ JwxtGetInfoService初始化完成');
   }
 
@@ -108,17 +114,20 @@ export class JwxtGetInfoService {
   }
 
   /**
-   * 获取学生个人信息(带内存缓存)
+   * 获取学生个人信息(带内存缓存和持久化存储)
    *
    * 流程：
    * 1. 检查内存缓存是否存在
    * 2. 如果缓存存在,直接返回
-   * 3. 否则请求API并缓存结果
+   * 3. ✅ 检查 Cookie 是否存在（必须先登录）
+   * 4. 请求API并缓存结果
+   * 5. 保存到 StudentInfoManager（持久化 + AppStorage）
    *
+   * @param context 应用上下文（用于持久化存储）
    * @returns Promise<StudentInfo> 学生个人信息
    * @throws Error 获取信息失败时抛出异常
    */
-  public async getInfo(): Promise<StudentInfo> {
+  public async getInfo(context: Context): Promise<StudentInfo> {
     // 检查缓存是否存在
     if (this.cachedStudentInfo) {
       hilog.info(DOMAIN, TAG, '✅ [GetInfo] 使用内存缓存，姓名: %{public}s', this.cachedStudentInfo.name);
@@ -127,6 +136,17 @@ export class JwxtGetInfoService {
 
     try {
       hilog.info(DOMAIN, TAG, '📝 [GetInfo] 开始从教务系统获取学生个人信息...');
+
+      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
+      const jwxtHost = 'jwxtwx.fjut.edu.cn';
+      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+
+      if (!existingCookie) {
+        hilog.error(DOMAIN, TAG, '❌ [GetInfo] Cookie 不存在，请先登录教务系统');
+        throw new Error('Cookie 不存在，请先登录教务系统');
+      }
+
+      hilog.info(DOMAIN, TAG, '✅ [GetInfo] Cookie 已存在，可以请求API');
 
       // API路径
       const apiUrl: string = 'xsxxxggl/xsxxwh_cxCkDgxsxx.html?gnmkdm=N100801';
@@ -164,7 +184,10 @@ export class JwxtGetInfoService {
       // 保存到内存缓存
       this.cachedStudentInfo = studentInfo;
 
-      hilog.info(DOMAIN, TAG, '🎉 [GetInfo] 学生信息获取成功并已缓存');
+      // ✅ 保存到 StudentInfoManager（持久化 + AppStorage）
+      this.studentInfoManager.saveStudentInfo(context, studentInfo);
+
+      hilog.info(DOMAIN, TAG, '🎉 [GetInfo] 学生信息获取成功并已缓存到首选项和内存');
       hilog.info(DOMAIN, TAG, '👤 [GetInfo] 姓名: %{public}s, 学号: %{public}s, 班级: %{public}s, 入学年份: %{public}s',
         studentInfo.name, studentInfo.student_id, studentInfo.class_name, studentInfo.grade);
 

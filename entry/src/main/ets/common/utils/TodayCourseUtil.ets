@@ -46,11 +46,18 @@ export class TodayCourseUtil {
       const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const weekDayStr = weekdays[today.getDay()];
 
+      // const params: TodayParams = {
+      //   year: parseInt(todayStatus.currentSemester.academicYear),
+      //   week: todayStatus.currentWeek,
+      //   termCode: todayStatus.currentSemester.semester === 1 ? '3' : '12',
+      //   weekDay: weekDayStr
+      // };
+
       const params: TodayParams = {
-        year: parseInt(todayStatus.currentSemester.academicYear),
-        week: todayStatus.currentWeek,
-        termCode: todayStatus.currentSemester.semester === 1 ? '3' : '12',
-        weekDay: weekDayStr
+        year: 2024,
+        week: 2,
+        termCode: '12',
+        weekDay: '星期一'
       };
 
       hilog.info(DOMAIN, TAG, `✅ [TodayCourseUtil] 今日参数: ${JSON.stringify(params)}`);

@@ -19,6 +19,7 @@ import { JwxtHttpClient } from './JwxtHttpClient';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { url } from '@kit.ArkTS';
 import { ExamInfo, JwxtExamResponse } from '../../models/ExamModels';
+import { CookieManager } from './CookieManager';
 
 const DOMAIN: number = 0x3006; // JWXT GetExam domain
 const TAG: string = 'JwxtGetExamService';
@@ -30,9 +31,11 @@ const TAG: string = 'JwxtGetExamService';
 export class JwxtGetExamService {
   private static instance: JwxtGetExamService;
   private httpClient: JwxtHttpClient;
+  private cookieManager: CookieManager;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
+    this.cookieManager = CookieManager.getInstance();
     hilog.info(DOMAIN, TAG, '✅ JwxtGetExamService初始化完成');
   }
 
@@ -64,6 +67,17 @@ export class JwxtGetExamService {
   public async getExam(year: number, term: number): Promise<ExamInfo[]> {
     try {
       hilog.info(DOMAIN, TAG, '📝 [GetExam] 开始获取考试信息... year=%{public}d, term=%{public}d', year, term);
+
+      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
+      const jwxtHost = 'jwxtwx.fjut.edu.cn';
+      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+
+      if (!existingCookie) {
+        hilog.error(DOMAIN, TAG, '❌ Cookie 不存在，请先登录教务系统');
+        throw new Error('Cookie 不存在，请先登录教务系统');
+      }
+
+      hilog.info(DOMAIN, TAG, '✅ Cookie 已存在，可以请求API');
 
       // API路径
       const apiUrl: string = 'kwgl/kscx_cxXsksxxIndex.html?doType=query&gnmkdm=N358105';

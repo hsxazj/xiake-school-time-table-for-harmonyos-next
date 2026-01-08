@@ -14,6 +14,7 @@ import { JwxtCourseParams, JwxtCourseRawData, JwxtCourseResponse, JwxtCourse } f
 import { CourseParser } from '../../common/utils/CourseParser';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { url } from '@kit.ArkTS';
+import { CookieManager } from './CookieManager';
 
 const DOMAIN: number = 0x0002;
 const TAG: string = 'JwxtCourseService';
@@ -29,9 +30,11 @@ const TAG: string = 'JwxtCourseService';
 export class JwxtCourseService {
   private static instance: JwxtCourseService;
   private httpClient: JwxtHttpClient;
+  private cookieManager: CookieManager;
 
   private constructor() {
     this.httpClient = JwxtHttpClient.getInstance();
+    this.cookieManager = CookieManager.getInstance();
   }
 
   /**
@@ -65,6 +68,17 @@ export class JwxtCourseService {
   public async getCourseList(params: JwxtCourseParams): Promise<JwxtCourse[]> {
     try {
       hilog.info(DOMAIN, TAG, `获取课程: ${params.year}学年 第${params.term}学期`);
+
+      // ✅ 步骤1: 检查 Cookie 是否存在（必须先登录）
+      const jwxtHost = 'jwxtwx.fjut.edu.cn';
+      const existingCookie = await this.cookieManager.getCookie(jwxtHost);
+
+      if (!existingCookie) {
+        hilog.error(DOMAIN, TAG, '❌ Cookie 不存在，请先登录教务系统');
+        throw new Error('Cookie 不存在，请先登录教务系统');
+      }
+
+      hilog.info(DOMAIN, TAG, '✅ Cookie 已存在，可以请求API');
 
       const apiUrl: string = 'kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151';
       const referer: string = 'kbcx/xskbcx_cxXsKb.html?gnmkdm=N2151&layout=default';

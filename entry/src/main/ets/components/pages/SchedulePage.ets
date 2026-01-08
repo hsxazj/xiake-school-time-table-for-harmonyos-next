@@ -8,6 +8,7 @@ import { CacheManager } from '../../common/utils/CacheManager';
 import { CourseParser } from '../../common/utils/CourseParser';
 import { curves, promptAction } from '@kit.ArkUI';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
+import { StudentInfoManager } from '../../services/StudentInfoManager';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -81,6 +82,7 @@ export struct SchedulePage {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   // 新增：学生信息服务和状态
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
+  private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
   @State private studentInfo: StudentInfo | null = null;
   @State private userGrade: number = 0; // 学生入学年份(数字格式)
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -808,12 +810,35 @@ export struct SchedulePage {
 
   /**
    * 加载学生信息(获取入学年份用于年级限制)
+   * 优先从 StudentInfoManager 获取,如果没有则调用 API 获取并保存
    */
   private async loadStudentInfo(): Promise<void> {
     try {
       console.info('📋 [Schedule] 开始获取学生信息...');
-      this.studentInfo = await this.jwxtGetInfoService.getInfo();
+      const context = getContext(this);
 
+      // 1. 先尝试从内存获取
+      let studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+
+      // 2. 如果内存中没有,尝试从首选项加载到内存
+      if (!studentInfo) {
+        console.info('💾 [Schedule] 内存中无学生信息,尝试从首选项加载...');
+        const loaded = await this.studentInfoManager.loadStudentInfoToMemory(context);
+        if (loaded) {
+          studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
+        }
+      }
+
+      // 3. 如果首选项中也没有,调用 API 获取并保存
+      if (!studentInfo) {
+        console.info('🌐 [Schedule] 首选项中无学生信息,调用 API 获取...');
+        studentInfo = await this.jwxtGetInfoService.getInfo(context);
+        // 保存到 StudentInfoManager
+        this.studentInfoManager.saveStudentInfo(context, studentInfo);
+      }
+
+      // 4. 更新状态
+      this.studentInfo = studentInfo;
       if (this.studentInfo && this.studentInfo.grade) {
         // 将 grade 字符串转换为数字 (如 "2024" -> 2024)
         this.userGrade = parseInt(this.studentInfo.grade);

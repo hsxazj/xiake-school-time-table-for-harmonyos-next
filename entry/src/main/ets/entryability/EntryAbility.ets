@@ -4,6 +4,8 @@ import { window } from '@kit.ArkUI';
 import { AppConfigManager } from '../services/AppConfigManager';
 import { JwxtLoginService } from '../services/jwxt/JwxtLoginService';
 import { JwxtHttpClient } from '../services/jwxt/JwxtHttpClient';
+import { JwxtGetInfoService } from '../services/jwxt/JwxtGetInfoService';
+import { StudentInfoManager } from '../services/StudentInfoManager';
 
 const DOMAIN = 0x0000;
 
@@ -11,15 +13,20 @@ export default class EntryAbility extends UIAbility {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();
   private jwxtHttpClient: JwxtHttpClient = JwxtHttpClient.getInstance();
+  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
+  private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
 
-    // 初始化配置信息
+    // 1. 从首选项加载学生信息到内存（如果有缓存）
+    this.loadStudentInfoFromCache();
+
+    // 2. 初始化配置信息（不阻塞）
     this.initializeConfig();
 
-    // 自动登录教务系统
+    // 3. 自动登录教务系统（不阻塞）
     this.autoLoginJwxt();
   }
 
@@ -74,8 +81,8 @@ export default class EntryAbility extends UIAbility {
   }
 
   /**
-   * 自动登录教务系统
-   * 应用启动时自动执行，将Cookie保存到内存
+   * 自动登录教务系统并获取学生信息
+   * 应用启动时自动执行，将Cookie保存到内存，获取学生信息到首选项和AppStorage
    */
   private async autoLoginJwxt(): Promise<void> {
     try {
@@ -93,12 +100,45 @@ export default class EntryAbility extends UIAbility {
       AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'success');
       hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 教务系统自动登录成功，Cookie已保存到内存');
 
+      // ✅ 登录成功后，获取学生信息并保存
+      try {
+        hilog.info(DOMAIN, 'testTag', '📝 [EntryAbility] 开始获取学生信息...');
+        const studentInfo = await this.jwxtGetInfoService.getInfo(this.context);
+        hilog.info(DOMAIN, 'testTag', `✅ [EntryAbility] 学生信息获取成功: ${studentInfo.name} (${studentInfo.student_id})`);
+      } catch (infoError) {
+        // 获取学生信息失败不影响应用启动
+        const errorMsg = infoError instanceof Error ? infoError.message : String(infoError);
+        hilog.error(DOMAIN, 'testTag', `⚠️ [EntryAbility] 获取学生信息失败: ${errorMsg}`);
+      }
+
     } catch (error) {
       // 设置登录状态为失败
       AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'failed');
       hilog.error(DOMAIN, 'testTag', '❌ [EntryAbility] 教务系统自动登录失败: %{public}s',
         error instanceof Error ? error.message : JSON.stringify(error));
       // 不阻塞应用启动，仅记录错误
+    }
+  }
+
+  /**
+   * 从首选项加载学生信息到内存（AppStorage）
+   * 应用启动时优先使用缓存
+   */
+  private async loadStudentInfoFromCache(): Promise<void> {
+    try {
+      hilog.info(DOMAIN, 'testTag', '📂 [EntryAbility] 开始加载学生信息缓存...');
+
+      const loaded = await this.studentInfoManager.loadStudentInfoToMemory(this.context);
+
+      if (loaded) {
+        hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 学生信息缓存加载成功');
+      } else {
+        hilog.info(DOMAIN, 'testTag', '📭 [EntryAbility] 无学生信息缓存');
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      hilog.error(DOMAIN, 'testTag', `❌ [EntryAbility] 加载学生信息缓存失败: ${errorMsg}`);
+      // 不阻塞应用启动
     }
   }
 }
