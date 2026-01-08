@@ -7,7 +7,7 @@ import {
   TreeHolePaginationData,
   TreeHolePicture,
   GetPicturesRequest
-} from '../../models/TreeHoleModels';
+} from '../../models/TreeHoleModels.ets_';
 import { ApiResponse, HttpService } from './HttpService';
 
 // 导出类型
@@ -18,7 +18,7 @@ export {
   PostCommentRequest,
   TreeHolePicture,
   GetPicturesRequest
-} from '../../models/TreeHoleModels';
+} from '../../models/TreeHoleModels.ets_';
 
 /**
  * 树洞API请求参数接口
