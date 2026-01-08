@@ -949,11 +949,6 @@ export struct SchedulePage {
       if (this.courseList.length > 0) {
         // 有缓存数据，提示使用本地缓存
         console.warn('📚 [Course] 请求失败，继续使用缓存数据');
-        this.promptAction.showToast({
-          message: '请求教务系统失败，使用本地缓存',
-          duration: 3000,
-          bottom: '100vp'
-        });
       } else {
         // 无缓存数据，提示用户
         this.promptAction.showToast({

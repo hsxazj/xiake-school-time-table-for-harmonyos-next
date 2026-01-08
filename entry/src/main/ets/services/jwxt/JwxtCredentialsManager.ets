@@ -31,6 +31,7 @@ const TAG: string = 'JwxtCredentialsManager';
 export interface JwxtCredentials {
   /** 学号 */
   sid: string;
+
   /** 密码（明文） */
   password: string;
 }
@@ -41,12 +42,10 @@ export interface JwxtCredentials {
  */
 export class JwxtCredentialsManager {
   private static instance: JwxtCredentialsManager;
-
   /** 学号存储键 */
   private static readonly SID_KEY: string = 'jwxt_student_id';
   /** 密码存储键 */
   private static readonly PASSWORD_KEY: string = 'jwxt_password';
-
   private preferencesUtil: PreferencesUtil;
 
   private constructor() {
@@ -93,7 +92,7 @@ export class JwxtCredentialsManager {
    * @param context 应用上下文
    * @returns JwxtCredentials 或 null（无凭证）
    */
-  public getCredentials(context: Context): JwxtCredentials | null {
+  public getCredentials(context: Context | undefined): JwxtCredentials | null {
     try {
       const sid = this.preferencesUtil.getValue(context, JwxtCredentialsManager.SID_KEY, '') as string;
       const password = this.preferencesUtil.getValue(context, JwxtCredentialsManager.PASSWORD_KEY, '') as string;
@@ -138,7 +137,7 @@ export class JwxtCredentialsManager {
    * @param context 应用上下文
    * @returns boolean
    */
-  public hasCredentials(context: Context): boolean {
+  public hasCredentials(context: Context | undefined): boolean {
     const credentials = this.getCredentials(context);
     const hasCredentials = credentials !== null;
 

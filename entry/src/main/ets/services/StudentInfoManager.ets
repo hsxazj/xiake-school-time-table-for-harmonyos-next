@@ -63,7 +63,7 @@ export class StudentInfoManager {
    * @param context 应用上下文
    * @param studentInfo 学生信息
    */
-  public saveStudentInfo(context: Context, studentInfo: StudentInfo): void {
+  public saveStudentInfo(context: Context | undefined, studentInfo: StudentInfo): void {
     try {
       // 1. 保存到首选项（持久化）
       const jsonStr = JSON.stringify(studentInfo);
@@ -85,7 +85,7 @@ export class StudentInfoManager {
    * @param context 应用上下文
    * @returns 成功返回 true，失败或不存在返回 false
    */
-  public async loadStudentInfoToMemory(context: Context): Promise<boolean> {
+  public async loadStudentInfoToMemory(context: Context | undefined): Promise<boolean> {
     try {
       const jsonStr = PreferencesUtil.getInstance().getValue(
         context,

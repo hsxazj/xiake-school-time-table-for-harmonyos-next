@@ -13,6 +13,8 @@ struct OpenPage {
   @State initMessage: string = '正在加载...';
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private credentialsManager: JwxtCredentialsManager = JwxtCredentialsManager.getInstance();
+  private context = this.getUIContext().getHostContext();
+
 
   aboutToAppear(): void {
     this.waitForInitAndNavigate();
@@ -71,14 +73,12 @@ struct OpenPage {
    */
   private async waitForInitAndNavigate(): Promise<void> {
     try {
-      // 获取应用上下文
-      const context = getContext(this);
 
       // 1. 检查凭证
       this.initMessage = '正在检查登录凭证...';
       hilog.info(DOMAIN, TAG, '🔍 [Init] 开始检查登录凭证');
 
-      const hasCredentials = this.credentialsManager.hasCredentials(context);
+      const hasCredentials = this.credentialsManager.hasCredentials(this.context);
 
       if (!hasCredentials) {
         // 无凭证 → 登录页
@@ -94,7 +94,7 @@ struct OpenPage {
       hilog.info(DOMAIN, TAG, '🚀 [Init] 尝试快速初始化（缓存优先）');
 
       const startTime = Date.now();
-      const fastInitSuccess = await this.appConfigManager.tryInitializeFromCache(context);
+      const fastInitSuccess = await this.appConfigManager.tryInitializeFromCache(this.context);
       const fastInitTime = Date.now() - startTime;
 
       if (fastInitSuccess) {
@@ -111,7 +111,7 @@ struct OpenPage {
 
       try {
         const fullInitStart = Date.now();
-        const initResult = await this.appConfigManager.initialize(context);
+        const initResult = await this.appConfigManager.initialize(this.context);
         const fullInitTime = Date.now() - fullInitStart;
 
         hilog.info(DOMAIN, TAG, `✅ [Init] 完整初始化成功，耗时: ${fullInitTime}ms，使用缓存: ${initResult.usedCache}`);

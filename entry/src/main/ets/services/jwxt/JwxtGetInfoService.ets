@@ -127,7 +127,7 @@ export class JwxtGetInfoService {
    * @returns Promise<StudentInfo> 学生个人信息
    * @throws Error 获取信息失败时抛出异常
    */
-  public async getInfo(context: Context): Promise<StudentInfo> {
+  public async getInfo(context: Context|undefined): Promise<StudentInfo> {
     // 检查缓存是否存在
     if (this.cachedStudentInfo) {
       hilog.info(DOMAIN, TAG, '✅ [GetInfo] 使用内存缓存，姓名: %{public}s', this.cachedStudentInfo.name);

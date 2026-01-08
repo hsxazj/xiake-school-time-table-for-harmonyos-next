@@ -25,16 +25,14 @@ export struct ExamPage {
   private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private configService: ConfigApiService = ConfigApiService.getInstance();
-
+  private context = this.getUIContext().getHostContext();
   // 考试页面独立的学期状态管理
   @State private currentExamSemester: SemesterInfo | null = null;
   @State private semesterList: SemesterInfo[] = [];
   @State private showSemesterPicker: boolean = false;
-
   // 学生信息和年级限制
   @State private studentInfo: StudentInfo | null = null;
   @State private userGrade: number = 0; // 学生入学年份(数字格式)
-
   // 动画效果 - 与HomePage保持一致
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
@@ -57,7 +55,7 @@ export struct ExamPage {
   private async loadStudentInfo(): Promise<void> {
     try {
       hilog.info(DOMAIN, TAG, '📋 [ExamPage] 开始获取学生信息...');
-      const context = getContext(this);
+
 
       // 1. 先尝试从内存获取
       let studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
@@ -65,7 +63,7 @@ export struct ExamPage {
       // 2. 如果内存中没有,尝试从首选项加载到内存
       if (!studentInfo) {
         hilog.info(DOMAIN, TAG, '💾 [ExamPage] 内存中无学生信息,尝试从首选项加载...');
-        const loaded = await this.studentInfoManager.loadStudentInfoToMemory(context);
+        const loaded = await this.studentInfoManager.loadStudentInfoToMemory(this.context);
         if (loaded) {
           studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
         }
@@ -74,9 +72,9 @@ export struct ExamPage {
       // 3. 如果首选项中也没有,调用 API 获取并保存
       if (!studentInfo) {
         hilog.info(DOMAIN, TAG, '🌐 [ExamPage] 首选项中无学生信息,调用 API 获取...');
-        studentInfo = await this.jwxtGetInfoService.getInfo(context);
+        studentInfo = await this.jwxtGetInfoService.getInfo(this.context);
         // 保存到 StudentInfoManager
-        this.studentInfoManager.saveStudentInfo(context, studentInfo);
+        this.studentInfoManager.saveStudentInfo(this.context, studentInfo);
       }
 
       // 4. 更新状态
@@ -221,7 +219,12 @@ export struct ExamPage {
                 .fontColor(Color.White)
                 .backgroundColor($r('app.color.schedule_primary_color'))
                 .borderRadius(20)
-                .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+                .padding({
+                  left: 20,
+                  right: 20,
+                  top: 8,
+                  bottom: 8
+                })
                 .onClick(() => {
                   this.errorMessage = '';
                   this.loadExamList();
@@ -618,12 +621,6 @@ export struct ExamPage {
       if (this.examList.length > 0) {
         // 有缓存数据，提示使用本地缓存（不设置 errorMessage，继续显示缓存数据）
         hilog.warn(DOMAIN, TAG, '📚 [ExamPage] 请求失败，继续使用缓存数据');
-        const promptAction = this.getUIContext().getPromptAction();
-        promptAction.showToast({
-          message: '请求教务系统失败，使用本地缓存',
-          duration: 3000,
-          bottom: '100vp'
-        });
       } else {
         // 无缓存数据，显示错误信息
         if (error instanceof Error) {
