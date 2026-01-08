@@ -114,8 +114,8 @@ export default class EntryFormAbility extends FormExtensionAbility {
       hilog.info(0x0000, TAG,
         `🔍 [FormAbility] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
 
-      // 使用 TodayCourseUtil 加载今日课程
-      const todayCourses = await TodayCourseUtil.loadTodayCourses(getContext(this));
+      // 使用 TodayCourseUtil 加载今日课程（传递 FormExtensionContext）
+      const todayCourses = await TodayCourseUtil.loadTodayCourses(this.context);
 
       if (todayCourses.length === 0) {
         hilog.info(0x0000, TAG, '📭 [FormAbility] 今日无课');
