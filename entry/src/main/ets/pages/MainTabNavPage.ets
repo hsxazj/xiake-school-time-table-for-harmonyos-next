@@ -1,6 +1,5 @@
 import { HomePage } from '../components/pages/HomePage';
 import { SchedulePage } from '../components/pages/SchedulePage';
-import { TreeHolePage } from '../components/pages/TreeHolePage';
 import { MinePage } from '../components/pages/MinePage';
 import { ExamPage } from '../components/pages/ExamPage';
 import { AppConfigManager } from '../services/AppConfigManager';

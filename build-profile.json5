@@ -7,11 +7,11 @@
         "material": {
           "certpath": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001AC06D00BCCADF553A2D26328DCFC038BA5A5A6BC28AF865005B42A334E60EBBD964B0D6F8D59A",
+          "keyPassword": "0000001B0A00D21DA2D455B1AFA7CEBE36AA32C4B462A3192A19E70AD10F8C85B51E9BEC2577B724CF4075",
           "profile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\hsxazj\\.ohos\\config\\default_xiake-school-time-table-for-harmonyos-next_kUE8ECcNpNJCSXs43U_C5CcrR3Y13GV-XQtfIpUhz_o=.p12",
-          "storePassword": "0000001A157F2979D650FE722962D692CA0E0C620E8D0452095866EA5E70CC121EA35A166EEE4F4A35D5"
+          "storePassword": "0000001B30D685219390FF333ED358CD68E22C929F9C4433B7B292C0309A015B32B0E6954F92ED3D6D0D4B"
         }
       }
     ],
@@ -32,10 +32,21 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
+      }
+    ],
+    "capabilities": [
+      {
+        "bundleName": "com.fjutxiake.schooltimetable",
+        "config": [
+          {
+            "name": "Push Kit",
+            "capability": "com.huawei.service.push.base_service"
+          }
+        ]
       }
     ]
   },

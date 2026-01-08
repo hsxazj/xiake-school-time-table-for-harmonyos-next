@@ -7,7 +7,7 @@ import { TreeHoleApiService } from '../../services/api/TreeHoleApiService';
 import { SimpleUserInfo } from '../../models/UserModels';
 import { curves } from '@kit.ArkUI';
 import { API_CONFIG } from '../../common/constants/AppConstants';
-import { TreeHoleImageGrid, ImageClickCallback } from '../base/TreeHoleImageGrid';
+import { TreeHoleImageGrid, ImageClickCallback } from '../base/TreeHoleImageGrid.ets_';
 import { ImagePreviewDialog, ImagePreviewCloseCallback } from '../base/ImagePreviewDialog';
 
 @Component

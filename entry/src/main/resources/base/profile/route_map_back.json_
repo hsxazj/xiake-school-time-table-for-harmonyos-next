@@ -1,0 +1,36 @@
+{
+  "routerMap": [
+    {
+      "name": "MainTabNavPage",
+      "pageSourceFile": "src/main/ets/pages/MainTabNavPage.ets",
+      "buildFunction": "MainTabNavPageBuilder",
+      "data": {
+        "description": "this is MainTabPage"
+      }
+    },
+    {
+      "name": "LoginNavPage",
+      "pageSourceFile": "src/main/ets/components/pages/LoginPage.ets",
+      "buildFunction": "LoginNavPageBuilder",
+      "data": {
+        "description": "this is LoginNavPage"
+      }
+    },
+    {
+      "name": "TreeHolePostPage",
+      "pageSourceFile": "src/main/ets/pages/TreeHolePostNavPage.ets_",
+      "buildFunction": "TreeHolePostNavPageBuilder",
+      "data": {
+        "description": "this is TreeHolePostPage"
+      }
+    },
+    {
+      "name": "TreeHoleDetailPage",
+      "pageSourceFile": "src/main/ets/pages/TreeHoleDetailNavPage.ets_",
+      "buildFunction": "TreeHoleDetailNavPageBuilder",
+      "data": {
+        "description": "this is TreeHoleDetailPage"
+      }
+    }
+  ]
+}
