@@ -337,17 +337,10 @@ export struct LoginPageContent {
         AppStorage.setOrCreate('loginStatusChanged', Date.now());
         hilog.info(DOMAIN, TAG, '📢 [Notification] 发送登录状态变化通知');
 
-        // 判断来源并导航
-        const from = this.navigationParams['from'] as string;
-        if (from === 'OpenPage') {
-          // 如果是从OpenPage来的，使用replace跳转到主页
-          hilog.info(DOMAIN, TAG, '🔙 [Navigation] 从OpenPage来的，跳转到主页');
-          this.pathStack.replacePathByName('MainTabNavPage', null);
-        } else {
-          // 如果是从其他地方来的（如MinePage），关闭模态页面返回上一页
-          hilog.info(DOMAIN, TAG, '🔙 [Navigation] 关闭登录模态页面返回上一页');
-          this.pathStack.pop();
-        }
+        // 登录成功后统一跳转到主页
+        hilog.info(DOMAIN, TAG, '🔙 [Navigation] 登录成功，跳转到主页');
+        this.pathStack.clear();
+        this.pathStack.pushPathByName('MainTabNavPage', null);
       }, 500); // 减少延时，让MinePage能更早开始渐显
     }, 600); // 稍微减少等待时间，提升响应速度
   }
