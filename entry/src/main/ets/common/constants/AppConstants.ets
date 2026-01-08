@@ -8,7 +8,7 @@ export interface ApiConfig {
 export const API_CONFIG: ApiConfig = {
   BASE_URL: 'https://school-time.fjutxiake.com',
   // BASE_URL: 'http://192.168.1.4:12001',
-  TIMEOUT: 800  // 设置为1秒用于测试缓存降级
+  TIMEOUT: 1500  // 设置为1.5秒
 };
 
 export const RSA_PUBLIC_KEY =

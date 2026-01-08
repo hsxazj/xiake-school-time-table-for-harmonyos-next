@@ -4,7 +4,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppConfigManager } from '../services/AppConfigManager';
 import { CourseInfo } from '../models/CourseModels';
 import { FormService } from '../services/FormService';
-import { TodayCourseUtil, TodayParams } from '../common/utils/TodayCourseUtil';
+import { TodayCourseUtil } from '../common/utils/TodayCourseUtil';
 
 interface TodayCourseFormData {
   formId: string;

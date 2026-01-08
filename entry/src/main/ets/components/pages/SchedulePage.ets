@@ -5,7 +5,6 @@ import { AppConfigManager } from '../../services/AppConfigManager';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
 import { CacheManager } from '../../common/utils/CacheManager';
-import { ErrorUtil } from '../../common/utils/ErrorUtil';
 import { CourseParser } from '../../common/utils/CourseParser';
 import { curves, promptAction } from '@kit.ArkUI';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
@@ -68,7 +67,7 @@ export struct SchedulePage {
   @State private currentStatus: CurrentSemesterStatus | null = null;
   @State private currentSemester: SemesterInfo | null = null;
   @State private semesterList: SemesterInfo[] = [];
-  @State private displayStatusText: string = "第1周";
+  @State private displayStatusText: string = ""; // 初始为空，等待配置加载
   // 新增基于日期的滑动状态
   @State private currentDate: Date = new Date(); // 当前显示的日期
   // 滑动手势状态
@@ -141,7 +140,7 @@ export struct SchedulePage {
         Row() {
           // 周数可点击区域
           Row() {
-            Text(this.displayStatusText || `第${this.currentWeek || 1}周`)
+            Text(this.displayStatusText || "加载中...")
               .fontSize(22)
               .fontWeight(FontWeight.Bold)
               .fontColor(this.currentStatus?.isInHoliday ? '#FF9800' : '#333333') // 假期中用橙色
