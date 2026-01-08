@@ -32,13 +32,13 @@ export struct TreeHolePage {
   private readonly pageSize: number = 10;
 
   aboutToAppear(): void {
-    console.info('🌳 [TreeHolePage] 页面即将显示，初始化数据');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHolePage] 页面即将显示，初始化数据');
     this.checkLoginStatus();
     this.loadTreeHoleList(true);
   }
 
   onPageShow(): void {
-    console.info('🌳 [TreeHolePage] 页面显示');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHolePage] 页面显示');
     // 每次页面显示时刷新登录状态
     this.checkLoginStatusAsync();
   }
@@ -342,7 +342,7 @@ export struct TreeHolePage {
    * 监听登录状态变化
    */
   private onLoginStatusChanged(): void {
-    console.info(`🌳 [TreeHolePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    hilog.info(DOMAIN,TAG,`🌳 [TreeHolePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
     // 登录状态变化时重新检查
     this.checkLoginStatusAsync();
   }
@@ -393,7 +393,7 @@ export struct TreeHolePage {
 
       this.hasMore = normalData?.hasNext || false;
 
-      console.info(`🌳 [TreeHolePage] 加载完成，当前${this.treeHoleList?.length || 0}条数据`);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHolePage] 加载完成，当前${this.treeHoleList?.length || 0}条数据`);
     } catch (error) {
       console.error('🌳 [TreeHolePage] 加载树洞列表失败:', error);
       // 确保在出错时数组仍然有效
@@ -433,7 +433,7 @@ export struct TreeHolePage {
       return;
     }
 
-    console.info('🌳 [TreeHolePage] 跳转到发布页面');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHolePage] 跳转到发布页面');
     try {
       this.pathStack.pushPathByName('TreeHolePostPage', null);
     } catch (error) {
@@ -456,7 +456,7 @@ export struct TreeHolePage {
    * 处理树洞项点击
    */
   private handleItemClick(item: TreeHoleItem): void {
-    console.info(`🌳 [TreeHolePage] 查看树洞详情 ID:${item.id}`);
+    hilog.info(DOMAIN,TAG,`🌳 [TreeHolePage] 查看树洞详情 ID:${item.id}`);
 
     // 设置转场效果
     this.transitionEffect = TransitionEffect.OPACITY
@@ -489,7 +489,7 @@ export struct TreeHolePage {
           this.treeHoleList[index].isLike = newIsLiked ? 1 : 0;
           this.treeHoleList[index].likes += newIsLiked ? 1 : -1;
         }
-        console.info(`🌳 [TreeHolePage] ${newIsLiked ? '点赞' : '取消点赞'}成功`);
+        hilog.info(DOMAIN,TAG,`🌳 [TreeHolePage] ${newIsLiked ? '点赞' : '取消点赞'}成功`);
       }
     } catch (error) {
       console.error('🌳 [TreeHolePage] 点赞操作失败:', error);
@@ -500,7 +500,7 @@ export struct TreeHolePage {
    * 处理图片点击事件
    */
   private handleImageClick(imageUrl: string, imageIndex: number, allImages: string[]): void {
-    console.info(`🖼️ [TreeHolePage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
+    hilog.info(DOMAIN,TAG,`🖼️ [TreeHolePage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
     
     this.previewImages = allImages;
     this.previewCurrentIndex = imageIndex;
@@ -511,7 +511,7 @@ export struct TreeHolePage {
    * 处理图片预览关闭事件
    */
   private handleImagePreviewClose(): void {
-    console.info('🖼️ [TreeHolePage] 关闭图片预览');
+    hilog.info(DOMAIN,TAG,'🖼️ [TreeHolePage] 关闭图片预览');
     this.imagePreviewVisible = false;
     this.previewImages = [];
     this.previewCurrentIndex = 0;
@@ -528,13 +528,13 @@ export struct TreeHolePage {
       primaryButton: {
         value: '取消',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户取消登录');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHolePage] 用户取消登录');
         }
       },
       secondaryButton: {
         value: '去登录',
         action: () => {
-          console.info('🌳 [TreeHolePage] 用户选择去登录');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHolePage] 用户选择去登录');
           try {
             this.pathStack.pushPathByName('LoginNavPage', null);
           } catch (error) {

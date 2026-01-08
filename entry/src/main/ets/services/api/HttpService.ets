@@ -1,5 +1,11 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from '@ohos/axios';
 import { API_CONFIG } from '../../common/constants/AppConstants';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+
+
+const DOMAIN = 0x1000; // App Config domain
+const TAG = 'HttpService'; // 树洞功能启用状态存储键
+
 
 export interface ApiResponse<T> {
   code: number;
@@ -181,7 +187,7 @@ export class HttpService {
    */
   public setDefaultHeader(key: string, value: string): void {
     this.axiosInstance.defaults.headers.common[key] = value;
-    console.info(`🔧 [Header] Set default header: ${key}=${value}`);
+    hilog.info(DOMAIN,TAG,`🔧 [Header] Set default header: ${key}=${value}`);
   }
 
   /**
@@ -190,7 +196,7 @@ export class HttpService {
   public removeDefaultHeader(key: string): void {
     // ArkTS中使用undefined赋值替代delete操作
     this.axiosInstance.defaults.headers.common[key] = undefined;
-    console.info(`🗑️ [Header] Removed default header: ${key}`);
+    hilog.info(DOMAIN,TAG,`🗑️ [Header] Removed default header: ${key}`);
   }
 
   /**
@@ -232,14 +238,14 @@ export class HttpService {
         }
 
         // 打印请求日志
-        console.info(`[HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        hilog.info(DOMAIN,TAG,`[HTTP Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
         if (config.data) {
-          console.info(`[Request Data]`, JSON.stringify(config.data));
+          hilog.info(DOMAIN,TAG,`[Request Data]`, JSON.stringify(config.data));
         }
         if (config.params) {
-          console.info(`[Request Params]`, JSON.stringify(config.params));
+          hilog.info(DOMAIN,TAG,`[Request Params]`, JSON.stringify(config.params));
         }
-        console.info(`[Request Time] ${new Date().toLocaleTimeString()}`);
+        hilog.info(DOMAIN,TAG,`[Request Time] ${new Date().toLocaleTimeString()}`);
 
         return config;
       },
@@ -256,10 +262,10 @@ export class HttpService {
         const config = response.config as CustomAxiosRequestConfig;
         const duration = config.metadata?.startTime ? Date.now() - config.metadata.startTime : 0;
 
-        console.info(`[HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
-        console.info(`[Response Data]`, JSON.stringify(response.data));
-        console.info(`[Response Time] ${duration}ms`);
-        console.info(`[Response Size] ${JSON.stringify(response.data).length} bytes`);
+        hilog.info(DOMAIN,TAG,`[HTTP Response] ${response.status} ${config.method?.toUpperCase()} ${response.config.url}`);
+        hilog.info(DOMAIN,TAG,`[Response Data]`, JSON.stringify(response.data));
+        hilog.info(DOMAIN,TAG,`[Response Time] ${duration}ms`);
+        hilog.info(DOMAIN,TAG,`[Response Size] ${JSON.stringify(response.data).length} bytes`);
 
         return response;
       },

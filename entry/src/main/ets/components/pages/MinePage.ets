@@ -289,7 +289,7 @@ export struct MinePage {
    * 监听登录状态变化
    */
   private onLoginStatusChanged(): void {
-    console.info(`[MinePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    hilog.info(DOMAIN,TAG,`[MinePage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
     this.checkLoginStatus();
   }
 
@@ -370,7 +370,7 @@ export struct MinePage {
     setTimeout(() => {
       this.pageOpacity = 1;
       this.pageTranslateY = 0;
-      console.info('[MinePage] 🎬 启动渐显动画');
+      hilog.info(DOMAIN,TAG,'[MinePage] 🎬 启动渐显动画');
     }, 100);
   }
 
@@ -410,7 +410,7 @@ export struct MinePage {
     try {
       // 从AppConfigManager获取树洞功能状态
       this.treeHoleEnabled = this.appConfigManager.getTreeHoleEnabled();
-      console.info(`[MinePage] 树洞功能状态: ${this.treeHoleEnabled}`);
+      hilog.info(DOMAIN,TAG,`[MinePage] 树洞功能状态: ${this.treeHoleEnabled}`);
     } catch (error) {
       console.error('[MinePage] 加载树洞功能设置失败:', error);
       this.treeHoleEnabled = true; // 默认启用
@@ -436,7 +436,7 @@ export struct MinePage {
       this.appConfigManager.setTreeHoleEnabled(newState, context);
       this.treeHoleEnabled = newState;
 
-      console.info(`[MinePage] 树洞功能已${newState ? '启用' : '禁用'}`);
+      hilog.info(DOMAIN,TAG,`[MinePage] 树洞功能已${newState ? '启用' : '禁用'}`);
 
       // 显示重启提示对话框
       this.showRestartConfirmDialog();
@@ -486,7 +486,7 @@ export struct MinePage {
         return;
       }
 
-      console.info('[MinePage] 准备重启应用...');
+      hilog.info(DOMAIN,TAG,'[MinePage] 准备重启应用...');
 
       // 获取UIAbilityContext来执行重启
       const abilityContext = context as common.UIAbilityContext;
@@ -497,7 +497,7 @@ export struct MinePage {
           console.error('[MinePage] 重启应用失败:', error);
           this.showToast('重启失败，请手动重启应用');
         } else {
-          console.info('[MinePage] 应用重启成功');
+          hilog.info(DOMAIN,TAG,'[MinePage] 应用重启成功');
         }
       });
     } catch (error) {
@@ -517,7 +517,7 @@ export struct MinePage {
       primaryButton: {
         value: '取消',
         action: () => {
-          console.info('[MinePage] 用户取消退出登录');
+          hilog.info(DOMAIN,TAG,'[MinePage] 用户取消退出登录');
         }
       },
       secondaryButton: {
@@ -536,7 +536,7 @@ export struct MinePage {
   private navigateToLogin(): void {
     try {
       this.pathStack.pushPathByName('LoginNavPage', null, true); // 使用模态转场
-      console.info('[MinePage] 跳转到登录页面');
+      hilog.info(DOMAIN,TAG,'[MinePage] 跳转到登录页面');
     } catch (error) {
       console.error('[MinePage] 跳转到登录页面失败:', error);
     }
@@ -598,7 +598,7 @@ export struct MinePage {
       // 如果Toast显示失败,至少输出日志
       hilog.error(DOMAIN, TAG, '❌ [Toast] 显示Toast失败: %{public}s',
         error instanceof Error ? error.message : String(error));
-      console.info(`[Toast] ${message}`);
+      hilog.info(DOMAIN,TAG,`[Toast] ${message}`);
     }
   }
 }

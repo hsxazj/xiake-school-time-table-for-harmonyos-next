@@ -41,7 +41,7 @@ export struct HomePage {
 
   onPageShow(): void {
     // 页面每次显示时重新初始化今日参数，确保不受其他页面影响
-    console.info('📱 [HomePage] 页面显示，重新初始化今日参数');
+    hilog.info(DOMAIN,TAG,'📱 [HomePage] 页面显示，重新初始化今日参数');
     this.initTodayParams();
     // 重新加载今日课程以防有变化
     this.loadTodayCourses();
@@ -251,7 +251,7 @@ export struct HomePage {
     this.todayParams = TodayCourseUtil.getTodayParams();
 
     if (this.todayParams) {
-      console.info(`✅ [Today Params Cache] 基于真实今日计算参数: ${JSON.stringify(this.todayParams)}`);
+      hilog.info(DOMAIN,TAG,`✅ [Today Params Cache] 基于真实今日计算参数: ${JSON.stringify(this.todayParams)}`);
     } else {
       console.warn('⚠️ [Today Params Cache] 无法获取今日参数');
     }

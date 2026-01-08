@@ -6,6 +6,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { common } from '@kit.AbilityKit';
 
 const DOMAIN = 0x3000; // Login Page domain
+const TAG = 'LoginPage';
 
 @Builder
 export function LoginNavPageBuilder() {
@@ -212,7 +213,7 @@ export struct LoginPageContent {
     setTimeout(() => {
       this.pageOpacity = 1;
       this.pageTranslateY = 0;
-      console.info('[LoginPage] 🎬 启动渐显动画');
+      hilog.info(DOMAIN,TAG,'[LoginPage] 🎬 启动渐显动画');
     }, 100);
   }
 
@@ -228,7 +229,7 @@ export struct LoginPageContent {
       this.loginStatus = LoginStatus.LOADING;
       this.clearError();
 
-      hilog.info(DOMAIN, 'LoginPage', `🔐 [Login] 开始登录: ${this.loginForm.username}`);
+      hilog.info(DOMAIN, TAG, `🔐 [Login] 开始登录: ${this.loginForm.username}`);
 
       // 获取UIAbilityContext
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
@@ -239,14 +240,14 @@ export struct LoginPageContent {
         this.loginForm.username,
         this.loginForm.password
       );
-      hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 凭证已保存');
+      hilog.info(DOMAIN, TAG, '✅ [Login] 凭证已保存');
 
       // 步骤2: 调用JWXT登录服务执行登录
       // 登录流程: logout → 获取CSRF → 获取公钥 → 加密密码 → 提交表单
       await this.jwxtLoginService.login(context);
 
       this.loginStatus = LoginStatus.SUCCESS;
-      hilog.info(DOMAIN, 'LoginPage', '✅ [Login] 登录成功');
+      hilog.info(DOMAIN, TAG, '✅ [Login] 登录成功');
 
       // 登录成功的提示
       this.showSuccessMessage();
@@ -256,10 +257,10 @@ export struct LoginPageContent {
 
       if (error instanceof Error) {
         this.errorMessage = error.message;
-        hilog.error(DOMAIN, 'LoginPage', `❌ [Login] 登录失败: ${error.message}`);
+        hilog.error(DOMAIN, TAG, `❌ [Login] 登录失败: ${error.message}`);
       } else {
         this.errorMessage = '登录失败，请重试';
-        hilog.error(DOMAIN, 'LoginPage', '❌ [Login] 登录失败: 未知错误');
+        hilog.error(DOMAIN, TAG, '❌ [Login] 登录失败: 未知错误');
       }
 
       // 显示错误提示
@@ -303,7 +304,7 @@ export struct LoginPageContent {
     // 启动渐隐动画
     this.startFadeOutAnimation();
 
-    hilog.info(DOMAIN, 'LoginPage', '🎉 [Success] 登录成功提示已显示');
+    hilog.info(DOMAIN, TAG, '🎉 [Success] 登录成功提示已显示');
   }
 
   /**
@@ -317,7 +318,7 @@ export struct LoginPageContent {
       bottom: 100
     });
 
-    hilog.info(DOMAIN, 'LoginPage', '⚠️ [Error] 登录失败提示已显示');
+    hilog.info(DOMAIN, TAG, '⚠️ [Error] 登录失败提示已显示');
   }
 
   /**
@@ -328,23 +329,23 @@ export struct LoginPageContent {
     setTimeout(() => {
       // 开始渐隐动画
       this.pageOpacity = 0;
-      hilog.info(DOMAIN, 'LoginPage', '🎬 [Animation] 开始渐隐动画');
+      hilog.info(DOMAIN, TAG, '🎬 [Animation] 开始渐隐动画');
 
       // 动画完成后处理导航
       setTimeout(() => {
         // 通过修改AppStorage中的一个标记来触发MainTabNavPage的状态检查
         AppStorage.setOrCreate('loginStatusChanged', Date.now());
-        hilog.info(DOMAIN, 'LoginPage', '📢 [Notification] 发送登录状态变化通知');
+        hilog.info(DOMAIN, TAG, '📢 [Notification] 发送登录状态变化通知');
 
         // 判断来源并导航
         const from = this.navigationParams['from'] as string;
         if (from === 'OpenPage') {
           // 如果是从OpenPage来的，使用replace跳转到主页
-          hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 从OpenPage来的，跳转到主页');
+          hilog.info(DOMAIN, TAG, '🔙 [Navigation] 从OpenPage来的，跳转到主页');
           this.pathStack.replacePathByName('MainTabNavPage', null);
         } else {
           // 如果是从其他地方来的（如MinePage），关闭模态页面返回上一页
-          hilog.info(DOMAIN, 'LoginPage', '🔙 [Navigation] 关闭登录模态页面返回上一页');
+          hilog.info(DOMAIN, TAG, '🔙 [Navigation] 关闭登录模态页面返回上一页');
           this.pathStack.pop();
         }
       }, 500); // 减少延时，让MinePage能更早开始渐显

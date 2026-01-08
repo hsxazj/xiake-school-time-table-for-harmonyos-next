@@ -29,7 +29,7 @@ struct TreeHolePostNavPage {
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
 
   aboutToAppear(): void {
-    console.info('🌳 [TreeHolePostNavPage] 发布页面初始化');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHolePostNavPage] 发布页面初始化');
   }
 
   @Builder
@@ -140,7 +140,7 @@ struct TreeHolePostNavPage {
         .unselectedColor('#CCCCCC')
         .onChange((value: boolean) => {
           this.isAnonymous = value;
-          console.info(`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
+          hilog.info(DOMAIN,TAG,`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
         })
         .margin({ right: 12 })
 
@@ -149,7 +149,7 @@ struct TreeHolePostNavPage {
         .fontColor('#333333')
         .onClick(() => {
           this.isAnonymous = !this.isAnonymous;
-          console.info(`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
+          hilog.info(DOMAIN,TAG,`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
         })
 
       Blank()
@@ -176,7 +176,7 @@ struct TreeHolePostNavPage {
     })
     .onClick(() => {
       this.isAnonymous = !this.isAnonymous;
-      console.info(`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHolePostNavPage] 切换匿名模式: ${this.isAnonymous}`);
     })
   }
 
@@ -241,7 +241,7 @@ struct TreeHolePostNavPage {
     .hideTitleBar(true)
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
-      console.info('🌳 [TreeHolePostNavPage] 页面就绪');
+      hilog.info(DOMAIN,TAG,'🌳 [TreeHolePostNavPage] 页面就绪');
     })
     .onBackPressed(() => {
       this.handleCancel();

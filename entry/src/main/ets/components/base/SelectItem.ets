@@ -58,12 +58,12 @@ export struct SelectItem {
     })
     .alignItems(VerticalAlign.Center)
     .onClick(() => {
-      console.info(`SelectItem被点击，title: ${this.title}`);
+      hilog.info(DOMAIN,TAG,`SelectItem被点击，title: ${this.title}`);
       if (this.onTap) {
-        console.info('调用onTap回调');
+        hilog.info(DOMAIN,TAG,'调用onTap回调');
         this.onTap();
       } else {
-        console.info('onTap回调为空');
+        hilog.info(DOMAIN,TAG,'onTap回调为空');
       }
     })
   }

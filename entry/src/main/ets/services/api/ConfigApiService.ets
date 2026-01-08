@@ -191,7 +191,7 @@ export class ConfigApiService {
           statusText: `第${currentWeek}周`
         };
 
-        console.info(`📅 [Current Status] 当前在${semester.academicYear}学年第${semester.semester}学期第${currentWeek}周`);
+        hilog.info(DOMAIN,TAG,`📅 [Current Status] 当前在${semester.academicYear}学年第${semester.semester}学期第${currentWeek}周`);
         return this.currentStatus;
       }
 
@@ -206,10 +206,10 @@ export class ConfigApiService {
     if (mostRecentEndedSemester) {
       const calculatedWeek = this.calculateWeekInSemester(mostRecentEndedSemester.startDate, today);
 
-      console.info(`📅 [Week Debug] 最近结束学期: ${mostRecentEndedSemester.academicYear}学年第${mostRecentEndedSemester.semester}学期`);
-      console.info(`📅 [Week Debug] 学期开始: ${mostRecentEndedSemester.startDate}, 当前日期: ${today.getFullYear()}-${String(today.getMonth() +
+      hilog.info(DOMAIN,TAG,`📅 [Week Debug] 最近结束学期: ${mostRecentEndedSemester.academicYear}学年第${mostRecentEndedSemester.semester}学期`);
+      hilog.info(DOMAIN,TAG,`📅 [Week Debug] 学期开始: ${mostRecentEndedSemester.startDate}, 当前日期: ${today.getFullYear()}-${String(today.getMonth() +
         1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
-      console.info(`📅 [Week Debug] 计算出的周数: ${calculatedWeek}`);
+      hilog.info(DOMAIN,TAG,`📅 [Week Debug] 计算出的周数: ${calculatedWeek}`);
 
       this.currentStatus = {
         isInSemester: false,
@@ -219,7 +219,7 @@ export class ConfigApiService {
         statusText: "假期中"
       };
 
-      console.info(`📅 [Current Status] 当前在假期中，按${mostRecentEndedSemester.academicYear}学年第${mostRecentEndedSemester.semester}学期计算为第${calculatedWeek}周`);
+      hilog.info(DOMAIN,TAG,`📅 [Current Status] 当前在假期中，按${mostRecentEndedSemester.academicYear}学年第${mostRecentEndedSemester.semester}学期计算为第${calculatedWeek}周`);
       return this.currentStatus;
     }
 
@@ -246,7 +246,7 @@ export class ConfigApiService {
     const semesterInfo = earliestFutureSemester
       ? `即将开始${earliestFutureSemester.academicYear}学年第${earliestFutureSemester.semester}学期`
       : '未找到相关学期';
-    console.info(`📅 [Current Status] 当前在假期中，${semesterInfo}`);
+    hilog.info(DOMAIN,TAG,`📅 [Current Status] 当前在假期中，${semesterInfo}`);
     return this.currentStatus;
   }
 
@@ -282,7 +282,7 @@ export class ConfigApiService {
       currentWeek = Math.ceil((daysDifference - 6) / 7) + 1; // 大于6多余的部分每多7天加1周
     }
 
-    console.info(`📅 [Week Calculation] ${startDate} -> ${nowTimeString}, 相差${daysDifference}天, 第${currentWeek}周`);
+    hilog.info(DOMAIN,TAG,`📅 [Week Calculation] ${startDate} -> ${nowTimeString}, 相差${daysDifference}天, 第${currentWeek}周`);
     return currentWeek;
   }
 
@@ -397,7 +397,7 @@ export class ConfigApiService {
         previousWeekDate.setDate(currentDate.getDate() - 7);
 
         if (previousWeekDate < earliestValidDate) {
-          console.info(`📅 [Swipe Limit] 不能前往上一周：${classGrade}级学生在${previousWeekDate.toDateString()}之前尚未入学（最早入学日期：${earliestValidDate.toDateString()}）`);
+          hilog.info(DOMAIN,TAG,`📅 [Swipe Limit] 不能前往上一周：${classGrade}级学生在${previousWeekDate.toDateString()}之前尚未入学（最早入学日期：${earliestValidDate.toDateString()}）`);
           return false;
         }
       }
@@ -411,11 +411,11 @@ export class ConfigApiService {
     previousWeekDate.setDate(currentDate.getDate() - 7);
 
     if (previousWeekDate < earliestStartDate) {
-      console.info(`📅 [Swipe Limit] 不能前往上一周：上周日期(${previousWeekDate.toDateString()})早于最早学期开始日期(${earliestStartDate.toDateString()})`);
+      hilog.info(DOMAIN,TAG,`📅 [Swipe Limit] 不能前往上一周：上周日期(${previousWeekDate.toDateString()})早于最早学期开始日期(${earliestStartDate.toDateString()})`);
       return false;
     }
 
-    console.info(`📅 [Swipe Check] 可以前往上一周：当前日期${currentDate.toDateString()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Swipe Check] 可以前往上一周：当前日期${currentDate.toDateString()}`);
     return true;
   }
 
@@ -480,13 +480,13 @@ export class ConfigApiService {
       if (isLastSemester) {
         // 在最远学期中，检查是否是最后一周
         if (currentStatus.currentWeek >= this.farthestTotalWeeks) {
-          console.info(`📅 [Swipe Limit] 不能进入下一周：当前是最远学期${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期第${currentStatus.currentWeek}周（共${this.farthestTotalWeeks}周）`);
+          hilog.info(DOMAIN,TAG,`📅 [Swipe Limit] 不能进入下一周：当前是最远学期${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期第${currentStatus.currentWeek}周（共${this.farthestTotalWeeks}周）`);
           return false;
         }
       }
     }
 
-    console.info(`📅 [Swipe Check] 可以进入下一周：当前日期${currentDate.toDateString()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Swipe Check] 可以进入下一周：当前日期${currentDate.toDateString()}`);
     return true;
   }
 
@@ -513,7 +513,7 @@ export class ConfigApiService {
     const isValid = semesterYear >= enrollmentYear;
 
     if (!isValid) {
-      console.info(`📅 [Semester Validation] ${classGrade}级学生不能访问${semester.academicYear}学年第${semester.semester}学期（入学年份：${enrollmentYear}）`);
+      hilog.info(DOMAIN,TAG,`📅 [Semester Validation] ${classGrade}级学生不能访问${semester.academicYear}学年第${semester.semester}学期（入学年份：${enrollmentYear}）`);
     }
 
     return isValid;
@@ -606,13 +606,13 @@ export class ConfigApiService {
     );
 
     if (firstSemester) {
-      console.info(`📅 [Grade Validation] ${grade}级学生最早入学日期：${firstSemester.startDate}`);
+      hilog.info(DOMAIN,TAG,`📅 [Grade Validation] ${grade}级学生最早入学日期：${firstSemester.startDate}`);
       return new Date(firstSemester.startDate);
     }
 
     // 如果找不到对应学期，返回该年9月1日作为默认入学日期
     const defaultDate = new Date(enrollmentYear, 8, 1); // 9月1日（月份从0开始）
-    console.info(`📅 [Grade Validation] ${grade}级学生使用默认入学日期：${defaultDate.toDateString()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Grade Validation] ${grade}级学生使用默认入学日期：${defaultDate.toDateString()}`);
     return defaultDate;
   }
 
@@ -688,12 +688,12 @@ export class ConfigApiService {
       this.farthestSemesterNumber = this.farthestSemester.semester;
       this.farthestTotalWeeks = this.farthestSemester.totalWeeks;
 
-      console.info(`📚 [Farthest Semester] 最远学期: ${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期，共${this.farthestTotalWeeks}周`);
+      hilog.info(DOMAIN,TAG,`📚 [Farthest Semester] 最远学期: ${this.farthestAcademicYear}学年第${this.farthestSemesterNumber}学期，共${this.farthestTotalWeeks}周`);
     }
 
-    console.info(`📚 [Semester Data] 处理了${this.semesterList.length}个学期数据`);
+    hilog.info(DOMAIN,TAG,`📚 [Semester Data] 处理了${this.semesterList.length}个学期数据`);
     this.semesterList.forEach(sem => {
-      console.info(`📚 [Semester] ${sem.academicYear}学年第${sem.semester}学期: ${sem.startDate} ~ ${sem.endDate} (${sem.totalWeeks}周)`);
+      hilog.info(DOMAIN,TAG,`📚 [Semester] ${sem.academicYear}学年第${sem.semester}学期: ${sem.startDate} ~ ${sem.endDate} (${sem.totalWeeks}周)`);
     });
   }
 }

@@ -36,13 +36,13 @@ struct TreeHoleDetailNavPage {
   private treeHoleApiService: TreeHoleApiService = TreeHoleApiService.getInstance();
 
   aboutToAppear(): void {
-    console.info('🌳 [TreeHoleDetailNavPage] 页面初始化');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 页面初始化');
     this.checkLoginStatus();
     this.startFadeInAnimation();
   }
 
   onPageShow(): void {
-    console.info('🌳 [TreeHoleDetailNavPage] 页面显示');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 页面显示');
     // 每次页面显示时刷新登录状态
     this.checkLoginStatusAsync();
   }
@@ -510,7 +510,7 @@ struct TreeHoleDetailNavPage {
         })
         .onClick(() => {
           // 跳转到登录页面
-          console.info('🌳 [TreeHoleDetailNavPage] 用户点击去登录');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 用户点击去登录');
           try {
             this.pathStack.pushPathByName('LoginNavPage', null);
           } catch (error) {
@@ -611,7 +611,7 @@ struct TreeHoleDetailNavPage {
       // 接收页面参数
       const params = ctx.pathInfo.param as TreeHoleItem;
       if (params) {
-        console.info('🌳 [TreeHoleDetailNavPage] 接收到参数:', JSON.stringify(params));
+        hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 接收到参数:', JSON.stringify(params));
         this.treeHoleItem = params;
         this.treeHoleId = params.id;
         // 并行加载评论和图片数据
@@ -621,7 +621,7 @@ struct TreeHoleDetailNavPage {
         console.error('🌳 [TreeHoleDetailNavPage] 未接收到树洞数据');
       }
 
-      console.info('🌳 [TreeHoleDetailNavPage] 页面就绪');
+      hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 页面就绪');
     })
     .onBackPressed(() => {
       // 设置返回转场效果
@@ -639,7 +639,7 @@ struct TreeHoleDetailNavPage {
   public setTreeHoleItem(item: TreeHoleItem): void {
     this.treeHoleItem = item;
     this.treeHoleId = item.id;
-    console.info(`🌳 [TreeHoleDetailNavPage] 设置树洞数据，ID: ${item.id}`);
+    hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 设置树洞数据，ID: ${item.id}`);
   }
 
   /**
@@ -662,7 +662,7 @@ struct TreeHoleDetailNavPage {
    * 监听登录状态变化
    */
   private onLoginStatusChanged(): void {
-    console.info(`🌳 [TreeHoleDetailNavPage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
+    hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 收到登录状态变化通知: ${this.loginStatusChanged}`);
     // 登录状态变化时重新检查
     this.checkLoginStatusAsync();
   }
@@ -674,7 +674,7 @@ struct TreeHoleDetailNavPage {
     setTimeout(() => {
       this.pageOpacity = 1;
       this.pageTranslateY = 0;
-      console.info('[TreeHoleDetailNavPage] 🎬 启动渐显动画');
+      hilog.info(DOMAIN,TAG,'[TreeHoleDetailNavPage] 🎬 启动渐显动画');
     }, 100);
   }
 
@@ -684,12 +684,12 @@ struct TreeHoleDetailNavPage {
   private async loadComments(): Promise<void> {
     try {
       this.isLoading = true;
-      console.info(`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的评论`);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的评论`);
 
       const commentsData = await this.treeHoleApiService.getTreeHoleComments(this.treeHoleId, 1, 50);
       this.commentsList = commentsData.list;
 
-      console.info(`🌳 [TreeHoleDetailNavPage] 加载了 ${commentsData.list.length} 条评论`);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 加载了 ${commentsData.list.length} 条评论`);
     } catch (error) {
       console.error('🌳 [TreeHoleDetailNavPage] 加载评论失败:', error);
     } finally {
@@ -702,7 +702,7 @@ struct TreeHoleDetailNavPage {
    */
   private async loadImages(): Promise<void> {
     try {
-      console.info(`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的图片`);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 开始加载树洞 ${this.treeHoleId} 的图片`);
 
       const pictures = await this.treeHoleApiService.getPictures(this.treeHoleId);
       
@@ -714,7 +714,7 @@ struct TreeHoleDetailNavPage {
         this.treeHoleItem.images = imageUrls;
       }
 
-      console.info(`🌳 [TreeHoleDetailNavPage] 加载了 ${imageUrls.length} 张图片:`, imageUrls);
+      hilog.info(DOMAIN,TAG,`🌳 [TreeHoleDetailNavPage] 加载了 ${imageUrls.length} 张图片:`, imageUrls);
     } catch (error) {
       console.error('🌳 [TreeHoleDetailNavPage] 加载图片失败:', error);
       // 图片加载失败不影响主要功能，设置空数组
@@ -772,7 +772,7 @@ struct TreeHoleDetailNavPage {
    * 处理图片点击事件
    */
   private handleImageClick(imageUrl: string, imageIndex: number, allImages: string[]): void {
-    console.info(`🖼️ [TreeHoleDetailNavPage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
+    hilog.info(DOMAIN,TAG,`🖼️ [TreeHoleDetailNavPage] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
     
     this.previewImages = allImages;
     this.previewCurrentIndex = imageIndex;
@@ -783,7 +783,7 @@ struct TreeHoleDetailNavPage {
    * 处理图片预览关闭事件
    */
   private handleImagePreviewClose(): void {
-    console.info('🖼️ [TreeHoleDetailNavPage] 关闭图片预览');
+    hilog.info(DOMAIN,TAG,'🖼️ [TreeHoleDetailNavPage] 关闭图片预览');
     this.imagePreviewVisible = false;
     this.previewImages = [];
     this.previewCurrentIndex = 0;
@@ -800,7 +800,7 @@ struct TreeHoleDetailNavPage {
       primaryButton: {
         value: '确定',
         action: () => {
-          console.info('🌳 [TreeHoleDetailNavPage] Toast确认');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] Toast确认');
         }
       }
     });
@@ -817,14 +817,14 @@ struct TreeHoleDetailNavPage {
       primaryButton: {
         value: '取消',
         action: () => {
-          console.info('🌳 [TreeHoleDetailNavPage] 用户取消登录');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 用户取消登录');
         }
       },
       secondaryButton: {
         value: '去登录',
         fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
-          console.info('🌳 [TreeHoleDetailNavPage] 用户选择去登录');
+          hilog.info(DOMAIN,TAG,'🌳 [TreeHoleDetailNavPage] 用户选择去登录');
           // 跳转到登录页面
           try {
             this.pathStack.pushPathByName('LoginNavPage', null);

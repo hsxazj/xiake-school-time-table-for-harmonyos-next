@@ -9,12 +9,16 @@ import { CourseParser } from '../../common/utils/CourseParser';
 import { curves, promptAction } from '@kit.ArkUI';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
 import { StudentInfoManager } from '../../services/StudentInfoManager';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 周日期范围接口
 interface WeekDateRange {
   startDate: Date;
   endDate: Date;
 }
+
+const DOMAIN = 0x1000; // App Config domain
+const TAG = 'SchedulePage'; // 树洞功能启用状态存储键
 
 // 课程网格数据接口（参照class-schedule-c）
 interface ScheduleCourse {
@@ -674,7 +678,7 @@ export struct SchedulePage {
    * 处理周课表数据（使用接口数据）
    */
   private processWeekScheduleData(): void {
-    console.info('📅 [Schedule] 开始处理周课表数据...');
+    hilog.info(DOMAIN,TAG,'📅 [Schedule] 开始处理周课表数据...');
 
     // 初始化网格数据结构
     this.initializeScheduleGrid();
@@ -685,7 +689,7 @@ export struct SchedulePage {
     // 计算课程布局
     this.calculateCourseLayout();
 
-    console.info('📅 [Schedule] 周课表数据处理完成');
+    hilog.info(DOMAIN,TAG,'📅 [Schedule] 周课表数据处理完成');
   }
 
   /**
@@ -731,7 +735,7 @@ export struct SchedulePage {
     // 触发入场动画
     this.triggerCourseBlockEnterAnimation();
 
-    console.info(`📚 [Course] 处理了${this.courseList.length}门课程，当前周有${weekCourses.length}门课程`);
+    hilog.info(DOMAIN,TAG,`📚 [Course] 处理了${this.courseList.length}门课程，当前周有${weekCourses.length}门课程`);
   }
 
   /**
@@ -814,7 +818,7 @@ export struct SchedulePage {
    */
   private async loadStudentInfo(): Promise<void> {
     try {
-      console.info('📋 [Schedule] 开始获取学生信息...');
+      hilog.info(DOMAIN,TAG,'📋 [Schedule] 开始获取学生信息...');
       const context = getContext(this);
 
       // 1. 先尝试从内存获取
@@ -822,7 +826,7 @@ export struct SchedulePage {
 
       // 2. 如果内存中没有,尝试从首选项加载到内存
       if (!studentInfo) {
-        console.info('💾 [Schedule] 内存中无学生信息,尝试从首选项加载...');
+        hilog.info(DOMAIN,TAG,'💾 [Schedule] 内存中无学生信息,尝试从首选项加载...');
         const loaded = await this.studentInfoManager.loadStudentInfoToMemory(context);
         if (loaded) {
           studentInfo = this.studentInfoManager.getStudentInfoFromMemory();
@@ -831,7 +835,7 @@ export struct SchedulePage {
 
       // 3. 如果首选项中也没有,调用 API 获取并保存
       if (!studentInfo) {
-        console.info('🌐 [Schedule] 首选项中无学生信息,调用 API 获取...');
+        hilog.info(DOMAIN,TAG,'🌐 [Schedule] 首选项中无学生信息,调用 API 获取...');
         studentInfo = await this.jwxtGetInfoService.getInfo(context);
         // 保存到 StudentInfoManager
         this.studentInfoManager.saveStudentInfo(context, studentInfo);
@@ -842,7 +846,7 @@ export struct SchedulePage {
       if (this.studentInfo && this.studentInfo.grade) {
         // 将 grade 字符串转换为数字 (如 "2024" -> 2024)
         this.userGrade = parseInt(this.studentInfo.grade);
-        console.info(`📋 [Schedule] 学生入学年份: ${this.userGrade}`);
+        hilog.info(DOMAIN,TAG,`📋 [Schedule] 学生入学年份: ${this.userGrade}`);
       } else {
         console.warn('📋 [Schedule] 未获取到学生入学年份，将不限制年级');
         this.userGrade = 0; // 0 表示不限制
@@ -880,7 +884,7 @@ export struct SchedulePage {
       // 加载课程数据
       await this.loadCourseData();
 
-      console.info(`📅 [Schedule Init] 初始化完成: ${this.currentDate.getFullYear()}-${this.currentDate.getMonth() +
+      hilog.info(DOMAIN,TAG,`📅 [Schedule Init] 初始化完成: ${this.currentDate.getFullYear()}-${this.currentDate.getMonth() +
         1}-${this.currentDate.getDate()}`);
 
     } catch (error) {
@@ -907,31 +911,31 @@ export struct SchedulePage {
 
     try {
       // 步骤1: 尝试从缓存加载
-      console.info(`📚 [Course] 优先从缓存加载: ${academicYear}学年 第${semester}学期`);
+      hilog.info(DOMAIN,TAG,`📚 [Course] 优先从缓存加载: ${academicYear}学年 第${semester}学期`);
       const cachedCourses = await CacheManager.getSemesterCourses(academicYear, semester);
 
       if (cachedCourses && cachedCourses.length > 0) {
         // 有缓存，立即使用缓存数据渲染
-        console.info(`📚 [Course] 使用缓存数据: ${cachedCourses.length}门课程`);
+        hilog.info(DOMAIN,TAG,`📚 [Course] 使用缓存数据: ${cachedCourses.length}门课程`);
         this.courseList = cachedCourses;
         this.processWeekScheduleData();
       } else {
-        console.info(`📚 [Course] 无缓存数据，等待API请求`);
+        hilog.info(DOMAIN,TAG,`📚 [Course] 无缓存数据，等待API请求`);
         this.isLoadingCourses = true;
       }
 
       // 步骤2: 异步请求API更新（无论缓存是否存在都请求）
-      console.info(`📚 [Course] 后台请求API更新数据: ${academicYear}学年 第${semester}学期`);
+      hilog.info(DOMAIN,TAG,`📚 [Course] 后台请求API更新数据: ${academicYear}学年 第${semester}学期`);
 
       // 构建请求参数
       const params = this.jwxtCourseService.buildCourseParams(academicYear, semester);
-      console.info(`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
+      hilog.info(DOMAIN,TAG,`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
 
       // 获取课程列表
       const courseList: JwxtCourse[] = await this.jwxtCourseService.getCourseList(params);
 
       // 步骤3: API成功，覆盖旧数据和缓存
-      console.info(`📚 [Course] API请求成功，更新数据: ${courseList.length}门课程`);
+      hilog.info(DOMAIN,TAG,`📚 [Course] API请求成功，更新数据: ${courseList.length}门课程`);
       this.courseList = courseList;
 
       // 保存到缓存
@@ -940,7 +944,7 @@ export struct SchedulePage {
       // 重新处理课表数据
       this.processWeekScheduleData();
 
-      console.info(`📚 [Course] 成功加载并缓存${courseList.length}门课程`);
+      hilog.info(DOMAIN,TAG,`📚 [Course] 成功加载并缓存${courseList.length}门课程`);
 
     } catch (error) {
       console.error('📚 [Course] 加载课程数据失败:', error);
@@ -952,8 +956,8 @@ export struct SchedulePage {
       } else {
         // 无缓存数据，提示用户
         this.promptAction.showToast({
-          message: '网络连接失败，请检查网络后重试',
-          duration: 3000,
+          message: '使用缓存',
+          duration: 1000,
           bottom: '100vp'
         });
       }
@@ -981,7 +985,7 @@ export struct SchedulePage {
       this.totalWeeks = semesterStatus.currentSemester.totalWeeks;
       this.displayStatusText = semesterStatus.statusText;
 
-      console.info(`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek})`);
+      hilog.info(DOMAIN,TAG,`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek})`);
     }
   }
 
@@ -1033,15 +1037,15 @@ export struct SchedulePage {
       (oldSemester.academicYear !== this.currentSemester?.academicYear ||
         oldSemester.semester !== this.currentSemester?.semester)) {
       // 学期变化了，需要加载新学期数据
-      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 学期变化，加载新学期数据`);
       await this.loadCourseData();
     } else {
       // 学期未变化，直接重新处理显示
-      console.info(`📅 [Navigate] 左滑到上一周，使用本地数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 左滑到上一周，使用本地数据`);
       this.processWeekScheduleData();
     }
 
-    console.info(`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Navigate] 左滑到上一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
 
   /**
@@ -1067,17 +1071,17 @@ export struct SchedulePage {
       (oldSemester.academicYear !== this.currentSemester?.academicYear ||
         oldSemester.semester !== this.currentSemester?.semester)) {
       // 学期变化了，需要加载新学期数据
-      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 学期变化，加载新学期数据`);
       await this.loadCourseData();
     } else {
       // 学期未变化，直接重新处理显示
-      console.info(`📅 [Navigate] 右滑到下一周，使用本地数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 右滑到下一周，使用本地数据`);
       this.processWeekScheduleData();
     }
 
     this.calculateWeekDatesFromCurrentDate();
 
-    console.info(`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Navigate] 右滑到下一周: ${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`);
   }
 
   /**
@@ -1102,7 +1106,7 @@ export struct SchedulePage {
       // 重新加载新学期的课程数据
       await this.loadCourseData();
 
-      console.info(`📅 [Semester Switch] 切换到${rawTargetSemester.academicYear}学年第${rawTargetSemester.semester}学期`);
+      hilog.info(DOMAIN,TAG,`📅 [Semester Switch] 切换到${rawTargetSemester.academicYear}学年第${rawTargetSemester.semester}学期`);
     }
   }
 
@@ -1139,7 +1143,7 @@ export struct SchedulePage {
   private canAccessSemester(targetSemester: SemesterInfo | null): boolean {
     // 如果没有获取到学生入学年份,不限制
     if (!this.userGrade || this.userGrade === 0) {
-      console.info('📋 [Schedule] 未获取到入学年份，不限制访问');
+      hilog.info(DOMAIN,TAG,'📋 [Schedule] 未获取到入学年份，不限制访问');
       return true;
     }
 
@@ -1156,7 +1160,7 @@ export struct SchedulePage {
     // 例如: 2024年入学的学生,可以访问2024学年及以后的学期,不能访问2023学年及之前的学期
     const canAccess = this.userGrade <= academicYear;
 
-    console.info(`📋 [Schedule] 年级限制检查: 入学年份=${this.userGrade}, 目标学年=${academicYear}, 可访问=${canAccess}`);
+    hilog.info(DOMAIN,TAG,`📋 [Schedule] 年级限制检查: 入学年份=${this.userGrade}, 目标学年=${academicYear}, 可访问=${canAccess}`);
 
     return canAccess;
   }
@@ -1204,7 +1208,7 @@ export struct SchedulePage {
 
         // 检查是否可以右滑到上一周
         if (this.canSwipeToDate(previousWeekDate)) {
-          console.info(`📅 [Navigate] 右滑到上一周`);
+          hilog.info(DOMAIN,TAG,`📅 [Navigate] 右滑到上一周`);
           this.navigateToPreviousWeek();
         } else {
           // 显示年级限制提示
@@ -1219,7 +1223,7 @@ export struct SchedulePage {
 
         // 检查是否可以左滑到下一周
         if (this.canSwipeToDate(nextWeekDate)) {
-          console.info(`📅 [Navigate] 左滑到下一周`);
+          hilog.info(DOMAIN,TAG,`📅 [Navigate] 左滑到下一周`);
           this.navigateToNextWeek();
         } else {
           // 显示暂无数据提示
@@ -1268,7 +1272,7 @@ export struct SchedulePage {
         this.calculateWeekDatesFromCurrentDate();
 
         // 直接重新处理显示，不请求API
-        console.info(`📅 [Week Select] 选择第${weekNum}周，使用本地数据`);
+        hilog.info(DOMAIN,TAG,`📅 [Week Select] 选择第${weekNum}周，使用本地数据`);
         this.processWeekScheduleData();
       }
       this.showWeekPicker = false;
@@ -1287,7 +1291,7 @@ export struct SchedulePage {
       duration: 2000,
       bottom: '100vp'
     });
-    console.info('📅 [Toast] 显示年级限制提示');
+    hilog.info(DOMAIN,TAG,'📅 [Toast] 显示年级限制提示');
   }
 
   /**
@@ -1333,7 +1337,7 @@ export struct SchedulePage {
       duration: 2000,
       bottom: '100vp'
     });
-    console.info('📅 [Toast] 显示暂无数据提示');
+    hilog.info(DOMAIN,TAG,'📅 [Toast] 显示暂无数据提示');
   }
 
   /**
@@ -1394,7 +1398,7 @@ export struct SchedulePage {
    * 课程块点击事件（参考show-list.vue的showItem方法）
    */
   private onCourseBlockClick(course: ScheduleCourse, dayIndex: number, courseIndex: number): void {
-    console.info(`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
+    hilog.info(DOMAIN,TAG,`📚 [Course Click] ${course.courseName} - ${course.teacher.join(',')}`);
     // 此方法现在由buildCourseBlock中的onClick直接处理弹窗逻辑
   }
 
@@ -1432,7 +1436,7 @@ export struct SchedulePage {
     // 设置当前课程弹窗状态
     this.coursePopupStates.set(courseKey, show);
 
-    console.info(`📚 [Popup] ${show ? '显示' : '隐藏'}课程弹窗: ${courseKey}`);
+    hilog.info(DOMAIN,TAG,`📚 [Popup] ${show ? '显示' : '隐藏'}课程弹窗: ${courseKey}`);
   }
 
   /**
@@ -1442,7 +1446,7 @@ export struct SchedulePage {
     this.coursePopupStates.forEach((value, key) => {
       this.coursePopupStates.set(key, false);
     });
-    console.info('📚 [Popup] 关闭所有课程弹窗');
+    hilog.info(DOMAIN,TAG,'📚 [Popup] 关闭所有课程弹窗');
   }
 
   /**
@@ -1518,7 +1522,7 @@ export struct SchedulePage {
       }
     }
 
-    console.info(`📚 [Course Layout] 原始课程${courses.length}门，添加占位块后${result.length}个元素`);
+    hilog.info(DOMAIN,TAG,`📚 [Course Layout] 原始课程${courses.length}门，添加占位块后${result.length}个元素`);
     return result;
   }
 
@@ -1526,13 +1530,13 @@ export struct SchedulePage {
    * 触发课程块入场动画（一次性全部显示）
    */
   private triggerCourseBlockEnterAnimation(): void {
-    console.info('📅 [Animation] 开始触发课程块入场动画（一次性显示）');
+    hilog.info(DOMAIN,TAG,'📅 [Animation] 开始触发课程块入场动画（一次性显示）');
 
     // 简单延迟后一次性显示所有课程
     setTimeout(() => {
       // 清空控制状态，让所有课程显示
       this.courseBlockVisible = [];
-      console.info('📅 [Animation] 所有课程已显示');
+      hilog.info(DOMAIN,TAG,'📅 [Animation] 所有课程已显示');
     }, 50); // 从100减少到50，进一步加快显示速度
   }
 
@@ -1541,7 +1545,7 @@ export struct SchedulePage {
    */
   private triggerCourseBlockExitAnimation(): Promise<void> {
     return new Promise((resolve) => {
-      console.info('📅 [Animation] 开始退场动画');
+      hilog.info(DOMAIN,TAG,'📅 [Animation] 开始退场动画');
 
       // 初始化隐藏状态
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -1555,7 +1559,7 @@ export struct SchedulePage {
 
       // 等待转场动画完成
       setTimeout(() => {
-        console.info('📅 [Animation] 退场动画完成');
+        hilog.info(DOMAIN,TAG,'📅 [Animation] 退场动画完成');
         resolve();
       }, 100); // 从200减少到100，进一步加快消失速度
     });
@@ -1586,7 +1590,7 @@ export struct SchedulePage {
    * 新策略：不再请求API，直接使用本地数据重新渲染
    */
   private async navigateToCurrentWeek(): Promise<void> {
-    console.info('📅 [Navigate] 回到本周');
+    hilog.info(DOMAIN,TAG,'📅 [Navigate] 回到本周');
 
     // 先播放退场动画
     await this.triggerCourseBlockExitAnimation();
@@ -1606,14 +1610,14 @@ export struct SchedulePage {
       (oldSemester.academicYear !== this.currentSemester?.academicYear ||
         oldSemester.semester !== this.currentSemester?.semester)) {
       // 学期变化了，需要加载新学期数据
-      console.info(`📅 [Navigate] 学期变化，加载新学期数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 学期变化，加载新学期数据`);
       await this.loadCourseData();
     } else {
       // 学期未变化，直接重新处理显示
-      console.info(`📅 [Navigate] 回到本周，使用本地数据`);
+      hilog.info(DOMAIN,TAG,`📅 [Navigate] 回到本周，使用本地数据`);
       this.processWeekScheduleData();
     }
 
-    console.info(`📅 [Navigate] 已回到本周: ${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
+    hilog.info(DOMAIN,TAG,`📅 [Navigate] 已回到本周: ${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`);
   }
 }

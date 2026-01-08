@@ -1,6 +1,10 @@
 import { preferences } from '@kit.ArkData';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const PREFERENCES_NAME: string = 'SchoolTimeTablePreferences';
+
+const DOMAIN = 0x1000; // App Config domain
+const TAG = 'PreferencesUtil'; // 树洞功能启用状态存储键
 
 export class PreferencesUtil {
   private static preferencesUtil: PreferencesUtil;
@@ -51,7 +55,7 @@ export class PreferencesUtil {
       const preferences = this.getPreferences(context);
 
       if (preferences.hasSync(key)) {
-        console.info(`The key ${key} is contained.`);
+        hilog.info(DOMAIN,TAG,`The key ${key} is contained.`);
         if (override) {
           preferences.putSync(key, value);
         }
@@ -61,7 +65,7 @@ export class PreferencesUtil {
 
       // 使用同步刷新确保数据立即写入
       preferences.flushSync();
-      console.info(`Successfully saved ${key}: ${value}`);
+      hilog.info(DOMAIN,TAG,`Successfully saved ${key}: ${value}`);
     } catch (err) {
       console.error(`Save value by preferences error: ${err}`)
     }
@@ -96,7 +100,7 @@ export class PreferencesUtil {
 
       // 使用同步刷新确保数据立即写入
       preferences.flushSync();
-      console.info(`Successfully removed ${key}`);
+      hilog.info(DOMAIN,TAG,`Successfully removed ${key}`);
     } catch (err) {
       console.error(`Remove value by preferences error: ${err}`)
     }
@@ -113,7 +117,7 @@ export class PreferencesUtil {
 
       // 使用同步刷新确保数据立即写入
       preferences.flushSync();
-      console.info('Successfully cleared all data');
+      hilog.info(DOMAIN,TAG,'Successfully cleared all data');
     } catch (err) {
       console.error(`Failed to clear all values, Cause: ${err}`);
     }

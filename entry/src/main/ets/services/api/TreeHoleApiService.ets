@@ -129,7 +129,7 @@ export class TreeHoleApiService {
   private httpService = HttpService.getInstance();
 
   private constructor() {
-    console.info('🌳 [TreeHoleApiService] 初始化树洞API服务');
+    hilog.info(DOMAIN,TAG,'🌳 [TreeHoleApiService] 初始化树洞API服务');
   }
 
   public static getInstance(): TreeHoleApiService {

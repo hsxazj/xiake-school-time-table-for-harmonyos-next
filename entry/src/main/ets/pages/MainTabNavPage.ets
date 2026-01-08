@@ -3,11 +3,15 @@ import { SchedulePage } from '../components/pages/SchedulePage';
 import { MinePage } from '../components/pages/MinePage';
 import { ExamPage } from '../components/pages/ExamPage';
 import { AppConfigManager } from '../services/AppConfigManager';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 @Builder
 export function MainTabNavPageBuilder() {
   MainTabNavPage();
 }
+
+const DOMAIN = 0x1000; // App Config domain
+const TAG = 'MainTabNavPage'; // 树洞功能启用状态存储键
 
 @Component
 struct MainTabNavPage {
@@ -96,7 +100,7 @@ struct MainTabNavPage {
     })
     .onReady((ctx: NavDestinationContext) => {
       this.pathStack = ctx.pathStack;
-      console.info('all path stack:', this.pathStack.getAllPathName())
+      hilog.info(DOMAIN,TAG,'all path stack:', this.pathStack.getAllPathName())
     })
   }
 
@@ -107,7 +111,7 @@ struct MainTabNavPage {
     try {
       // 从AppConfigManager获取树洞功能状态
       this.treeHoleEnabled = this.appConfigManager.getTreeHoleEnabled();
-      console.info(`[MainTabNavPage] 树洞功能状态: ${this.treeHoleEnabled}`);
+      hilog.info(DOMAIN,TAG,`[MainTabNavPage] 树洞功能状态: ${this.treeHoleEnabled}`);
     } catch (error) {
       console.error('[MainTabNavPage] 加载树洞功能设置失败:', error);
       this.treeHoleEnabled = true; // 默认启用

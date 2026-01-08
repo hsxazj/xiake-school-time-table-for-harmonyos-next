@@ -92,8 +92,8 @@ userInfo >
 =>
 {
     // 处理成功情况
-    console.info("id" + response.data.id)
-    console.info(JSON.stringify(response));
+    hilog.info(DOMAIN,TAG,"id" + response.data.id)
+    hilog.info(DOMAIN,TAG,JSON.stringify(response));
 }
 )
 .
@@ -103,7 +103,7 @@ AxiosError
 =>
 {
     // 处理错误情况
-    console.info(JSON.stringify(error));
+    hilog.info(DOMAIN,TAG,JSON.stringify(error));
 }
 )
 .
@@ -125,8 +125,8 @@ userInfo >
 )
 =>
 {
-    console.info("id" + response.data.id)
-    console.info(JSON.stringify(response));
+    hilog.info(DOMAIN,TAG,"id" + response.data.id)
+    hilog.info(DOMAIN,TAG,JSON.stringify(response));
 }
 )
 .
@@ -135,7 +135,7 @@ AxiosError
 )
 =>
 {
-    console.info(JSON.stringify(error));
+    hilog.info(DOMAIN,TAG,JSON.stringify(error));
 }
 )
 .
@@ -180,12 +180,12 @@ string >
 )
 =>
 {
-    console.info(JSON.stringify(response));
+    hilog.info(DOMAIN,TAG,JSON.stringify(response));
 }
 )
 .
 catch((error) => {
-    console.info(JSON.stringify(error));
+    hilog.info(DOMAIN,TAG,JSON.stringify(error));
 });
 ```
 
@@ -251,7 +251,7 @@ AxiosResponse
 )
 =>
 {
-    console.info('result:' + JSON.stringify(res.data));
+    hilog.info(DOMAIN,TAG,'result:' + JSON.stringify(res.data));
 }
 )
 .
@@ -277,7 +277,7 @@ AxiosResponse
 )
 =>
 {
-    console.info("result:" + JSON.stringify(response.data));
+    hilog.info(DOMAIN,TAG,"result:" + JSON.stringify(response.data));
 }
 )
 .
@@ -314,7 +314,7 @@ AxiosResponse
 )
 =>
 {
-    console.info("result:" + JSON.stringify(response.data));
+    hilog.info(DOMAIN,TAG,"result:" + JSON.stringify(response.data));
 }
 )
 .
@@ -979,7 +979,7 @@ try {
     formData.append('file', buf2);
     // formData.append('file', buf2, { filename: 'text.txt', type: 'text/plain'}); 设置多部分表单数据的数据名称和数据类型类型
 } catch (err) {
-    console.info('err:' + JSON.stringify(err));
+    hilog.info(DOMAIN,TAG,'err:' + JSON.stringify(err));
 }
 // 发送请求
 axios.post<
@@ -1036,7 +1036,7 @@ AxiosResponse
 )
 =>
 {
-    console.info("result" + JSON.stringify(res.data));
+    hilog.info(DOMAIN,TAG,"result" + JSON.stringify(res.data));
 }
 )
 .
@@ -1116,7 +1116,7 @@ string >
 )
 =>
 {
-    console.info("result" + JSON.stringify(res.data));
+    hilog.info(DOMAIN,TAG,"result" + JSON.stringify(res.data));
 }
 )
 .
@@ -1219,7 +1219,7 @@ axios({
 )
 .
 then((res) => {
-    console.info("result: " + JSON.stringify(res.data));
+    hilog.info(DOMAIN,TAG,"result: " + JSON.stringify(res.data));
 }).catch((error) => {
     console.error("error:" + JSON.stringify(error));
 })

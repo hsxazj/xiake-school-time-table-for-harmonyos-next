@@ -142,13 +142,13 @@ export struct ImagePreviewDialog {
               // 缩放手势
               PinchGesture({ fingers: 2, distance: 1 })
                 .onActionStart(() => {
-                  console.info('🖼️ [ImagePreviewDialog] 开始缩放手势');
+                  hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 开始缩放手势');
                 })
                 .onActionUpdate((event: GestureEvent) => {
                   this.imageScale = Math.max(0.5, Math.min(3, event.scale));
                 })
                 .onActionEnd(() => {
-                  console.info('🖼️ [ImagePreviewDialog] 缩放手势结束');
+                  hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 缩放手势结束');
                   // 缩放结束后重置位置
                   if (this.imageScale < 1) {
                     this.resetImageTransform();
@@ -159,9 +159,9 @@ export struct ImagePreviewDialog {
               PanGesture({ fingers: 1, distance: 3, direction: PanDirection.All })
                 .onActionStart(() => {
                   if (this.imageScale > 1.1) {
-                    console.info('🖼️ [ImagePreviewDialog] 开始拖拽手势');
+                    hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 开始拖拽手势');
                   } else {
-                    console.info('🖼️ [ImagePreviewDialog] 开始滑动手势');
+                    hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 开始滑动手势');
                   }
                 })
                 .onActionUpdate((event: GestureEvent) => {
@@ -180,7 +180,7 @@ export struct ImagePreviewDialog {
                 })
                 .onActionEnd((event: GestureEvent) => {
                   if (this.imageScale > 1.1) {
-                    console.info('🖼️ [ImagePreviewDialog] 拖拽手势结束');
+                    hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 拖拽手势结束');
                   } else if (this.images.length > 1 && this.imageScale <= 1.1) {
                     // 判断是否为有效的水平滑动
                     const isHorizontalSwipe = Math.abs(event.offsetX) > Math.abs(event.offsetY) && Math.abs(event.offsetX) > 20;
@@ -190,11 +190,11 @@ export struct ImagePreviewDialog {
                     if (isHorizontalSwipe) {
                       if (event.offsetX > 20 && this.currentImageIndex > 0) {
                         // 向右滑动，显示上一张
-                        console.info('🖼️ [ImagePreviewDialog] 滑动到上一张');
+                        hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 滑动到上一张');
                         this.switchToPrevious();
                       } else if (event.offsetX < -20 && this.currentImageIndex < this.images.length - 1) {
                         // 向左滑动，显示下一张
-                        console.info('🖼️ [ImagePreviewDialog] 滑动到下一张');
+                        hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 滑动到下一张');
                         this.switchToNext();
                       }
                     }
@@ -206,10 +206,10 @@ export struct ImagePreviewDialog {
             // 单击手势关闭预览
             TapGesture({ count: 1 })
               .onAction(() => {
-                console.info('🖼️ [ImagePreviewDialog] 单击图片');
+                hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 单击图片');
                 // 激进优化：延时减少到50ms，最大化响应速度
                 this.clickTimer = setTimeout(() => {
-                  console.info('🖼️ [ImagePreviewDialog] 单击关闭预览');
+                  hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 单击关闭预览');
                   this.handleClose();
                 }, 50);
               })
@@ -218,7 +218,7 @@ export struct ImagePreviewDialog {
             // 双击手势切换缩放状态
             TapGesture({ count: 2 })
               .onAction(() => {
-                console.info('🖼️ [ImagePreviewDialog] 双击切换缩放');
+                hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 双击切换缩放');
                 // 清除单击定时器
                 if (this.clickTimer) {
                   clearTimeout(this.clickTimer);
@@ -297,7 +297,7 @@ export struct ImagePreviewDialog {
    * 处理关闭事件
    */
   private handleClose(): void {
-    console.info('🖼️ [ImagePreviewDialog] 关闭图片预览');
+    hilog.info(DOMAIN,TAG,'🖼️ [ImagePreviewDialog] 关闭图片预览');
     this.startHideAnimation();
   }
 
@@ -313,7 +313,7 @@ export struct ImagePreviewDialog {
       }, () => {
         this.currentImageIndex--;
       });
-      console.info(`🖼️ [ImagePreviewDialog] 切换到上一张: ${this.currentImageIndex - 1}`);
+      hilog.info(DOMAIN,TAG,`🖼️ [ImagePreviewDialog] 切换到上一张: ${this.currentImageIndex - 1}`);
     }
   }
 
@@ -329,7 +329,7 @@ export struct ImagePreviewDialog {
       }, () => {
         this.currentImageIndex++;
       });
-      console.info(`🖼️ [ImagePreviewDialog] 切换到下一张: ${this.currentImageIndex + 1}`);
+      hilog.info(DOMAIN,TAG,`🖼️ [ImagePreviewDialog] 切换到下一张: ${this.currentImageIndex + 1}`);
     }
   }
 

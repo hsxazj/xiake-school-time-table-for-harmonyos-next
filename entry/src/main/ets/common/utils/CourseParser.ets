@@ -1,3 +1,8 @@
+import { hilog } from "@kit.PerformanceAnalysisKit";
+
+const DOMAIN = 0x1000; // App Config domain
+const TAG = 'CourseParser'; // 树洞功能启用状态存储键
+
 /**
  * 课程数据解析工具类
  *
@@ -84,7 +89,7 @@ export class CourseParser {
       return CourseParser.parseWeeksExpression(weeksStr);
 
     } catch (error) {
-      console.error('解析周次失败:', error, weeksStr);
+      hilog.error(DOMAIN, TAG, '解析周次失败:', error, weeksStr);
       return [];
     }
   }

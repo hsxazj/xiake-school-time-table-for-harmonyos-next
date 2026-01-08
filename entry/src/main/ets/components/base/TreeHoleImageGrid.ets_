@@ -125,7 +125,7 @@ export struct TreeHoleImageGrid {
    * 处理图片点击事件
    */
   private handleImageClick(imageUrl: string, imageIndex: number): void {
-    console.info(`🖼️ [TreeHoleImageGrid] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
+    hilog.info(DOMAIN,TAG,`🖼️ [TreeHoleImageGrid] 点击图片: ${imageIndex}, URL: ${imageUrl}`);
     
     if (this.onImageClick) {
       this.onImageClick.call(imageUrl, imageIndex, this.images);
