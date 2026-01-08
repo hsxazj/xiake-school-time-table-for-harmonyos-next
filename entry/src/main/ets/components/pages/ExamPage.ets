@@ -293,7 +293,6 @@ export struct ExamPage {
     Column() {
       // 序号和课程名称
       Row() {
-
         Column() {
           Text(examInfo.name || '未知课程')
             .fontSize(17)
@@ -312,32 +311,38 @@ export struct ExamPage {
       // 考试详细信息
       Column({ space: 8 }) {
         // 考试时间
-        Row() {
-          Text(examInfo.time || '时间待定')
-            .fontSize(15)
-            .fontColor('#666666')
-            .layoutWeight(1)
+        if (examInfo.time) {
+          Row() {
+            Text(examInfo.time)
+              .fontSize(15)
+              .fontColor('#666666')
+              .layoutWeight(1)
+          }
+          .width('100%')
         }
-        .width('100%')
 
-        // 考场信息
-        Row() {
-          Text(examInfo.classroom || '考场待定')
-            .fontSize(15)
-            .fontColor('#666666')
-            .layoutWeight(1)
+        if(examInfo.classroom){
+          // 考场信息
+          Row() {
+            Text(examInfo.classroom)
+              .fontSize(15)
+              .fontColor('#666666')
+              .layoutWeight(1)
+          }
+          .width('100%')
         }
-        .width('100%')
 
-        // 座位号
-        Row() {
-          Text(`座位号: ${examInfo.seat || '待定'}`)
-            .fontSize(15)
-            .fontColor('#666666')
-            .fontWeight(FontWeight.Medium)
-            .layoutWeight(1)
+        if(examInfo.seat){
+          // 座位号
+          Row() {
+            Text(`座位号: ${examInfo.seat || '待定'}`)
+              .fontSize(15)
+              .fontColor('#666666')
+              .fontWeight(FontWeight.Medium)
+              .layoutWeight(1)
+          }
+          .width('100%')
         }
-        .width('100%')
 
         // 考试成绩（如果有）
         if (examInfo.score !== undefined && examInfo.score !== '') {
@@ -719,35 +724,68 @@ export struct ExamPage {
   }
 
   /**
-   * 将成绩信息匹配到考试信息中
-   * @param examList 考试信息列表
+   * 将成绩信息匹配到考试信息中<br>
+   * 注意：没有考试信息的课程也会以“虚拟考试”形式返回
+   * @param examList  考试信息列表
    * @param gradeList 成绩信息列表
-   * @returns 合并后的考试信息列表
+   * @returns 合并后的考试信息列表（包含虚拟考试）
    */
-  private mergeExamWithGrades(examList: ExamInfo[], gradeList: GradeInfo[]): ExamInfo[] {
-    // TODO 应该把没有考试的成绩也显示
-    return examList.map((exam: ExamInfo) => {
-      // 查找对应的成绩
-      const matchedGrade = gradeList.find((grade: GradeInfo) => grade.name === exam.name);
+  private mergeExamWithGrades(
+    examList: ExamInfo[],
+    gradeList: GradeInfo[]
+  ): ExamInfo[] {
+    /* 1. 先处理“有考试”的部分 */
+    const withExam: ExamInfo[] = examList.map((exam) => {
+      const matchedGrade = gradeList.find((g) => g.name === exam.name);
 
       if (matchedGrade) {
-        hilog.info(DOMAIN, TAG, '🎯 [ExamPage] 课程 "%{public}s" 匹配到成绩: %{public}s',
-          exam.name, matchedGrade.score);
-        // 返回包含成绩的考试信息（手动复制属性，不使用展开运算符）
+        hilog.info(
+          DOMAIN,
+          TAG,
+          '🎯 [ExamPage] 课程 "%{public}s" 匹配到成绩: %{public}s',
+          exam.name,
+          matchedGrade.score
+        );
+        /* 手动复制，避免展开运算符 */
         const examWithScore: ExamInfo = {
           id: exam.id,
           name: exam.name,
           time: exam.time,
           classroom: exam.classroom,
           seat: exam.seat,
-          score: matchedGrade.score
+          score: matchedGrade.score,
         };
         return examWithScore;
       } else {
-        hilog.warn(DOMAIN, TAG, '⚠️ [ExamPage] 课程 "%{public}s" 未找到对应成绩', exam.name);
-        // 返回不包含成绩的考试信息
-        return exam;
+        hilog.warn(
+          DOMAIN,
+          TAG,
+          '⚠️ [ExamPage] 课程 "%{public}s" 未找到对应成绩',
+          exam.name
+        );
+        return exam; // 原考试对象，不含成绩
       }
     });
+
+    /* 2. 再处理“只有成绩、没有考试”的课程 */
+    const gradeMap = new Set(examList.map((e) => e.name)); // 已有考试的课程名
+    const virtualExams: ExamInfo[] = gradeList
+      .filter((g) => !gradeMap.has(g.name))
+      .map((g) => {
+        hilog.info(
+          DOMAIN,
+          TAG,
+          '🎯 [ExamPage] 课程 "%{public}s" 无考试信息，生成虚拟考试，成绩: %{public}s',
+          g.name,
+          g.score
+        );
+        return {
+          name: g.name,
+          score: g.score, // 挂上成绩
+        } as ExamInfo;
+      });
+
+    /* 3. 合并后一次性返回 */
+    return withExam.concat(virtualExams);
   }
 }
