@@ -103,7 +103,7 @@ export struct LoginPageContent {
         .margin({ bottom: 8 })
 
       // 副标题
-      Text('请登录您的账号')
+      Text('使用教务系统登录')
         .fontSize(16)
         .fontColor('#6B7280')
         .margin({ bottom: 40 })

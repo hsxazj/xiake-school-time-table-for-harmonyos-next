@@ -2,7 +2,6 @@ import { ApiResponse, HttpService } from './HttpService';
 import { DateUtil } from '../../common/utils/DateUtil';
 import { ConfigApiResponseData, CurrentSemesterStatus, SemesterInfo, WeekDateRange } from '../../models/ConfigModels';
 import { CacheManager } from '../../common/utils/CacheManager';
-import { ErrorUtil } from '../../common/utils/ErrorUtil';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 // 导出类型
@@ -148,7 +147,7 @@ export class ConfigApiService {
 
     } catch (error) {
       // 无缓存或非网络错误: 抛出原始错误
-      throw new Error(ErrorUtil.formatError(error));
+      throw new Error('从api获取数据失败');
     }
   }
 
