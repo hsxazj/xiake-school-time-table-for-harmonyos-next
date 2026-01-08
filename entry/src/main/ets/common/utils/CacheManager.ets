@@ -29,8 +29,8 @@ interface CachedSemesterCoursesData {
   data: JwxtCourse[];
   cachedAt: number;
   version: string;
-  academicYear: string;  // 学年，如 "2024"
-  semester: number;      // 学期，1 或 2
+  academicYear: string; // 学年，如 "2024"
+  semester: number; // 学期，1 或 2
 }
 
 // 考试信息缓存数据结构
@@ -38,8 +38,8 @@ interface CachedExamData {
   data: ExamInfo[];
   cachedAt: number;
   version: string;
-  academicYear: number;  // 学年，如 2024
-  semester: number;      // 学期，1 或 2
+  academicYear: number; // 学年，如 2024
+  semester: number; // 学期，1 或 2
 }
 
 // 成绩信息缓存数据结构
@@ -47,8 +47,8 @@ interface CachedGradeData {
   data: GradeInfo[];
   cachedAt: number;
   version: string;
-  academicYear: number;  // 学年，如 2024
-  semester: number;      // 学期，1 或 2
+  academicYear: number; // 学年，如 2024
+  semester: number; // 学期，1 或 2
 }
 
 // 配置数据结构接口
@@ -73,19 +73,20 @@ function buildScheduleCacheKey(year: string, term: string, week: number): string
  * 职责: 统一管理应用缓存操作
  */
 export class CacheManager {
-
   /**
    * 保存课表缓存（按需缓存，用于离线降级）
    * @param year 学年 (如 "2024")
    * @param term 学期代号 ("3"=第一学期, "12"=第二学期)
    * @param week 周次
    * @param data 课程数据列表
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
   public static async saveScheduleCache(
     year: string,
     term: string,
     week: number,
-    data: CourseInfo[]
+    data: CourseInfo[],
+    context?: Context
   ): Promise<void> {
     try {
       const cacheKey = buildScheduleCacheKey(year, term, week);
@@ -96,8 +97,8 @@ export class CacheManager {
       };
       const cacheValue = JSON.stringify(cacheData);
 
-      const context = getContext();
-      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+      const ctx = context ?? getContext();
+      PreferencesUtil.getInstance().putValue(ctx, cacheKey, cacheValue, true);
 
       hilog.info(DOMAIN, TAG, `✅ 缓存课表成功: ${cacheKey}`);
     } catch (error) {
@@ -111,17 +112,19 @@ export class CacheManager {
    * @param year 学年
    * @param term 学期代号
    * @param week 周次
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @returns 课程数据列表,如果不存在则返回null
    */
   public static async getScheduleCache(
     year: string,
     term: string,
-    week: number
+    week: number,
+    context?: Context
   ): Promise<CourseInfo[] | null> {
     try {
       const cacheKey = buildScheduleCacheKey(year, term, week);
-      const context = getContext();
-      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+      const ctx = context ?? getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(ctx, cacheKey, '') as string;
 
       if (!cacheValue) {
         hilog.info(DOMAIN, TAG, `📭 缓存不存在: ${cacheKey}`);
@@ -141,8 +144,9 @@ export class CacheManager {
   /**
    * 保存配置缓存
    * @param data 配置数据
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
-  public static async saveConfigCache(data: ConfigApiResponseData): Promise<void> {
+  public static async saveConfigCache(data: ConfigApiResponseData, context?: Context): Promise<void> {
     try {
       // 将Map转换为普通对象以便JSON序列化
       const startObj: Record<string, string[]> = {};
@@ -168,8 +172,8 @@ export class CacheManager {
       };
       const cacheValue = JSON.stringify(cacheData);
 
-      const context = getContext();
-      PreferencesUtil.getInstance().putValue(context, CACHE_KEY_CONFIG, cacheValue, true);
+      const ctx = context ?? getContext();
+      PreferencesUtil.getInstance().putValue(ctx, CACHE_KEY_CONFIG, cacheValue, true);
 
       hilog.info(DOMAIN, TAG, `✅ 缓存配置成功`);
     } catch (error) {
@@ -180,12 +184,13 @@ export class CacheManager {
 
   /**
    * 获取配置缓存
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @returns 配置数据,如果不存在则返回null
    */
-  public static async getConfigCache(): Promise<ConfigApiResponseData | null> {
+  public static async getConfigCache(context?: Context): Promise<ConfigApiResponseData | null> {
     try {
-      const context = getContext();
-      const cacheValue = PreferencesUtil.getInstance().getValue(context, CACHE_KEY_CONFIG, '') as string;
+      const ctx = context ?? getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(ctx, CACHE_KEY_CONFIG, '') as string;
 
       if (!cacheValue) {
         hilog.info(DOMAIN, TAG, `📭 配置缓存不存在`);
@@ -223,11 +228,13 @@ export class CacheManager {
    * @param academicYear 学年，如 "2024"
    * @param semester 学期，1 或 2
    * @param courses 课程列表
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
   public static async saveSemesterCourses(
     academicYear: string,
     semester: number,
-    courses: JwxtCourse[]
+    courses: JwxtCourse[],
+    context?: Context
   ): Promise<void> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_SEMESTER_COURSES}${academicYear}_${semester}`;
@@ -240,8 +247,8 @@ export class CacheManager {
       };
       const cacheValue = JSON.stringify(cacheData);
 
-      const context = getContext();
-      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+      const ctx = context ?? getContext();
+      PreferencesUtil.getInstance().putValue(ctx, cacheKey, cacheValue, true);
 
       hilog.info(DOMAIN, TAG, `✅ 缓存学期课程成功: ${academicYear}学年第${semester}学期, 共${courses.length}门课程`);
     } catch (error) {
@@ -258,12 +265,13 @@ export class CacheManager {
    */
   public static async getSemesterCourses(
     academicYear: string,
-    semester: number
+    semester: number,
+    context?: Context
   ): Promise<JwxtCourse[] | null> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_SEMESTER_COURSES}${academicYear}_${semester}`;
-      const context = getContext();
-      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+      let ctx = context ?? getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(ctx, cacheKey, '') as string;
 
       if (!cacheValue) {
         hilog.info(DOMAIN, TAG, `📭 学期课程缓存不存在: ${academicYear}学年第${semester}学期`);
@@ -271,7 +279,8 @@ export class CacheManager {
       }
 
       const cached: CachedSemesterCoursesData = JSON.parse(cacheValue);
-      hilog.info(DOMAIN, TAG, `📦 读取学期课程缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}门课程, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+      hilog.info(DOMAIN, TAG,
+        `📦 读取学期课程缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}门课程, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
 
       return cached.data;
     } catch (error) {
@@ -285,11 +294,13 @@ export class CacheManager {
    * @param academicYear 学年，如 2024
    * @param semester 学期，1 或 2
    * @param examList 考试信息列表
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
   public static async saveExamCache(
     academicYear: number,
     semester: number,
-    examList: ExamInfo[]
+    examList: ExamInfo[],
+    context?: Context
   ): Promise<void> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_EXAM}${academicYear}_${semester}`;
@@ -302,10 +313,11 @@ export class CacheManager {
       };
       const cacheValue = JSON.stringify(cacheData);
 
-      const context = getContext();
-      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+      const ctx = context ?? getContext();
+      PreferencesUtil.getInstance().putValue(ctx, cacheKey, cacheValue, true);
 
-      hilog.info(DOMAIN, TAG, `✅ 缓存考试信息成功: ${academicYear}学年第${semester}学期, 共${examList.length}条考试信息`);
+      hilog.info(DOMAIN, TAG,
+        `✅ 缓存考试信息成功: ${academicYear}学年第${semester}学期, 共${examList.length}条考试信息`);
     } catch (error) {
       hilog.error(DOMAIN, TAG, `❌ 缓存考试信息失败: ${JSON.stringify(error)}`);
       // 错误静默处理,不抛出
@@ -316,16 +328,18 @@ export class CacheManager {
    * 获取考试信息缓存
    * @param academicYear 学年，如 2024
    * @param semester 学期，1 或 2
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @returns 考试信息列表，如果不存在则返回null
    */
   public static async getExamCache(
     academicYear: number,
-    semester: number
+    semester: number,
+    context?: Context
   ): Promise<ExamInfo[] | null> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_EXAM}${academicYear}_${semester}`;
-      const context = getContext();
-      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+      const ctx = context ?? getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(ctx, cacheKey, '') as string;
 
       if (!cacheValue) {
         hilog.info(DOMAIN, TAG, `📭 考试信息缓存不存在: ${academicYear}学年第${semester}学期`);
@@ -333,7 +347,8 @@ export class CacheManager {
       }
 
       const cached: CachedExamData = JSON.parse(cacheValue);
-      hilog.info(DOMAIN, TAG, `📦 读取考试信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条考试信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+      hilog.info(DOMAIN, TAG,
+        `📦 读取考试信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条考试信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
 
       return cached.data;
     } catch (error) {
@@ -347,11 +362,13 @@ export class CacheManager {
    * @param academicYear 学年，如 2024
    * @param semester 学期，1 或 2
    * @param gradeList 成绩信息列表
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
   public static async saveGradeCache(
     academicYear: number,
     semester: number,
-    gradeList: GradeInfo[]
+    gradeList: GradeInfo[],
+    context?: Context
   ): Promise<void> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_GRADE}${academicYear}_${semester}`;
@@ -364,10 +381,11 @@ export class CacheManager {
       };
       const cacheValue = JSON.stringify(cacheData);
 
-      const context = getContext();
-      PreferencesUtil.getInstance().putValue(context, cacheKey, cacheValue, true);
+      const ctx = context ?? getContext();
+      PreferencesUtil.getInstance().putValue(ctx, cacheKey, cacheValue, true);
 
-      hilog.info(DOMAIN, TAG, `✅ 缓存成绩信息成功: ${academicYear}学年第${semester}学期, 共${gradeList.length}条成绩信息`);
+      hilog.info(DOMAIN, TAG,
+        `✅ 缓存成绩信息成功: ${academicYear}学年第${semester}学期, 共${gradeList.length}条成绩信息`);
     } catch (error) {
       hilog.error(DOMAIN, TAG, `❌ 缓存成绩信息失败: ${JSON.stringify(error)}`);
       // 错误静默处理,不抛出
@@ -378,16 +396,18 @@ export class CacheManager {
    * 获取成绩信息缓存
    * @param academicYear 学年，如 2024
    * @param semester 学期，1 或 2
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @returns 成绩信息列表，如果不存在则返回null
    */
   public static async getGradeCache(
     academicYear: number,
-    semester: number
+    semester: number,
+    context?: Context
   ): Promise<GradeInfo[] | null> {
     try {
       const cacheKey = `${CACHE_KEY_PREFIX_GRADE}${academicYear}_${semester}`;
-      const context = getContext();
-      const cacheValue = PreferencesUtil.getInstance().getValue(context, cacheKey, '') as string;
+      const ctx = context ?? getContext();
+      const cacheValue = PreferencesUtil.getInstance().getValue(ctx, cacheKey, '') as string;
 
       if (!cacheValue) {
         hilog.info(DOMAIN, TAG, `📭 成绩信息缓存不存在: ${academicYear}学年第${semester}学期`);
@@ -395,7 +415,8 @@ export class CacheManager {
       }
 
       const cached: CachedGradeData = JSON.parse(cacheValue);
-      hilog.info(DOMAIN, TAG, `📦 读取成绩信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条成绩信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
+      hilog.info(DOMAIN, TAG,
+        `📦 读取成绩信息缓存成功: ${academicYear}学年第${semester}学期, 共${cached.data.length}条成绩信息, 缓存时间: ${new Date(cached.cachedAt).toLocaleString()}`);
 
       return cached.data;
     } catch (error) {

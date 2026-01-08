@@ -106,8 +106,8 @@ export class AppConfigManager {
         this.loadTreeHoleSettings(context);
       }
 
-      // Step 1: 尝试从缓存快速初始化
-      const configResponse = await this.configService.getConfig();
+      // Step 1: 尝试从缓存快速初始化(传入context以支持卡片环境)
+      const configResponse = await this.configService.getConfig(context);
 
       // 判断是否使用了缓存
       const usedCache = configResponse.msg === '缓存数据';
@@ -187,8 +187,8 @@ export class AppConfigManager {
     try {
       hilog.info(DOMAIN, 'AppConfig', '🔄 [AppConfigManager] 开始初始化应用配置...');
 
-      // Step 1: 获取配置数据
-      const configResponse = await this.configService.getConfig();
+      // Step 1: 获取配置数据(传入context以支持卡片环境)
+      const configResponse = await this.configService.getConfig(context);
       const usedCache = configResponse.msg === '缓存数据' || configResponse.msg === '离线数据';
 
       if (usedCache) {

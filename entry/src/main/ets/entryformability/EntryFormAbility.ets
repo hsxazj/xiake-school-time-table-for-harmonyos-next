@@ -78,7 +78,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
     return formInfo.FormState.READY;
   }
 
-  private async loadTodayCourses(formId: string, overrideClassId?: string): Promise<void> {
+  private async loadTodayCourses(formId: string): Promise<void> {
     try {
       // 先更新为加载状态
       let loadingFormData: TodayCourseFormData = {
@@ -92,8 +92,16 @@ export default class EntryFormAbility extends FormExtensionAbility {
         // TODO: Implement error handling.
       });
 
-      // 初始化配置管理器
-      await this.appConfigManager.initialize();
+      // 优先使用缓存快速初始化配置管理器
+      const cacheInitSuccess = await this.appConfigManager.tryInitializeFromCache(this.context);
+      if (!cacheInitSuccess) {
+        // 如果缓存初始化失败，尝试完整初始化
+        hilog.warn(0x0000, TAG, '⚠️ [FormAbility] 缓存初始化失败，尝试完整初始化');
+        await this.appConfigManager.initialize(this.context);
+      } else {
+        hilog.info(0x0000, TAG, '✅ [FormAbility] 使用缓存快速初始化成功');
+      }
+
 
       // 获取今日参数
       const todayParams = TodayCourseUtil.getTodayParams();
@@ -107,7 +115,7 @@ export default class EntryFormAbility extends FormExtensionAbility {
         `🔍 [FormAbility] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
 
       // 使用 TodayCourseUtil 加载今日课程
-      const todayCourses = await TodayCourseUtil.loadTodayCourses();
+      const todayCourses = await TodayCourseUtil.loadTodayCourses(getContext(this));
 
       if (todayCourses.length === 0) {
         hilog.info(0x0000, TAG, '📭 [FormAbility] 今日无课');

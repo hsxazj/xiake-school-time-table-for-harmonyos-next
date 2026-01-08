@@ -1,9 +1,6 @@
 import { preferences } from '@kit.ArkData';
-import dataPreferences from '@ohos.data.preferences';
-import { BusinessError } from '@kit.BasicServicesKit';
 
 const PREFERENCES_NAME: string = 'SchoolTimeTablePreferences';
-let preference: dataPreferences.Preferences | null = null;
 
 export class PreferencesUtil {
   private static preferencesUtil: PreferencesUtil;
@@ -17,7 +14,7 @@ export class PreferencesUtil {
     return PreferencesUtil.preferencesUtil;
   }
 
-  getPreferences(context: Context | undefined): preferences.Preferences {
+  getPreferences(context?: Context): preferences.Preferences {
     // 构建options配置
     let options: preferences.Options = {
       name: this.preferenceName
@@ -44,7 +41,7 @@ export class PreferencesUtil {
 
   /**
    * 保存数据到首选项
-   * @param context 上下文
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @param key 键
    * @param value 值
    * @param override 是否覆盖现有值
@@ -72,7 +69,7 @@ export class PreferencesUtil {
 
   /**
    * 获取数据
-   * @param context 上下文
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @param key 键
    * @param defaultValue 默认返回值
    * @returns 值
@@ -89,7 +86,7 @@ export class PreferencesUtil {
 
   /**
    * 从首选项按key移除数据
-   * @param context 上下文
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @param key 键
    */
   removeValue(context: Context | undefined, key: string) {
@@ -107,7 +104,7 @@ export class PreferencesUtil {
 
   /**
    * 清除所有数据
-   * @param context 上下文
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
   clearAll(context: Context | undefined) {
     try {

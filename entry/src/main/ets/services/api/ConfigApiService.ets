@@ -46,11 +46,12 @@ export class ConfigApiService {
    * 1. 立即尝试读取缓存,如果有缓存则立即返回
    * 2. 异步发起API请求更新缓存
    * 3. 如果没有缓存,则等待API请求完成
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
-  public async getConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
+  public async getConfig(context?: Context): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
-      // 1. 优先尝试读取缓存
-      const cached = await CacheManager.getConfigCache();
+      // 1. 优先尝试读取缓存(传入context以支持卡片环境)
+      const cached = await CacheManager.getConfigCache(context);
 
       if (cached) {
         hilog.info(DOMAIN, TAG, `✅ 优先使用缓存配置,异步更新中...`);
@@ -59,7 +60,7 @@ export class ConfigApiService {
         this.processSemesterData(cached);
 
         // 异步发起API请求更新缓存 (不阻塞返回)
-        this.updateConfigCacheInBackground();
+        this.updateConfigCacheInBackground(context);
 
         // 立即返回缓存数据
         return {
@@ -71,7 +72,7 @@ export class ConfigApiService {
 
       // 2. 无缓存: 等待API请求完成
       hilog.info(DOMAIN, TAG, `⚠️ 无缓存,等待API请求...`);
-      return await this.fetchAndCacheConfig();
+      return await this.fetchAndCacheConfig(context);
 
     } catch (error) {
       // 3. 发生错误: 最后的降级尝试
@@ -83,9 +84,10 @@ export class ConfigApiService {
   /**
    * 后台异步更新配置缓存
    * 此方法不抛出异常,静默处理错误
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    */
-  private updateConfigCacheInBackground(): void {
-    this.fetchAndCacheConfig()
+  private updateConfigCacheInBackground(context?: Context): void {
+    this.fetchAndCacheConfig(context)
       .then((response: ApiResponse<ConfigApiResponseData>) => {
         hilog.info(DOMAIN, TAG, `✅ 后台更新配置成功: ${response.msg}`);
         // 更新内存中的学期数据
@@ -99,9 +101,10 @@ export class ConfigApiService {
 
   /**
    * 从API获取配置并缓存
+   * @param context 上下文(可选,在卡片中必须传入 FormExtensionContext)
    * @returns 配置响应数据
    */
-  private async fetchAndCacheConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
+  private async fetchAndCacheConfig(context?: Context): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
       // 发起HTTP请求
       const response = await HttpService.getInstance().get<null, Record<string, Object>>('/config');
@@ -130,9 +133,9 @@ export class ConfigApiService {
         data: { start: startMap, end: endMap }
       };
 
-      // 异步保存缓存 (不阻塞返回)
+      // 异步保存缓存 (不阻塞返回,传入context)
       if (configResponse.code === 200) {
-        CacheManager.saveConfigCache(configResponse.data)
+        CacheManager.saveConfigCache(configResponse.data, context)
           .catch((err: Error) => {
             hilog.error(DOMAIN, TAG, `缓存配置失败: ${err.message}`);
           });
@@ -249,7 +252,7 @@ export class ConfigApiService {
   }
 
   /**
-   * 计算某个学期内的当前周数 (完全按照class-schedule-c的getWeek逻辑)
+   * 计算某个学期内的当前周数
    */
   public calculateWeekInSemester(startDate: string, currentDate: Date): number {
     // 解析开始日期 - 完全按照class-schedule-c的方式

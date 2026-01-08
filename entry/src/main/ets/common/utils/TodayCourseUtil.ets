@@ -12,10 +12,10 @@ const TAG: string = 'TodayCourseUtil';
  * 今日课程参数
  */
 export interface TodayParams {
-  year: number;       // 学年
-  week: number;       // 周次
-  termCode: string;   // 学期代号 ('3'=第一学期, '12'=第二学期)
-  weekDay: string;    // 星期几 ('星期一', '星期二', ...)
+  year: number; // 学年
+  week: number; // 周次
+  termCode: string; // 学期代号 ('3'=第一学期, '12'=第二学期)
+  weekDay: string; // 星期几 ('星期一', '星期二', ...)
 }
 
 /**
@@ -101,7 +101,8 @@ export class TodayCourseUtil {
       return [];
     }
 
-    hilog.info(DOMAIN, TAG, `🔍 [TodayCourseUtil] 筛选条件: 第${currentWeek}周, ${todayParams.weekDay}(${currentDayOfWeek})`);
+    hilog.info(DOMAIN, TAG,
+      `🔍 [TodayCourseUtil] 筛选条件: 第${currentWeek}周, ${todayParams.weekDay}(${currentDayOfWeek})`);
 
     // 筛选符合条件的课程
     const todayCourses = semesterCourses.filter(course => {
@@ -169,7 +170,7 @@ export class TodayCourseUtil {
    * 加载今日课程(完整流程)
    * @returns 今日课程列表,如果失败则返回空数组
    */
-  public static async loadTodayCourses(): Promise<CourseInfo[]> {
+  public static async loadTodayCourses(context?: Context): Promise<CourseInfo[]> {
     try {
       // 1. 获取今日参数
       const todayParams = TodayCourseUtil.getTodayParams();
@@ -187,7 +188,7 @@ export class TodayCourseUtil {
 
       hilog.info(DOMAIN, TAG, `📦 [TodayCourseUtil] 尝试从缓存加载: ${academicYear}学年第${semester}学期`);
 
-      const semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester);
+      const semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester, context);
 
       if (!semesterCourses || semesterCourses.length === 0) {
         hilog.warn(DOMAIN, TAG, '⚠️ [TodayCourseUtil] 缓存中无学期课程数据');
