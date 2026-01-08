@@ -4,6 +4,7 @@ import { JwxtCourse } from '../../models/JwxtCourseModels';
 import { CourseTimeUtil } from './CourseTimeUtil';
 import { CacheManager } from './CacheManager';
 import { AppConfigManager } from '../../services/AppConfigManager';
+import { JwxtCourseService } from '../../services/jwxt/JwxtCourseService';
 
 const DOMAIN: number = 0x0004;
 const TAG: string = 'TodayCourseUtil';
@@ -188,14 +189,45 @@ export class TodayCourseUtil {
 
       hilog.info(DOMAIN, TAG, `📦 [TodayCourseUtil] 尝试从缓存加载: ${academicYear}学年第${semester}学期`);
 
-      const semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester, context);
+      let semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester, context);
+
+      // 如果缓存中没有数据，从API获取
+      if (!semesterCourses || semesterCourses.length === 0) {
+        hilog.warn(DOMAIN, TAG, '⚠️ [TodayCourseUtil] 缓存中无学期课程数据，尝试从API获取');
+
+        try {
+          // 获取上下文（如果没有传入则从全局获取）
+          const ctx = context ?? getContext();
+
+          // 初始化课程服务
+          const courseService = JwxtCourseService.getInstance();
+          await courseService.initialize(ctx);
+
+          // 构建课程请求参数
+          const courseParams = courseService.buildCourseParams(academicYear, semester);
+
+          // 从API获取学期课程
+          hilog.info(DOMAIN, TAG, `🌐 [TodayCourseUtil] 正在从API获取课程数据...`);
+          semesterCourses = await courseService.getCourseList(courseParams);
+
+          hilog.info(DOMAIN, TAG, `✅ [TodayCourseUtil] 从API获取到 ${semesterCourses.length} 门课程`);
+
+          // 保存到缓存
+          await CacheManager.saveSemesterCourses(academicYear, semester, semesterCourses, context);
+          hilog.info(DOMAIN, TAG, `💾 [TodayCourseUtil] 课程数据已保存到缓存`);
+        } catch (apiError) {
+          hilog.error(DOMAIN, TAG, '❌ [TodayCourseUtil] 从API获取课程失败: %{public}s',
+            apiError instanceof Error ? apiError.message : String(apiError));
+          return [];
+        }
+      }
 
       if (!semesterCourses || semesterCourses.length === 0) {
-        hilog.warn(DOMAIN, TAG, '⚠️ [TodayCourseUtil] 缓存中无学期课程数据');
+        hilog.warn(DOMAIN, TAG, '⚠️ [TodayCourseUtil] 无法获取学期课程数据');
         return [];
       }
 
-      hilog.info(DOMAIN, TAG, `✅ [TodayCourseUtil] 从缓存获取到 ${semesterCourses.length} 门课程`);
+      hilog.info(DOMAIN, TAG, `✅ [TodayCourseUtil] 成功获取到 ${semesterCourses.length} 门学期课程`);
 
       // 3. 筛选今日课程
       const todayCourses = TodayCourseUtil.filterTodayCourses(semesterCourses, todayParams);
