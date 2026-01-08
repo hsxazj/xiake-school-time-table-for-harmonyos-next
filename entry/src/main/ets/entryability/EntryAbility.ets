@@ -79,6 +79,8 @@ export default class EntryAbility extends UIAbility {
    */
   private async autoLoginJwxt(): Promise<void> {
     try {
+      // 设置登录状态为进行中
+      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'loading');
       hilog.info(DOMAIN, 'testTag', '🔐 [EntryAbility] 开始自动登录教务系统...');
 
       // 初始化HTTP客户端的Cookie管理
@@ -87,9 +89,13 @@ export default class EntryAbility extends UIAbility {
       // 执行登录
       await this.jwxtLoginService.login(this.context);
 
+      // 设置登录状态为成功
+      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'success');
       hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 教务系统自动登录成功，Cookie已保存到内存');
 
     } catch (error) {
+      // 设置登录状态为失败
+      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'failed');
       hilog.error(DOMAIN, 'testTag', '❌ [EntryAbility] 教务系统自动登录失败: %{public}s',
         error instanceof Error ? error.message : JSON.stringify(error));
       // 不阻塞应用启动，仅记录错误
