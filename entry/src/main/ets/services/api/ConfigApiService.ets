@@ -41,11 +41,69 @@ export class ConfigApiService {
   }
 
   /**
-   * 获取配置信息 (支持缓存和降级)
+   * 获取配置信息 (优先返回缓存,异步更新API)
+   * 策略:
+   * 1. 立即尝试读取缓存,如果有缓存则立即返回
+   * 2. 异步发起API请求更新缓存
+   * 3. 如果没有缓存,则等待API请求完成
    */
   public async getConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
     try {
-      // 1. 发起HTTP请求
+      // 1. 优先尝试读取缓存
+      const cached = await CacheManager.getConfigCache();
+
+      if (cached) {
+        hilog.info(DOMAIN, TAG, `✅ 优先使用缓存配置,异步更新中...`);
+
+        // 处理学期数据
+        this.processSemesterData(cached);
+
+        // 异步发起API请求更新缓存 (不阻塞返回)
+        this.updateConfigCacheInBackground();
+
+        // 立即返回缓存数据
+        return {
+          code: 200,
+          data: cached,
+          msg: '缓存数据'
+        };
+      }
+
+      // 2. 无缓存: 等待API请求完成
+      hilog.info(DOMAIN, TAG, `⚠️ 无缓存,等待API请求...`);
+      return await this.fetchAndCacheConfig();
+
+    } catch (error) {
+      // 3. 发生错误: 最后的降级尝试
+      console.error('获取配置失败:', error);
+      throw new Error('获取配置失败');
+    }
+  }
+
+  /**
+   * 后台异步更新配置缓存
+   * 此方法不抛出异常,静默处理错误
+   */
+  private updateConfigCacheInBackground(): void {
+    this.fetchAndCacheConfig()
+      .then((response: ApiResponse<ConfigApiResponseData>) => {
+        hilog.info(DOMAIN, TAG, `✅ 后台更新配置成功: ${response.msg}`);
+        // 更新内存中的学期数据
+        this.processSemesterData(response.data);
+      })
+      .catch((error: Error) => {
+        hilog.warn(DOMAIN, TAG, `⚠️ 后台更新配置失败: ${error.message}`);
+        // 静默处理错误,不影响用户体验
+      });
+  }
+
+  /**
+   * 从API获取配置并缓存
+   * @returns 配置响应数据
+   */
+  private async fetchAndCacheConfig(): Promise<ApiResponse<ConfigApiResponseData>> {
+    try {
+      // 发起HTTP请求
       const response = await HttpService.getInstance().get<null, Record<string, Object>>('/config');
 
       // 转换原始数据为Map结构
@@ -72,7 +130,7 @@ export class ConfigApiService {
         data: { start: startMap, end: endMap }
       };
 
-      // 2. 请求成功: 异步缓存配置 (不阻塞返回)
+      // 异步保存缓存 (不阻塞返回)
       if (configResponse.code === 200) {
         CacheManager.saveConfigCache(configResponse.data)
           .catch((err: Error) => {
@@ -84,31 +142,10 @@ export class ConfigApiService {
       this.processSemesterData(configResponse.data);
 
       return configResponse;
+
     } catch (error) {
-      // 3. 网络错误: 尝试降级到缓存
-      if (ErrorUtil.isNetworkError(error)) {
-        hilog.warn(DOMAIN, TAG, `网络错误,尝试读取缓存: ${ErrorUtil.formatError(error)}`);
-
-        const cached = await CacheManager.getConfigCache();
-        if (cached) {
-          hilog.info(DOMAIN, TAG, `✅ 使用缓存配置`);
-
-          // 处理学期数据
-          this.processSemesterData(cached);
-
-          return {
-            code: 200,
-            data: cached,
-            msg: '离线数据'
-          };
-        } else {
-          hilog.warn(DOMAIN, TAG, `⚠️ 缓存不存在,无法降级`);
-        }
-      }
-
-      // 4. 无缓存或非网络错误: 抛出原始错误
-      console.error('获取配置失败:', error);
-      throw new Error('获取配置失败');
+      // 无缓存或非网络错误: 抛出原始错误
+      throw new Error(ErrorUtil.formatError(error));
     }
   }
 

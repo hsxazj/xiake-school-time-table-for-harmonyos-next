@@ -4,13 +4,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppConfigManager } from '../services/AppConfigManager';
 import { CourseInfo } from '../models/CourseModels';
 import { FormService } from '../services/FormService';
-
-interface TodayParm {
-  year: number;
-  week: number;
-  termCode: string;
-  weekDay: string;
-}
+import { TodayCourseUtil, TodayParams } from '../common/utils/TodayCourseUtil';
 
 interface TodayCourseFormData {
   formId: string;
@@ -94,23 +88,39 @@ export default class EntryFormAbility extends FormExtensionAbility {
         errorMessage: ''
       };
       let loadingFormMsg: formBindingData.FormBindingData = formBindingData.createFormBindingData(loadingFormData);
-      formProvider.updateForm(formId, loadingFormMsg);
+      formProvider.updateForm(formId, loadingFormMsg).catch(() => {
+        // TODO: Implement error handling.
+      });
 
+      // 初始化配置管理器
       await this.appConfigManager.initialize();
 
-      const todayParams = this.initTodayParams();
+      // 获取今日参数
+      const todayParams = TodayCourseUtil.getTodayParams();
       if (!todayParams) {
-        hilog.warn(0x0000, TAG, '无法获取今日课程参数');
+        hilog.warn(0x0000, TAG, '⚠️ [FormAbility] 无法获取今日课程参数');
         this.updateFormData(formId, [], false, '获取课程参数失败');
         return;
       }
 
       hilog.info(0x0000, TAG,
-        `🔍 [Today Course Form] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
+        `🔍 [FormAbility] 加载课程: year=${todayParams.year}, week=${todayParams.week}, weekDay=${todayParams.weekDay}, term=${todayParams.termCode}`);
 
-      // TODO 重写
+      // 使用 TodayCourseUtil 加载今日课程
+      const todayCourses = await TodayCourseUtil.loadTodayCourses();
+
+      if (todayCourses.length === 0) {
+        hilog.info(0x0000, TAG, '📭 [FormAbility] 今日无课');
+        this.updateFormData(formId, [], false, '');
+        return;
+      }
+
+      // 更新卡片数据
+      this.updateFormData(formId, todayCourses, false);
+
+      hilog.info(0x0000, TAG, `✅ [FormAbility] 卡片更新完成，共${todayCourses.length}门课程`);
     } catch (error) {
-      hilog.error(0x0000, TAG, '加载今日课程失败:', JSON.stringify(error));
+      hilog.error(0x0000, TAG, '❌ [FormAbility] 加载今日课程失败:', JSON.stringify(error));
       this.updateFormData(formId, [], false, '加载课程数据失败');
     }
   }
@@ -128,24 +138,5 @@ export default class EntryFormAbility extends FormExtensionAbility {
     }).catch((error: Error) => {
       hilog.error(0x0000, TAG, 'updateForm failed.%s', JSON.stringify(error));
     });
-  }
-
-  private initTodayParams(): TodayParm | null {
-    const currentStatus = this.appConfigManager.getCurrentStatus();
-    if (!currentStatus || !currentStatus.currentSemester) {
-      hilog.warn(0x0000, TAG, '未找到当前学期信息');
-      return null;
-    }
-
-    const today = new Date();
-    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-    const weekDayStr = weekdays[today.getDay()];
-
-    return {
-      year: parseInt(currentStatus.currentSemester.academicYear),
-      week: currentStatus.currentWeek,
-      termCode: currentStatus.currentSemester.semester === 1 ? '3' : '12',
-      weekDay: weekDayStr
-    };
   }
 }

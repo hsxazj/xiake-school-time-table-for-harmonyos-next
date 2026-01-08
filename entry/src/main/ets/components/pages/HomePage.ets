@@ -2,19 +2,12 @@
 import { CourseInfo } from '../../models/CourseModels';
 import { CourseColorUtil } from '../../common/utils/CourseColorUtil';
 import { CourseTimeUtil } from '../../common/utils/CourseTimeUtil';
-import { CacheManager } from '../../common/utils/CacheManager';
+import { TodayCourseUtil, TodayParams } from '../../common/utils/TodayCourseUtil';
 import { curves } from '@kit.ArkUI';
 import { AppConfigManager } from '../../services/AppConfigManager';
 import { FormService } from '../../services/FormService';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-
-interface TodayParm {
-  year: number;
-  week: number;
-  termCode: string;
-  weekDay: string;
-}
 
 const DOMAIN: number = 0x0003;
 const TAG = 'HomePage';
@@ -29,7 +22,7 @@ export struct HomePage {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
   private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   // 今日课程参数缓存
-  private todayParams: TodayParm | null = null;
+  private todayParams: TodayParams | null = null;
   // 动画支持 - 与周课程页保持一致
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
@@ -223,89 +216,11 @@ export struct HomePage {
 
       hilog.info(DOMAIN, TAG, `🔍 [Today Course] 使用参数: year=${this.todayParams.year}, week=${this.todayParams.week}, weekDay=${this.todayParams.weekDay}, term=${this.todayParams.termCode}`);
 
-      // 1. 从缓存获取整个学期的课程数据
-      const semester = this.todayParams.termCode === '3' ? 1 : 2;
-      const academicYear = this.todayParams.year.toString();
+      // 使用 TodayCourseUtil 加载今日课程
+      const todayCourses = await TodayCourseUtil.loadTodayCourses();
 
-      hilog.info(DOMAIN, TAG, `📦 [Today Course] 尝试从缓存加载: ${academicYear}学年第${semester}学期`);
-
-      const semesterCourses = await CacheManager.getSemesterCourses(academicYear, semester);
-
-      if (!semesterCourses || semesterCourses.length === 0) {
-        hilog.warn(DOMAIN, TAG, '⚠️ [Today Course] 缓存中无学期课程数据');
-        this.todayCourses = [];
-        return;
-      }
-
-      hilog.info(DOMAIN, TAG, `✅ [Today Course] 从缓存获取到 ${semesterCourses.length} 门课程`);
-
-      // 2. 筛选今日课程
-      const currentWeek = this.todayParams.week;
-      const weekdayMap: Record<string, number> = {
-        '星期一': 1,
-        '星期二': 2,
-        '星期三': 3,
-        '星期四': 4,
-        '星期五': 5,
-        '星期六': 6,
-        '星期日': 7
-      };
-      const currentDayOfWeek = weekdayMap[this.todayParams.weekDay];
-
-      if (!currentDayOfWeek) {
-        hilog.warn(DOMAIN, TAG, `⚠️ [Today Course] 无效的星期: ${this.todayParams.weekDay}`);
-        this.todayCourses = [];
-        return;
-      }
-
-      hilog.info(DOMAIN, TAG, `🔍 [Today Course] 筛选条件: 第${currentWeek}周, ${this.todayParams.weekDay}(${currentDayOfWeek})`);
-
-      // 筛选符合条件的课程
-      const todayCourses = semesterCourses.filter(course => {
-        // 条件1: 周次匹配 - 课程的 weeks 数组中包含当前周
-        const isWeekMatch = course.weeks && course.weeks.includes(currentWeek);
-        // 条件2: 星期匹配 - 课程的 dayOfWeek 等于当前星期几
-        const isDayMatch = course.dayOfWeek === currentDayOfWeek;
-
-        return isWeekMatch && isDayMatch;
-      });
-
-      hilog.info(DOMAIN, TAG, `✅ [Today Course] 筛选到 ${todayCourses.length} 门今日课程`);
-
-      // 3. 转换为 CourseInfo 格式
-      const courseInfoList: CourseInfo[] = todayCourses.map((course): CourseInfo => {
-        // 转换节次数组为时间字符串数组
-        const courseTime = CourseTimeUtil.sessionsToTimeStrings(course.sessions);
-        // 格式化节次字符串
-        const section = CourseTimeUtil.formatSections(course.sessions);
-        // 格式化周次为字符串
-        const weeks = JSON.stringify(course.weeks);
-
-        const courseInfo: CourseInfo = {
-          courseId: parseInt(course.id) || 0,
-          courseName: course.name,
-          teacher: course.teacher,
-          classroom: course.classroom,
-          weekday: this.todayParams!.weekDay,
-          section: section,
-          weeks: weeks,
-          courseTime: courseTime,
-          campus: course.campus || ''
-        };
-        return courseInfo;
-      });
-
-      // 4. 按节次排序 (按第一节课的节次升序)
-      courseInfoList.sort((a, b) => {
-        const aFirstSession = a.section.match(/\d+/);
-        const bFirstSession = b.section.match(/\d+/);
-        const aNum = aFirstSession ? parseInt(aFirstSession[0]) : 0;
-        const bNum = bFirstSession ? parseInt(bFirstSession[0]) : 0;
-        return aNum - bNum;
-      });
-
-      // 5. 更新状态
-      this.todayCourses = courseInfoList;
+      // 更新状态
+      this.todayCourses = todayCourses;
 
       hilog.info(DOMAIN, TAG, `🎉 [Today Course] 今日课程加载完成，共${this.todayCourses.length}门课程`);
 
@@ -330,31 +245,14 @@ export struct HomePage {
    * 修复：直接基于当前日期计算，不依赖可能被课表页面滑动影响的全局状态
    */
   private initTodayParams(): void {
-    // 直接基于今天的日期计算学期状态，避免受课表页面滑动影响
-    const today = new Date();
-    const configService = this.appConfigManager.getConfigService();
+    // 使用 TodayCourseUtil 获取今日参数
+    this.todayParams = TodayCourseUtil.getTodayParams();
 
-    // 使用ConfigService直接计算今天对应的学期状态
-    const todayStatus = configService.calculateCurrentSemesterStatus(today);
-
-    if (!todayStatus || !todayStatus.currentSemester) {
-      console.warn('未找到当前学期信息');
-      return;
+    if (this.todayParams) {
+      console.info(`✅ [Today Params Cache] 基于真实今日计算参数: ${JSON.stringify(this.todayParams)}`);
+    } else {
+      console.warn('⚠️ [Today Params Cache] 无法获取今日参数');
     }
-
-    // 获取今天是星期几
-    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-    const weekDayStr = weekdays[today.getDay()];
-
-    // 缓存今日课程参数 - 基于真实的今天，不受其他页面影响
-    this.todayParams = {
-      year: parseInt(todayStatus.currentSemester.academicYear),
-      week: todayStatus.currentWeek,
-      termCode: todayStatus.currentSemester.semester === 1 ? '3' : '12',
-      weekDay: weekDayStr
-    };
-
-    console.info(`✅ [Today Params Cache] 基于真实今日计算参数: ${JSON.stringify(this.todayParams)}`);
   }
 
   private loadUserInfo(): void {
