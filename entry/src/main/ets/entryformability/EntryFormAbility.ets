@@ -5,6 +5,7 @@ import { AppConfigManager } from '../services/AppConfigManager';
 import { CourseInfo } from '../models/CourseModels';
 import { FormService } from '../services/FormService';
 import { TodayCourseUtil } from '../common/utils/TodayCourseUtil';
+import { JwxtCredentialsManager } from '../services/jwxt/JwxtCredentialsManager';
 
 interface TodayCourseFormData {
   formId: string;
@@ -80,6 +81,16 @@ export default class EntryFormAbility extends FormExtensionAbility {
 
   private async loadTodayCourses(formId: string): Promise<void> {
     try {
+      // 检查是否存在凭证
+      const credentialsManager = JwxtCredentialsManager.getInstance();
+      const hasCredentials = credentialsManager.hasCredentials(this.context);
+
+      if (!hasCredentials) {
+        hilog.warn(0x0000, TAG, '⚠️ [FormAbility] 未找到登录凭证');
+        this.updateFormData(formId, [], false, '请先登录');
+        return;
+      }
+
       // 先更新为加载状态
       let loadingFormData: TodayCourseFormData = {
         formId: formId,
@@ -95,8 +106,8 @@ export default class EntryFormAbility extends FormExtensionAbility {
       // 优先使用缓存快速初始化配置管理器
       const cacheInitSuccess = await this.appConfigManager.tryInitializeFromCache(this.context);
       if (!cacheInitSuccess) {
-        // 如果缓存初始化失败，尝试完整初始化
-        hilog.warn(0x0000, TAG, '⚠️ [FormAbility] 缓存初始化失败，尝试完整初始化');
+        // 如果缓存初始化失败,尝试完整初始化
+        hilog.warn(0x0000, TAG, '⚠️ [FormAbility] 缓存初始化失败,尝试完整初始化');
         await this.appConfigManager.initialize(this.context);
       } else {
         hilog.info(0x0000, TAG, '✅ [FormAbility] 使用缓存快速初始化成功');
