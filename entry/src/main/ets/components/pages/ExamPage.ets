@@ -568,8 +568,18 @@ export struct ExamPage {
     // 关闭选择器
     this.showSemesterPicker = false;
 
-    // 重新加载考试数据
+    // 先加载缓存数据（如果有）
     await this.loadExamList();
+
+    // 检查教务系统连接状态，如果已连接则主动刷新一次数据
+    const cookieManager = CookieManager.getInstance();
+    const isConnected = cookieManager.isConnected();
+    if (isConnected) {
+      hilog.info(DOMAIN, TAG, '✅ [ExamPage] 检测到教务系统已连接，刷新新学期数据');
+      await this.refreshExamFromApi();
+    } else {
+      hilog.info(DOMAIN, TAG, '⚠️ [ExamPage] 教务系统未连接，仅显示缓存数据');
+    }
   }
 
   /**
