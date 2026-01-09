@@ -11,6 +11,7 @@ import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfo
 import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
+import { courseDataUpdateBus } from '../../services/CourseDataUpdateEvent';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -959,6 +960,7 @@ export struct SchedulePage {
    * 1. 后台异步请求API
    * 2. API成功后更新数据和缓存
    * 3. 静默刷新，不影响当前显示
+   * 4. 发送数据更新事件通知其他组件
    */
   private async refreshCourseFromApi(): Promise<void> {
     if (!this.currentSemester) {
@@ -990,6 +992,11 @@ export struct SchedulePage {
       this.processWeekScheduleData();
 
       hilog.info(DOMAIN, TAG, `🔄 [Refresh] 成功刷新并缓存${courseList.length}门课程`);
+
+      // 发送课程数据更新事件，通知其他组件（如 HomePage）
+      courseDataUpdateBus.emit(academicYear, semester, courseList.length);
+      hilog.info(DOMAIN, TAG, `📢 [Refresh] 已发送课程数据更新事件`);
+
     } catch (error) {
       hilog.error(DOMAIN, TAG, '🔄 [Refresh] 从API刷新课程失败: %{public}s', JSON.stringify(error));
       // 静默失败，不影响用户体验

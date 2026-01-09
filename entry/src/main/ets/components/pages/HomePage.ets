@@ -9,6 +9,7 @@ import { FormService } from '../../services/FormService';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
 import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { courseDataUpdateBus, CourseDataUpdateListener } from '../../services/CourseDataUpdateEvent';
 
 const DOMAIN: number = 0x0003;
 const TAG = 'HomePage';
@@ -32,11 +33,29 @@ export struct HomePage {
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
   // 课程颜色相关状态 - 与SchedulePage保持一致
   @State private courseColorsList: string[] = [];
+  // 课程数据更新事件监听器
+  private courseDataUpdateListener: CourseDataUpdateListener = (params) => {
+    hilog.info(DOMAIN, TAG,
+      '🔔 [Event] 收到课程数据更新事件: %{public}s学年第%{public}d学期, 共%{public}d门课程',
+      params.academicYear, params.semester, params.courseCount);
+    // 重新加载今日课程
+    this.loadTodayCourses();
+  };
 
   aboutToAppear(): void {
+    // 注册课程数据更新事件监听器
+    courseDataUpdateBus.onCourseDataUpdate(this.courseDataUpdateListener);
+    hilog.info(DOMAIN, TAG, '📡 [HomePage] 已注册课程数据更新事件监听器');
+
     this.loadUserInfo();
     this.loadTodayCourses();
     this.loadStudentName();
+  }
+
+  aboutToDisappear(): void {
+    // 注销课程数据更新事件监听器
+    courseDataUpdateBus.offCourseDataUpdate(this.courseDataUpdateListener);
+    hilog.info(DOMAIN, TAG, '📡 [HomePage] 已注销课程数据更新事件监听器');
   }
 
   onPageShow(): void {
