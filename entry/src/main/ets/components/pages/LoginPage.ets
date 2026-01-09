@@ -1,4 +1,3 @@
-
 import { LoginForm, LoginStatus } from '../../models/LoginModels';
 import { JwxtCredentialsManager } from '../../services/jwxt/JwxtCredentialsManager';
 import { JwxtLoginService } from '../../services/jwxt/JwxtLoginService';
@@ -187,18 +186,21 @@ export struct LoginPageContent {
             .color(Color.White)
           Text('登录中...')
             .fontSize(16)
-            .fontColor(Color.White)
+            .fontColor(Color.Black)
         }
       } else {
         Text('登录')
           .fontSize(16)
-          .fontColor(Color.White)
+          // TODO 待定
+          .fontColor(Color.Black)
+          .fontWeight(FontWeight.Medium)
       }
     }
     .width('100%')
     .height(48)
     .borderRadius(8)
-    .backgroundColor(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING ? $r('app.color.schedule_primary_color') : '#9CA3AF')
+    .backgroundColor(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING ?
+      $r('app.color.schedule_primary_color') : '#9CA3AF')
     .enabled(this.isFormValid() && this.loginStatus !== LoginStatus.LOADING)
     .onClick(() => {
       this.handleLogin();
@@ -213,7 +215,7 @@ export struct LoginPageContent {
     setTimeout(() => {
       this.pageOpacity = 1;
       this.pageTranslateY = 0;
-      hilog.info(DOMAIN,TAG,'[LoginPage] 🎬 启动渐显动画');
+      hilog.info(DOMAIN, TAG, '[LoginPage] 🎬 启动渐显动画');
     }, 100);
   }
 
