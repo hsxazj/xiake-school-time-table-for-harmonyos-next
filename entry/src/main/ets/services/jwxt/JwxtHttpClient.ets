@@ -20,7 +20,13 @@
  *
  * @since 2026-01-07
  */
-import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig, AxiosRequestHeaders } from '@ohos/axios';
+import axios, {
+  AxiosInstance,
+  AxiosResponse,
+  AxiosError,
+  InternalAxiosRequestConfig,
+  AxiosRequestHeaders
+} from '@ohos/axios';
 import { JwxtConstants } from './JwxtConstants';
 import { CookieManager } from './CookieManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -70,16 +76,13 @@ export class JwxtHttpClient {
    *
    * @param context 应用上下文
    */
-  public async initialize(context: Context): Promise<void> {
+  public async initialize(context: Context | undefined): Promise<void> {
     if (this.isInitialized) {
       hilog.info(DOMAIN, TAG, '⚠️ 已初始化，跳过重复初始化');
       return;
     }
 
     try {
-      // 初始化CookieManager
-      await this.cookieManager.initialize(context);
-
       // 设置拦截器（依赖CookieManager）
       this.setupInterceptors();
 

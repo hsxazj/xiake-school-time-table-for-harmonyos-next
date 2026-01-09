@@ -11,9 +11,6 @@ const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
-  private jwxtLoginService: JwxtLoginService = JwxtLoginService.getInstance();
-  private jwxtHttpClient: JwxtHttpClient = JwxtHttpClient.getInstance();
-  private jwxtGetInfoService: JwxtGetInfoService = JwxtGetInfoService.getInstance();
   private studentInfoManager: StudentInfoManager = StudentInfoManager.getInstance();
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -25,9 +22,6 @@ export default class EntryAbility extends UIAbility {
 
     // 2. 初始化配置信息（不阻塞）
     this.initializeConfig();
-
-    // 3. 自动登录教务系统（不阻塞）
-    this.autoLoginJwxt();
   }
 
   onDestroy(): void {
@@ -76,46 +70,6 @@ export default class EntryAbility extends UIAbility {
 
     } catch (error) {
       hilog.error(DOMAIN, 'testTag', '❌ [EntryAbility] 应用配置初始化失败: %{public}s', JSON.stringify(error));
-      // 不阻塞应用启动，仅记录错误
-    }
-  }
-
-  /**
-   * 自动登录教务系统并获取学生信息
-   * 应用启动时自动执行，将Cookie保存到内存，获取学生信息到首选项和AppStorage
-   */
-  private async autoLoginJwxt(): Promise<void> {
-    try {
-      // 设置登录状态为进行中
-      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'loading');
-      hilog.info(DOMAIN, 'testTag', '🔐 [EntryAbility] 开始自动登录教务系统...');
-
-      // 初始化HTTP客户端的Cookie管理
-      await this.jwxtHttpClient.initialize(this.context);
-
-      // 执行登录
-      await this.jwxtLoginService.login(this.context);
-
-      // 设置登录状态为成功
-      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'success');
-      hilog.info(DOMAIN, 'testTag', '✅ [EntryAbility] 教务系统自动登录成功，Cookie已保存到内存');
-
-      // ✅ 登录成功后，获取学生信息并保存
-      try {
-        hilog.info(DOMAIN, 'testTag', '📝 [EntryAbility] 开始获取学生信息...');
-        const studentInfo = await this.jwxtGetInfoService.getInfo(this.context);
-        hilog.info(DOMAIN, 'testTag', `✅ [EntryAbility] 学生信息获取成功: ${studentInfo.name} (${studentInfo.student_id})`);
-      } catch (infoError) {
-        // 获取学生信息失败不影响应用启动
-        const errorMsg = infoError instanceof Error ? infoError.message : String(infoError);
-        hilog.error(DOMAIN, 'testTag', `⚠️ [EntryAbility] 获取学生信息失败: ${errorMsg}`);
-      }
-
-    } catch (error) {
-      // 设置登录状态为失败
-      AppStorage.setOrCreate<string>('jwxt_auto_login_status', 'failed');
-      hilog.error(DOMAIN, 'testTag', '❌ [EntryAbility] 教务系统自动登录失败: %{public}s',
-        error instanceof Error ? error.message : JSON.stringify(error));
       // 不阻塞应用启动，仅记录错误
     }
   }

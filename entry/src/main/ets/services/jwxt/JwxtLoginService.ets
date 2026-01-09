@@ -33,6 +33,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer } from '@kit.ArkTS';
 import { url } from '@kit.ArkTS';
+import { GlobalContext } from '../../common/utils/GlobalContext';
 
 const DOMAIN: number = 0x3003; // JWXT Login domain
 const TAG: string = 'JwxtLoginService';
@@ -44,6 +45,7 @@ const TAG: string = 'JwxtLoginService';
 interface JwxtPublicKey {
   /** RSA模数（Base64编码） */
   modulus: string;
+
   /** RSA指数（Base64编码） */
   exponent: string;
 }
@@ -83,7 +85,7 @@ export class JwxtLoginService {
    * @param context 应用上下文（用于获取凭证和初始化Cookie存储）
    * @throws Error 登录失败时抛出异常
    */
-  public async login(context: Context): Promise<void> {
+  public async login(context: Context | undefined): Promise<void> {
     try {
       hilog.info(DOMAIN, TAG, '🔐 [Login] 开始登录教务系统...');
 
@@ -130,8 +132,8 @@ export class JwxtLoginService {
       // 步骤6: 构造表单
       const form: url.URLSearchParams = new url.URLSearchParams();
       form.append('csrftoken', csrfToken);
-      form.append('yhm', sid);  // 用户名（学号）
-      form.append('mm', encrypted);  // 加密后的密码
+      form.append('yhm', sid); // 用户名（学号）
+      form.append('mm', encrypted); // 加密后的密码
       hilog.info(DOMAIN, TAG, '✅ [Login] 步骤6: 表单构造完成');
 
       // 步骤7: 提交登录请求
@@ -146,6 +148,12 @@ export class JwxtLoginService {
       this.validateLoginResponse(resp);
 
       hilog.info(DOMAIN, TAG, '🎉 [Login] 登录成功！Cookie已自动保存');
+
+      const uiCtx = GlobalContext.getInstance().getObject('UIContext') as UIContext;
+      if (uiCtx) {
+        uiCtx.getPromptAction().showToast({ message: '已连接至教务系统', duration: 1500 });
+      }
+
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [Login] 登录失败: %{public}s', JSON.stringify(error));
 

@@ -47,13 +47,6 @@ export class CookieManager {
   }
 
   /**
-   * 初始化（保持接口兼容，但内存模式下不需要做任何事）
-   */
-  public async initialize(context: Context): Promise<void> {
-    hilog.info(DOMAIN, TAG, '✅ 初始化完成（内存模式，无需操作）');
-  }
-
-  /**
    * 保存Cookie
    *
    * @param host 域名（如：jwxtwx.fjut.edu.cn）
