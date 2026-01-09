@@ -193,6 +193,19 @@ export class CookieManager {
   }
 
   /**
+   * 检查当前是否已连接到教务系统
+   *
+   * @returns 是否已连接（有 JSESSIONID）
+   */
+  public isConnected(): boolean {
+    const host = 'jwxtwx.fjut.edu.cn';
+    const cookieStr = this.cookieStore.get(host) || '';
+    const connected = cookieStr.includes('JSESSIONID');
+    hilog.info(DOMAIN, TAG, '🔍 [Check] 检查连接状态: isConnected=%{public}s', connected);
+    return connected;
+  }
+
+  /**
    * 从URL提取域名
    *
    * @param url 完整URL或相对路径

@@ -12,6 +12,7 @@ import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
 import { courseDataUpdateBus } from '../../services/CourseDataUpdateEvent';
+import { CookieManager } from '../../services/jwxt/CookieManager';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -148,6 +149,14 @@ export struct SchedulePage {
     }
     await this.jwxtCourseService.initialize(context);
 
+    // 先主动检查一次教务系统连接状态（解决跨页面状态同步问题）
+    const cookieManager = CookieManager.getInstance();
+    const isConnected = cookieManager.isConnected();
+    if (isConnected) {
+      hilog.info(DOMAIN, TAG, '✅ [Schedule] 检测到教务系统已连接，更新同步按钮状态');
+      this.jwxtConnected = true;
+    }
+
     // 注册教务系统连接事件监听器
     jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
     hilog.info(DOMAIN, TAG, '📡 [Schedule] 已注册教务系统连接事件监听器');
@@ -235,9 +244,15 @@ export struct SchedulePage {
               }
             }
           }
+          .margin({left: 8})
           .width(32)
           .height(32)
           .borderRadius(16)
+          .border({
+            width: 1,
+            color: this.jwxtConnected ? $r('app.color.schedule_primary_color') : '#CCCCCC',
+            radius: 16
+          })
           .backgroundColor(this.jwxtConnected ? '#E3F2FD' : '#F5F5F5')
           .enabled(this.jwxtConnected && !this.isSyncing)
           .transition(this.effect) // 添加转场动画

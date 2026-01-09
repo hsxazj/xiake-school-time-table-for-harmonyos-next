@@ -9,6 +9,7 @@ import { curves } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ConfigApiService, SemesterInfo } from '../../services/api/ConfigApiService';
 import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
+import { CookieManager } from '../../services/jwxt/CookieManager';
 
 const DOMAIN: number = 0x0010;
 const TAG = 'ExamPage';
@@ -49,6 +50,13 @@ export struct ExamPage {
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
 
   async aboutToAppear(): Promise<void> {
+    // 先主动检查一次教务系统连接状态（解决跨页面状态同步问题）
+    const cookieManager = CookieManager.getInstance();
+    const isConnected = cookieManager.isConnected();
+    if (isConnected) {
+      hilog.info(DOMAIN, TAG, '✅ [ExamPage] 检测到教务系统已连接，准备刷新考试数据');
+    }
+
     // 注册教务系统连接事件监听器
     jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
     hilog.info(DOMAIN, TAG, '📡 [ExamPage] 已注册教务系统连接事件监听器');
@@ -59,6 +67,11 @@ export struct ExamPage {
     await this.initializeSemesterData();
     // 加载考试列表
     this.loadExamList();
+
+    // 如果已连接，在初始化完成后刷新数据
+    if (isConnected) {
+      this.refreshExamFromApi();
+    }
   }
 
   aboutToDisappear(): void {
