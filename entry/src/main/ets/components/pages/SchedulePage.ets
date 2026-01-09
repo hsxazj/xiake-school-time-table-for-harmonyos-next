@@ -75,6 +75,7 @@ export struct SchedulePage {
   @State private currentSemester: SemesterInfo | null = null;
   @State private semesterList: SemesterInfo[] = [];
   @State private displayStatusText: string = ""; // 初始为空，等待配置加载
+  @State private currentSemesterAccessible: boolean = true; // 当前学期是否可访问（年级限制）
   // 新增基于日期的滑动状态
   @State private currentDate: Date = new Date(); // 当前显示的日期
   // 滑动手势状态
@@ -83,6 +84,9 @@ export struct SchedulePage {
   @State private endPosition: number = 0;
   // 新增课程数据相关状态
   @State private isLoadingCourses: boolean = false;
+  // 教务系统连接状态和同步状态
+  @State private jwxtConnected: boolean = false;
+  @State private isSyncing: boolean = false;
   private configService: ConfigApiService = ConfigApiService.getInstance();
   private jwxtCourseService: JwxtCourseService = JwxtCourseService.getInstance();
   private appConfigManager: AppConfigManager = AppConfigManager.getInstance();
@@ -95,6 +99,10 @@ export struct SchedulePage {
   // 教务系统连接事件监听器
   private jwxtConnectionListener: JwxtConnectionListener = (cookie: string, isConnected: boolean) => {
     hilog.info(DOMAIN, TAG, '🔔 [Event] 收到教务系统连接事件: isConnected=%{public}s', isConnected);
+
+    // 更新连接状态
+    this.jwxtConnected = isConnected;
+
     if (isConnected) {
       // 异步刷新课程数据
       this.refreshCourseFromApi();
@@ -186,7 +194,7 @@ export struct SchedulePage {
 
           Blank()
 
-          // 回到本周按钮
+          // 回到本周按钮（条件显示）
           if (!this.isCurrentWeekShowing()) {
             Button('回到本周')
               .fontSize(14)
@@ -205,11 +213,37 @@ export struct SchedulePage {
                 top: 0,
                 bottom: 0
               })
-              .transition(this.effect) // 应用与课程块相同的转场动画
+              .transition(this.effect) // 应用转场动画
               .onClick(async () => {
                 await this.navigateToCurrentWeek();
               })
           }
+
+          // 手动同步按钮
+          Button() {
+            Row() {
+              // 使用 LoadingProgress 显示加载动画或刷新图标
+              if (this.isSyncing) {
+                LoadingProgress()
+                  .width(16)
+                  .height(16)
+                  .color($r('app.color.schedule_primary_color'))
+              } else {
+                Text('⟳')
+                  .fontSize(20)
+                  .fontColor(this.jwxtConnected ? $r('app.color.schedule_primary_color') : '#CCCCCC')
+              }
+            }
+          }
+          .width(32)
+          .height(32)
+          .borderRadius(16)
+          .backgroundColor(this.jwxtConnected ? '#E3F2FD' : '#F5F5F5')
+          .enabled(this.jwxtConnected && !this.isSyncing)
+          .transition(this.effect) // 添加转场动画
+          .onClick(async () => {
+            await this.handleManualSync();
+          })
         }
         .width('100%')
         .padding({
@@ -1004,6 +1038,81 @@ export struct SchedulePage {
   }
 
   /**
+   * 处理手动同步按钮点击
+   *
+   * 与自动刷新的区别：
+   * 1. 显示同步状态（loading动画）
+   * 2. 同步完成后显示 Toast 提示
+   * 3. 需要检查教务系统连接状态
+   */
+  private async handleManualSync(): Promise<void> {
+    if (!this.jwxtConnected) {
+      this.promptAction.showToast({
+        message: '教务系统未连接',
+        duration: 2000,
+        bottom: '100vp'
+      });
+      return;
+    }
+
+    if (!this.currentSemester) {
+      this.promptAction.showToast({
+        message: '学期信息加载中，请稍后',
+        duration: 2000,
+        bottom: '100vp'
+      });
+      return;
+    }
+
+    // 设置同步状态
+    this.isSyncing = true;
+    hilog.info(DOMAIN, TAG, '🔄 [Manual Sync] 开始手动同步课程数据');
+
+    try {
+      const academicYear = this.currentSemester.academicYear;
+      const semester = this.currentSemester.semester;
+
+      // 构建请求参数
+      const params = this.jwxtCourseService.buildCourseParams(academicYear, semester);
+
+      // 获取课程列表
+      const courseList: JwxtCourse[] = await this.jwxtCourseService.getCourseList(params);
+
+      // 更新数据和缓存
+      this.courseList = courseList;
+      await CacheManager.saveSemesterCourses(academicYear, semester, courseList);
+
+      // 重新处理课表数据
+      this.processWeekScheduleData();
+
+      // 发送数据更新事件
+      courseDataUpdateBus.emit(academicYear, semester, courseList.length);
+
+      // 显示成功提示
+      this.promptAction.showToast({
+        message: `同步成功，共${courseList.length}门课程`,
+        duration: 2000,
+        bottom: '100vp'
+      });
+
+      hilog.info(DOMAIN, TAG, `🔄 [Manual Sync] 手动同步成功: ${courseList.length}门课程`);
+
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '🔄 [Manual Sync] 手动同步失败: %{public}s', JSON.stringify(error));
+
+      // 显示失败提示
+      this.promptAction.showToast({
+        message: '同步失败，请稍后重试',
+        duration: 2000,
+        bottom: '100vp'
+      });
+    } finally {
+      // 重置同步状态
+      this.isSyncing = false;
+    }
+  }
+
+  /**
    * 根据给定日期找到最近的学期并计算周数
    * 直接使用ConfigApiService的calculateCurrentSemesterStatus逻辑
    */
@@ -1017,7 +1126,10 @@ export struct SchedulePage {
       this.totalWeeks = semesterStatus.currentSemester.totalWeeks;
       this.displayStatusText = semesterStatus.statusText;
 
-      hilog.info(DOMAIN,TAG,`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek})`);
+      // 计算并缓存当前学期的可访问性（只计算一次）
+      this.currentSemesterAccessible = this.canAccessSemester(semesterStatus.currentSemester);
+
+      hilog.info(DOMAIN,TAG,`📅 [Semester Update] ${semesterStatus.currentSemester.academicYear}学年第${semesterStatus.currentSemester.semester}学期 - ${semesterStatus.statusText} (周数: ${semesterStatus.currentWeek}), 可访问: ${this.currentSemesterAccessible}`);
     }
   }
 
@@ -1267,19 +1379,15 @@ export struct SchedulePage {
 
   /**
    * 判断指定周数是否对当前年级可选
+   *
+   * 策略：在周选择器中，只要当前学期可访问（年份>=入学年份），该学期的所有周数都可选
+   * 只有在左右滑动时，才会校验具体的周数对应的日期是否可访问
+   *
+   * 优化：使用缓存的 currentSemesterAccessible 值，避免重复计算
    */
   private isWeekSelectableForCurrentGrade(weekNum: number): boolean {
-    if (!this.currentSemester) {
-      return false;
-    }
-
-    // 计算该周对应的日期
-    const semesterStartDate = new Date(this.currentSemester.startDate);
-    const targetDate = new Date(semesterStartDate);
-    targetDate.setDate(semesterStartDate.getDate() + (weekNum - 1) * 7);
-
-    // 检查该周所在学期是否可访问
-    return this.canSwipeToDate(targetDate);
+    // 直接返回缓存的学期可访问性，不再每次调用 canAccessSemester
+    return this.currentSemesterAccessible;
   }
 
   /**
