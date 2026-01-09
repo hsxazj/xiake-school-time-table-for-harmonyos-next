@@ -10,8 +10,8 @@ import { curves, promptAction } from '@kit.ArkUI';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
 import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
-import { courseDataUpdateBus } from '../../services/CourseDataUpdateEvent';
+import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/event/JwxtConnectionEvent';
+import { courseDataUpdateBus } from '../../services/event/CourseDataUpdateEvent';
 import { CookieManager } from '../../services/jwxt/CookieManager';
 
 // 周日期范围接口

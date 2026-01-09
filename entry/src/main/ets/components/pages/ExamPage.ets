@@ -8,7 +8,7 @@ import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ConfigApiService, SemesterInfo } from '../../services/api/ConfigApiService';
-import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
+import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/event/JwxtConnectionEvent';
 import { CookieManager } from '../../services/jwxt/CookieManager';
 
 const DOMAIN: number = 0x0010;

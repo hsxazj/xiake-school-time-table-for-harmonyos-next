@@ -9,7 +9,7 @@ import { FormService } from '../../services/FormService';
 import { JwxtGetInfoService } from '../../services/jwxt/JwxtGetInfoService';
 import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { courseDataUpdateBus, CourseDataUpdateListener } from '../../services/CourseDataUpdateEvent';
+import { courseDataUpdateBus, CourseDataUpdateListener } from '../../services/event/CourseDataUpdateEvent';
 
 const DOMAIN: number = 0x0003;
 const TAG = 'HomePage';

@@ -20,7 +20,7 @@
  * @since 2026-01-07
  */
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { jwxtConnectionBus } from './JwxtConnectionEvent';
+import { jwxtConnectionBus } from '../event/JwxtConnectionEvent';
 
 const DOMAIN: number = 0x3004; // Cookie Manager domain
 const TAG: string = 'CookieManager';
