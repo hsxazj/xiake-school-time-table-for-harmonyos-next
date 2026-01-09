@@ -149,7 +149,7 @@ export class JwxtLoginService {
 
       hilog.info(DOMAIN, TAG, '🎉 [Login] 登录成功！Cookie已自动保存');
 
-      const uiCtx = GlobalContext.getInstance().getObject('UIContext') as UIContext;
+      const uiCtx = GlobalContext.getInstance().getUIContext();
       if (uiCtx) {
         uiCtx.getPromptAction().showToast({ message: '已连接至教务系统', duration: 1500 });
       }

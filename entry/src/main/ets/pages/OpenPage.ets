@@ -23,7 +23,7 @@ struct OpenPage {
   private context = this.getUIContext().getHostContext();
 
   aboutToAppear(): void {
-    GlobalContext.getInstance().setObject('UIContext', this.getUIContext());
+    GlobalContext.getInstance().setUIContext(this.getUIContext());
     this.waitForInitAndNavigate();
     this.autoLoginJwxt();
   }
