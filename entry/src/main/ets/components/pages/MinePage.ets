@@ -516,6 +516,7 @@ export struct MinePage {
       alignment: DialogAlignment.Center,
       primaryButton: {
         value: '取消',
+        fontColor: $r('app.color.schedule_primary_color'),
         action: () => {
           hilog.info(DOMAIN,TAG,'[MinePage] 用户取消退出登录');
         }

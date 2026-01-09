@@ -191,8 +191,7 @@ export struct LoginPageContent {
       } else {
         Text('登录')
           .fontSize(16)
-          // TODO 待定
-          .fontColor(Color.Black)
+          .fontColor(this.isFormValid() ? Color.White : Color.Black)
           .fontWeight(FontWeight.Medium)
       }
     }
