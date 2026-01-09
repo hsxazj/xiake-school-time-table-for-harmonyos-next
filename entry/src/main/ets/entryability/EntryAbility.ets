@@ -16,10 +16,9 @@ export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
-    hilog.setMinLogLevel(hilog.LogLevel.WARN);   // 全局生效
+    hilog.setMinLogLevel(hilog.LogLevel.INFO);   // 全局生效
     // 1. 从首选项加载学生信息到内存（如果有缓存）
     this.loadStudentInfoFromCache();
-
     // 2. 初始化配置信息（不阻塞）
     this.initializeConfig();
   }

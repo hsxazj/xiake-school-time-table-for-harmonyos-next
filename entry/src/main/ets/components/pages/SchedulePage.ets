@@ -10,6 +10,7 @@ import { curves, promptAction } from '@kit.ArkUI';
 import { JwxtGetInfoService, StudentInfo } from '../../services/jwxt/JwxtGetInfoService';
 import { StudentInfoManager } from '../../services/StudentInfoManager';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
 
 // 周日期范围接口
 interface WeekDateRange {
@@ -90,6 +91,14 @@ export struct SchedulePage {
   @State private studentInfo: StudentInfo | null = null;
   @State private userGrade: number = 0; // 学生入学年份(数字格式)
   private weekDays: string[] = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  // 教务系统连接事件监听器
+  private jwxtConnectionListener: JwxtConnectionListener = (cookie: string, isConnected: boolean) => {
+    hilog.info(DOMAIN, TAG, '🔔 [Event] 收到教务系统连接事件: isConnected=%{public}s', isConnected);
+    if (isConnected) {
+      // 异步刷新课程数据
+      this.refreshCourseFromApi();
+    }
+  };
   // 参照class-schedule-c的sections配置
   private sections: SectionsConfig = {
     value1: [1, 2],
@@ -99,8 +108,6 @@ export struct SchedulePage {
     value5: [9, 10],
     value6: [11, 12],
   };
-  private betweenHeight: number = 5; // 增加一大节课间隔高度
-  private boxHeight: number = 25; // 增加一小节课高度
   // 周课表网格数据
   @State private scheduleGrid: WeekScheduleGrid = {
     nowClassList: [],
@@ -132,11 +139,21 @@ export struct SchedulePage {
     }
     await this.jwxtCourseService.initialize(context);
 
+    // 注册教务系统连接事件监听器
+    jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
+    hilog.info(DOMAIN, TAG, '📡 [Schedule] 已注册教务系统连接事件监听器');
+
     // 获取学生信息(包括入学年份)
     await this.loadStudentInfo();
 
     // 基于日期的初始化逻辑
     await this.initializeWithCurrentDate();
+  }
+
+  aboutToDisappear(): void {
+    // 注销教务系统连接事件监听器
+    jwxtConnectionBus.offConnectionSuccess(this.jwxtConnectionListener);
+    hilog.info(DOMAIN, TAG, '📡 [Schedule] 已注销教务系统连接事件监听器');
   }
 
   build() {
@@ -893,12 +910,13 @@ export struct SchedulePage {
   }
 
   /**
-   * 加载课程数据 (使用教务系统接口)
+   * 加载课程数据 (只从缓存加载)
    *
-   * 新策略：缓存优先 + 后台刷新
-   * 1. 优先从缓存加载并立即渲染
-   * 2. 异步请求API更新数据
-   * 3. API成功后覆盖旧数据和缓存
+   * 新策略：缓存优先，不主动调用API
+   * 1. 只从缓存加载数据
+   * 2. 如果有缓存，立即渲染
+   * 3. 如果没有缓存，显示空白状态
+   * 4. 等待教务系统连接事件后，由事件监听器异步调用API更新
    */
   private async loadCourseData(): Promise<void> {
     if (!this.currentSemester) {
@@ -910,32 +928,59 @@ export struct SchedulePage {
     const semester = this.currentSemester.semester;
 
     try {
-      // 步骤1: 尝试从缓存加载
-      hilog.info(DOMAIN,TAG,`📚 [Course] 优先从缓存加载: ${academicYear}学年 第${semester}学期`);
+      // 只从缓存加载
+      hilog.info(DOMAIN, TAG, `📚 [Course] 从缓存加载: ${academicYear}学年 第${semester}学期`);
       const cachedCourses = await CacheManager.getSemesterCourses(academicYear, semester);
 
       if (cachedCourses && cachedCourses.length > 0) {
         // 有缓存，立即使用缓存数据渲染
-        hilog.info(DOMAIN,TAG,`📚 [Course] 使用缓存数据: ${cachedCourses.length}门课程`);
+        hilog.info(DOMAIN, TAG, `📚 [Course] 使用缓存数据: ${cachedCourses.length}门课程`);
         this.courseList = cachedCourses;
         this.processWeekScheduleData();
       } else {
-        hilog.info(DOMAIN,TAG,`📚 [Course] 无缓存数据，等待API请求`);
-        this.isLoadingCourses = true;
+        // 无缓存数据，显示空白状态，等待教务系统连接事件
+        hilog.info(DOMAIN, TAG, `📚 [Course] 无缓存数据，等待教务系统连接后更新`);
+        this.courseList = [];
+        this.processWeekScheduleData();
       }
+    } catch (error) {
+      console.error('📚 [Course] 加载缓存数据失败:', error);
+      this.courseList = [];
+      this.processWeekScheduleData();
+    } finally {
+      this.isLoadingCourses = false;
+    }
+  }
 
-      // 步骤2: 异步请求API更新（无论缓存是否存在都请求）
-      hilog.info(DOMAIN,TAG,`📚 [Course] 后台请求API更新数据: ${academicYear}学年 第${semester}学期`);
+  /**
+   * 从API刷新课程数据（由教务系统连接事件触发）
+   *
+   * 策略：
+   * 1. 后台异步请求API
+   * 2. API成功后更新数据和缓存
+   * 3. 静默刷新，不影响当前显示
+   */
+  private async refreshCourseFromApi(): Promise<void> {
+    if (!this.currentSemester) {
+      hilog.warn(DOMAIN, TAG, '📚 [Refresh] 当前学期信息为空，跳过刷新');
+      return;
+    }
+
+    const academicYear = this.currentSemester.academicYear;
+    const semester = this.currentSemester.semester;
+
+    try {
+      hilog.info(DOMAIN, TAG, `🔄 [Refresh] 开始从API刷新课程: ${academicYear}学年 第${semester}学期`);
 
       // 构建请求参数
       const params = this.jwxtCourseService.buildCourseParams(academicYear, semester);
-      hilog.info(DOMAIN,TAG,`📚 [Course] 请求课程数据: ${JSON.stringify(params)}`);
+      hilog.info(DOMAIN, TAG, `🔄 [Refresh] 请求课程数据: ${JSON.stringify(params)}`);
 
       // 获取课程列表
       const courseList: JwxtCourse[] = await this.jwxtCourseService.getCourseList(params);
 
-      // 步骤3: API成功，覆盖旧数据和缓存
-      hilog.info(DOMAIN,TAG,`📚 [Course] API请求成功，更新数据: ${courseList.length}门课程`);
+      // API成功，覆盖旧数据和缓存
+      hilog.info(DOMAIN, TAG, `🔄 [Refresh] API请求成功，更新数据: ${courseList.length}门课程`);
       this.courseList = courseList;
 
       // 保存到缓存
@@ -944,30 +989,10 @@ export struct SchedulePage {
       // 重新处理课表数据
       this.processWeekScheduleData();
 
-      hilog.info(DOMAIN,TAG,`📚 [Course] 成功加载并缓存${courseList.length}门课程`);
-
+      hilog.info(DOMAIN, TAG, `🔄 [Refresh] 成功刷新并缓存${courseList.length}门课程`);
     } catch (error) {
-      console.error('📚 [Course] 加载课程数据失败:', error);
-
-      // 请求失败，根据是否有缓存数据显示不同提示
-      if (this.courseList.length > 0) {
-        // 有缓存数据，提示使用本地缓存
-        console.warn('📚 [Course] 请求失败，继续使用缓存数据');
-      } else {
-        // 无缓存数据，提示用户
-        this.promptAction.showToast({
-          message: '使用缓存',
-          duration: 1000,
-          bottom: '100vp'
-        });
-      }
-
-      // 如果没有任何数据，初始化空的网格
-      if (this.courseList.length === 0) {
-        this.processWeekScheduleData();
-      }
-    } finally {
-      this.isLoadingCourses = false;
+      hilog.error(DOMAIN, TAG, '🔄 [Refresh] 从API刷新课程失败: %{public}s', JSON.stringify(error));
+      // 静默失败，不影响用户体验
     }
   }
 

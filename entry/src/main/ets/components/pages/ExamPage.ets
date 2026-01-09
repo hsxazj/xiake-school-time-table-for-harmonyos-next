@@ -8,6 +8,7 @@ import { CacheManager } from '../../common/utils/CacheManager';
 import { curves } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ConfigApiService, SemesterInfo } from '../../services/api/ConfigApiService';
+import { jwxtConnectionBus, JwxtConnectionListener } from '../../services/jwxt/JwxtConnectionEvent';
 
 const DOMAIN: number = 0x0010;
 const TAG = 'ExamPage';
@@ -33,6 +34,14 @@ export struct ExamPage {
   // 学生信息和年级限制
   @State private studentInfo: StudentInfo | null = null;
   @State private userGrade: number = 0; // 学生入学年份(数字格式)
+  // 教务系统连接事件监听器
+  private jwxtConnectionListener: JwxtConnectionListener = (cookie: string, isConnected: boolean) => {
+    hilog.info(DOMAIN, TAG, '🔔 [Event] 收到教务系统连接事件: isConnected=%{public}s', isConnected);
+    if (isConnected) {
+      // 异步刷新考试数据
+      this.refreshExamFromApi();
+    }
+  };
   // 动画效果 - 与HomePage保持一致
   private effect: TransitionEffect =
     TransitionEffect.OPACITY
@@ -40,12 +49,22 @@ export struct ExamPage {
       .animation({ curve: curves.springMotion(0.8, 1.0), duration: 150 });
 
   async aboutToAppear(): Promise<void> {
+    // 注册教务系统连接事件监听器
+    jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
+    hilog.info(DOMAIN, TAG, '📡 [ExamPage] 已注册教务系统连接事件监听器');
+
     // 获取学生信息(包括入学年份)
     await this.loadStudentInfo();
     // 初始化学期数据
     await this.initializeSemesterData();
     // 加载考试列表
     this.loadExamList();
+  }
+
+  aboutToDisappear(): void {
+    // 注销教务系统连接事件监听器
+    jwxtConnectionBus.offConnectionSuccess(this.jwxtConnectionListener);
+    hilog.info(DOMAIN, TAG, '📡 [ExamPage] 已注销教务系统连接事件监听器');
   }
 
   /**
@@ -541,13 +560,13 @@ export struct ExamPage {
   }
 
   /**
-   * 加载考试列表（使用缓存优先策略）
+   * 加载考试列表（只从缓存加载）
    *
-   * 策略：
-   * 1. 优先从缓存加载并立即渲染（关闭loading）
-   * 2. 后台异步请求API更新数据
-   * 3. API成功后静默覆盖数据和缓存
-   * 4. API失败且有缓存时显示提示
+   * 新策略：缓存优先，不主动调用API
+   * 1. 只从缓存加载考试和成绩数据
+   * 2. 如果有缓存，立即渲染
+   * 3. 如果没有缓存，显示空白状态
+   * 4. 等待教务系统连接事件后，由事件监听器异步调用API更新
    */
   private async loadExamList(): Promise<void> {
     try {
@@ -567,8 +586,8 @@ export struct ExamPage {
       hilog.info(DOMAIN, TAG, '📅 [ExamPage] 加载学期: year=%{public}d, term=%{public}d',
         academicYear, semester);
 
-      // 步骤1: 尝试从缓存加载
-      hilog.info(DOMAIN, TAG, '📚 [ExamPage] 优先从缓存加载考试和成绩信息');
+      // 只从缓存加载
+      hilog.info(DOMAIN, TAG, '📚 [ExamPage] 从缓存加载考试和成绩信息');
       const cachedExamList = await CacheManager.getExamCache(academicYear, semester);
       const cachedGradeList = await CacheManager.getGradeCache(academicYear, semester);
 
@@ -582,16 +601,41 @@ export struct ExamPage {
         } else {
           this.examList = cachedExamList;
         }
-
-        // 立即关闭loading，显示缓存数据
-        this.isLoading = false;
       } else {
-        hilog.info(DOMAIN, TAG, `📚 [ExamPage] 无缓存数据，等待API请求`);
-        this.isLoading = true;
+        // 无缓存数据，显示空白状态，等待教务系统连接事件
+        hilog.info(DOMAIN, TAG, `📚 [ExamPage] 无缓存数据，等待教务系统连接后更新`);
+        this.examList = [];
       }
 
-      // 步骤2: 后台异步请求API更新（无论缓存是否存在都请求）
-      hilog.info(DOMAIN, TAG, '📚 [ExamPage] 后台请求API更新数据');
+      this.isLoading = false;
+
+    } catch (error) {
+      hilog.error(DOMAIN, TAG, '❌ [ExamPage] 加载缓存数据失败: %{public}s', JSON.stringify(error));
+      this.examList = [];
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * 从API刷新考试数据（由教务系统连接事件触发）
+   *
+   * 策略：
+   * 1. 后台异步请求API
+   * 2. API成功后更新数据和缓存
+   * 3. 静默刷新，不影响当前显示
+   */
+  private async refreshExamFromApi(): Promise<void> {
+    if (!this.currentExamSemester) {
+      hilog.warn(DOMAIN, TAG, '⚠️ [Refresh] 当前学期信息为空，跳过刷新');
+      return;
+    }
+
+    const academicYear = parseInt(this.currentExamSemester.academicYear);
+    const semester = this.currentExamSemester.semester;
+
+    try {
+      hilog.info(DOMAIN, TAG, '🔄 [Refresh] 开始从API刷新考试数据: year=%{public}d, term=%{public}d',
+        academicYear, semester);
 
       // 并行调用服务获取考试信息和成绩信息
       const results = await Promise.all([
@@ -602,41 +646,23 @@ export struct ExamPage {
       const examList = results[0];
       const gradeList = results[1];
 
-      hilog.info(DOMAIN, TAG, '✅ [ExamPage] API请求成功，更新数据: %{public}d条考试, %{public}d条成绩',
+      hilog.info(DOMAIN, TAG, '🔄 [Refresh] API请求成功，更新数据: %{public}d条考试, %{public}d条成绩',
         examList.length, gradeList.length);
 
-      // 步骤3: API成功，覆盖旧数据和缓存
-      // 保存到缓存
+      // API成功，覆盖旧数据和缓存
       await CacheManager.saveExamCache(academicYear, semester, examList);
       await CacheManager.saveGradeCache(academicYear, semester, gradeList);
 
       // 将成绩信息匹配到考试信息中
       this.examList = this.mergeExamWithGrades(examList, gradeList);
 
-      hilog.info(DOMAIN, TAG, '🎉 [ExamPage] 考试列表处理完成，共 %{public}d 条记录，其中 %{public}d 条有成绩',
+      hilog.info(DOMAIN, TAG, '🔄 [Refresh] 考试列表刷新完成，共 %{public}d 条记录，其中 %{public}d 条有成绩',
         this.examList.length,
         this.examList.filter((exam: ExamInfo) => exam.score !== undefined).length);
 
-      this.isLoading = false;
-
     } catch (error) {
-      hilog.error(DOMAIN, TAG, '❌ [ExamPage] 加载考试列表失败: %{public}s', JSON.stringify(error));
-
-      // 请求失败，根据是否有缓存数据显示不同提示
-      if (this.examList.length > 0) {
-        // 有缓存数据，提示使用本地缓存（不设置 errorMessage，继续显示缓存数据）
-        hilog.warn(DOMAIN, TAG, '📚 [ExamPage] 请求失败，继续使用缓存数据');
-      } else {
-        // 无缓存数据，显示错误信息
-        if (error instanceof Error) {
-          this.errorMessage = error.message;
-        } else {
-          this.errorMessage = '加载考试信息失败，请稍后重试';
-        }
-      }
-
-      this.isLoading = false;
-      this.isRefreshing = false;
+      hilog.error(DOMAIN, TAG, '🔄 [Refresh] 从API刷新考试数据失败: %{public}s', JSON.stringify(error));
+      // 静默失败，不影响用户体验
     }
   }
 

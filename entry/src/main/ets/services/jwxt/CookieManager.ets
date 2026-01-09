@@ -20,6 +20,7 @@
  * @since 2026-01-07
  */
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { jwxtConnectionBus } from './JwxtConnectionEvent';
 
 const DOMAIN: number = 0x3004; // Cookie Manager domain
 const TAG: string = 'CookieManager';
@@ -44,6 +45,18 @@ export class CookieManager {
       CookieManager.instance = new CookieManager();
     }
     return CookieManager.instance;
+  }
+
+  /**
+   * 通知所有订阅者Cookie状态已改变
+   * @param host 域名
+   */
+  private notify(host: string): void {
+    const cookieStr = this.cookieStore.get(host) ?? '';
+    // 检查是否包含 JSESSIONID，判断是否已连接到教务系统
+    const isConnected = cookieStr.includes('JSESSIONID');
+    jwxtConnectionBus.emit(cookieStr, isConnected);
+    hilog.info(DOMAIN, TAG, '🔔 [Notify] 已广播Cookie状态变更, isConnected=%{public}s', isConnected);
   }
 
   /**
@@ -128,6 +141,9 @@ export class CookieManager {
       hilog.info(DOMAIN, TAG, '💾 [Save] Cookie已保存到内存: host=%{public}s, count=%{public}d',
         host, existingCookies.size);
       hilog.info(DOMAIN, TAG, '💾 [Save] 保存的完整Cookie字符串: %{public}s', cookieStr);
+
+      // 触发事件通知
+      this.notify(host);
     } catch (error) {
       hilog.error(DOMAIN, TAG, '❌ [Save] 保存Cookie失败: %{public}s', JSON.stringify(error));
       // 不抛出异常，避免影响主流程
@@ -172,6 +188,8 @@ export class CookieManager {
   public async clearAllCookies(): Promise<void> {
     this.cookieStore.clear();
     hilog.info(DOMAIN, TAG, '🗑️ [Clear All] 所有Cookie已清除');
+    // 触发事件，通知所有订阅者Cookie已清空
+    jwxtConnectionBus.emit('', false);
   }
 
   /**
