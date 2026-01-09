@@ -43,13 +43,15 @@ export struct HomePage {
   };
 
   aboutToAppear(): void {
-    // 注册课程数据更新事件监听器
+    // 先加载初始数据（确保即使错过了之前的事件通知，也能获取到最新缓存数据）
+    hilog.info(DOMAIN, TAG, '📱 [HomePage] 页面初始化，先加载数据再注册监听器');
+    this.loadUserInfo();
+    this.loadTodayCourses(); // 主动加载一次，获取当前缓存中的最新数据
+    this.loadStudentName();
+
+    // 然后注册课程数据更新事件监听器（接收后续的更新通知）
     courseDataUpdateBus.onCourseDataUpdate(this.courseDataUpdateListener);
     hilog.info(DOMAIN, TAG, '📡 [HomePage] 已注册课程数据更新事件监听器');
-
-    this.loadUserInfo();
-    this.loadTodayCourses();
-    this.loadStudentName();
   }
 
   aboutToDisappear(): void {

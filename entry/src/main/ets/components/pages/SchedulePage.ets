@@ -155,11 +155,11 @@ export struct SchedulePage {
     if (isConnected) {
       hilog.info(DOMAIN, TAG, '✅ [Schedule] 检测到教务系统已连接，更新同步按钮状态');
       this.jwxtConnected = true;
+    }else{
+      // 注册教务系统连接事件监听器
+      jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
+      hilog.info(DOMAIN, TAG, '📡 [Schedule] 已注册教务系统连接事件监听器');
     }
-
-    // 注册教务系统连接事件监听器
-    jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
-    hilog.info(DOMAIN, TAG, '📡 [Schedule] 已注册教务系统连接事件监听器');
 
     // 获取学生信息(包括入学年份)
     await this.loadStudentInfo();

@@ -55,23 +55,18 @@ export struct ExamPage {
     const isConnected = cookieManager.isConnected();
     if (isConnected) {
       hilog.info(DOMAIN, TAG, '✅ [ExamPage] 检测到教务系统已连接，准备刷新考试数据');
+      this.refreshExamFromApi();
+    }else{
+      // 注册教务系统连接事件监听器
+      jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
+      hilog.info(DOMAIN, TAG, '📡 [ExamPage] 已注册教务系统连接事件监听器');
     }
-
-    // 注册教务系统连接事件监听器
-    jwxtConnectionBus.onConnectionSuccess(this.jwxtConnectionListener);
-    hilog.info(DOMAIN, TAG, '📡 [ExamPage] 已注册教务系统连接事件监听器');
-
     // 获取学生信息(包括入学年份)
     await this.loadStudentInfo();
     // 初始化学期数据
     await this.initializeSemesterData();
     // 加载考试列表
     this.loadExamList();
-
-    // 如果已连接，在初始化完成后刷新数据
-    if (isConnected) {
-      this.refreshExamFromApi();
-    }
   }
 
   aboutToDisappear(): void {
